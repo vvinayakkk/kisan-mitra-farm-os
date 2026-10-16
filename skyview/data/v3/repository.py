@@ -1,0 +1,523 @@
+"""Shared canonical queries used directly by HTTP routes and assistant tools."""
+
+import uuid
+from datetime import UTC, datetime
+from decimal import Decimal
+from zoneinfo import ZoneInfo
+
+from sqlalchemy import text
+
+from .db import connection, mode
+
+
+def clean(value):
+    if isinstance(value, dict):
+        return {k: clean(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [clean(v) for v in value]
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+
+def rows(db, sql, params=None):
+    return clean([dict(r) for r in db.execute(text(sql), params or {}).mappings()])
+
+
+def provenance(row, origin=None):
+    stamp = row.get("received_at") or row.get("fetched_at") or row.get("created_at")
+
+    def age_seconds(value):
+        if not value:
+            return None
+        try:
+            instant = datetime.fromisoformat(str(value))
+            if instant.tzinfo is None:
+                instant = instant.replace(tzinfo=UTC)
+            return max(0, (datetime.now(UTC) - instant).total_seconds())
+        except (ValueError, TypeError):
+            return None
+
+    age = age_seconds(stamp)
+    observed = (
+        row.get("observed_at") or row.get("observed_on") or row.get("arrival_date")
+    )
+    observation_age = age_seconds(observed)
+    # Daily prices and station packets have different freshness windows.
+    freshness_window = (
+        172800 if row.get("arrival_date") or row.get("observed_on") else 300
+    )
+    stale_age = observation_age if observation_age is not None else age
+    return {
+        "origin": origin or row.get("origin", "unknown"),
+        "lane": row.get("lane", mode().removeprefix("v3_")),
+        "source": row.get("provider_name") or row.get("source", "SkyView v3"),
+        "source_url": row.get("source_url"),
+        "as_of": row.get("as_of_date"),
+        "observed_at": observed,
+        "fetched_at": stamp,
+        "age_seconds": round(age) if age is not None else None,
+        "observation_age_seconds": round(observation_age)
+        if observation_age is not None
+        else None,
+        "stale": bool(stale_age is not None and stale_age > freshness_window),
+    }
+
+
+def _station(db, station_id):
+    # WS01 is an alias for the authenticated farmer's first installation, never another owner.
+    return (
+        db.execute(
+            text(
+                "SELECT id,station_key FROM sv3.stations WHERE (:alias OR station_key=:key OR id::text=:key) ORDER BY (station_key=:key) DESC,(device_type<>'mock-v3') DESC,station_key LIMIT 1"
+            ),
+            {"alias": station_id == "WS01", "key": station_id},
+        )
+        .mappings()
+        .first()
+    )
+
+
+def station_snapshot(farmer_id, station_id="WS01"):
+    with connection(farmer_id) as db:
+        station = _station(db, station_id)
+        if not station:
+            return {
+                "available": False,
+                "station_id": station_id,
+                "message": "No station is registered to this farm.",
+                "data_origin": "unavailable",
+            }
+        records = rows(
+            db,
+            """SELECT p.*,d.origin,d.lane,d.as_of_date,d.source_url,v.name AS provider_name
+         FROM sv3.sensor_packets p JOIN sv3.datasets d ON d.id=p.dataset_id JOIN sv3.providers v ON v.id=d.provider_id
+         WHERE p.station_id=:station AND observed_at<=now()+interval '2 minutes' ORDER BY observed_at DESC LIMIT 1""",
+            {"station": station["id"]},
+        )
+    if not records:
+        return {
+            "available": False,
+            "station_id": station_id,
+            "message": "No valid station packets have arrived.",
+            "data_origin": "unavailable",
+        }
+    raw = records[0]
+    result = {
+        "available": True,
+        "station_id": str(station["station_key"]),
+        "timestamp": raw["observed_at"],
+        "received_at": raw["received_at"],
+        "quality_flags": raw["quality_flags"],
+        "_source": raw["origin"],
+        "data_origin": raw["origin"],
+        "provenance": provenance(raw),
+    }
+    mapping = {
+        "temperature_c": "temperature",
+        "humidity_pct": "humidity",
+        "pressure_hpa": "pressure",
+        "wind_kmh": "windSpeed",
+        "wind_direction_degrees": "windDirection",
+        "rainfall_increment_mm": "rainfall",
+        "soil_temperature_c": "soilTemperature",
+        "soil_moisture_pct": "soilMoisture",
+        "pm25_ug_m3": "airQualityPM25",
+        "pm10_ug_m3": "airQualityPM10",
+        "uv_index": "uvIndex",
+        "lux": "lightIntensity",
+        "battery_v": "batteryVoltage",
+        "solar_v": "solarVoltage",
+    }
+    for src, dst in mapping.items():
+        result[dst] = raw[src]
+    result.update(
+        {
+            "soil_moisture": result["soilMoisture"],
+            "soil_temperature": result["soilTemperature"],
+            "wind_speed": result["windSpeed"],
+            "wind_direction": result["windDirection"],
+            "pm25": result["airQualityPM25"],
+            "pm10": result["airQualityPM10"],
+            "uv_index": result["uvIndex"],
+            "lux": result["lightIntensity"],
+            "battery_voltage": result["batteryVoltage"],
+            "solar_voltage": result["solarVoltage"],
+            "soil_moisture_basis": "relative_percent_unless_calibrated",
+        }
+    )
+    return result
+
+
+def weather_history(farmer_id, station_id="WS01", hours=24, limit=100):
+    with connection(farmer_id) as db:
+        station = _station(db, station_id)
+        if not station:
+            return {
+                "station_id": station_id,
+                "data": [],
+                "totalRecords": 0,
+                "returnedRecords": 0,
+            }
+        records = rows(
+            db,
+            """SELECT p.observed_at AS timestamp,p.temperature_c AS temperature,p.humidity_pct AS humidity,p.pressure_hpa AS pressure,
+         p.wind_kmh AS "windSpeed",p.wind_direction_degrees AS "windDirection",p.rainfall_increment_mm AS rainfall,p.soil_temperature_c AS "soilTemperature",
+         p.soil_moisture_pct AS "soilMoisture",p.pm25_ug_m3 AS "airQualityPM25",p.pm10_ug_m3 AS "airQualityPM10",p.uv_index AS "uvIndex",
+         p.lux AS "lightIntensity",p.battery_v AS "batteryVoltage",p.solar_v AS "solarVoltage",d.origin AS data_origin
+         FROM sv3.sensor_packets p JOIN sv3.datasets d ON d.id=p.dataset_id WHERE station_id=:station AND observed_at<=now()
+         AND observed_at>=now()-make_interval(hours=>:hours) ORDER BY observed_at DESC LIMIT :limit""",
+            {
+                "station": station["id"],
+                "hours": min(8760, max(1, hours)),
+                "limit": min(2000, max(1, limit)),
+            },
+        )
+    return {
+        "station_id": station_id,
+        "data": records,
+        "totalRecords": len(records),
+        "returnedRecords": len(records),
+        "source": "SkyView v3 timestamped packets",
+    }
+
+
+def price_unit(code):
+    return {
+        "inr_per_quintal": "INR/quintal",
+        "inr_per_tonne": "INR/tonne",
+        "inr_per_100_nuts": "INR/100 nuts",
+        "inr_per_kg": "INR/kg",
+    }.get(code, "INR/" + code)
+
+
+# Follow the canonical hierarchy rather than treating a district as a state.
+_MARKET_REGIONS = """WITH RECURSIVE market_regions AS (
+ SELECT id, name AS state, NULL::text AS district FROM sv3.regions WHERE level IN ('state','ut')
+ UNION ALL SELECT r.id,p.state,CASE WHEN r.level='district' THEN r.name ELSE p.district END
+ FROM sv3.regions r JOIN market_regions p ON r.parent_id=p.id
+) """
+_MARKET_COLUMNS = """p.series_id,p.observed_on AS arrival_date,p.min_price,p.max_price,p.modal_price,p.arrivals_quantity,
+ s.unit_code AS unit,c.name AS commodity,cv.name AS variety,s.grade,m.name AS market,
+ coalesce(mr.state,r.name) AS state,mr.district,
+ extract(year from p.observed_on)::int AS year,extract(month from p.observed_on)::int AS month,
+ extract(week from p.observed_on)::int AS week,p.fetched_at,d.origin,d.origin AS data_origin,
+ d.lane,d.source_url,v.name AS provider_name,d.as_of_date"""
+_MARKET_JOINS = """ JOIN sv3.markets m ON m.id=s.market_id JOIN sv3.crops c ON c.id=s.crop_id
+ JOIN sv3.crop_varieties cv ON cv.id=s.variety_id JOIN sv3.regions r ON r.id=m.region_id
+ LEFT JOIN market_regions mr ON mr.id=r.id """
+_MARKET_FILTER = """(:crop='' OR lower(c.name)=ANY(CAST(:crop_aliases AS text[])) OR lower(c.code)=ANY(CAST(:crop_aliases AS text[]))
+ OR EXISTS (SELECT 1 FROM jsonb_each_text(c.names) a WHERE lower(a.value)=lower(:crop)))
+ AND (:state='' OR lower(coalesce(mr.state,r.name))=lower(:state))
+ AND (:market='' OR lower(m.name)=lower(:market) OR m.id::text=:market) """
+
+
+def _crop_aliases(value):
+    value = value.strip().casefold()
+    groups = (
+        ("rice", "paddy"),
+        ("arhar", "pigeonpea", "pigeon pea", "pigeon-pea", "tur"),
+        ("okra", "bhindi", "lady finger", "ladies finger"),
+        ("eggplant", "brinjal"),
+        ("chickpea", "gram", "bengal gram", "chana"),
+        ("pearl millet", "bajra"),
+        ("sorghum", "jowar"),
+        ("mung bean", "green gram", "moong"),
+        ("black gram", "urad"),
+    )
+    return list(next((group for group in groups if value in group), (value,)))
+
+
+def _market_records(records):
+    for row in records:
+        row["provenance"] = provenance(row)
+        row["unit"] = price_unit(row["unit"])
+        row["source"] = row["provider_name"]
+    return records
+
+
+def market_history(
+    commodity="",
+    state="",
+    market="",
+    limit=100,
+    year=None,
+    month=None,
+    week=None,
+    observed_only=False,
+):
+    with connection() as db:
+        records = rows(
+            db,
+            _MARKET_REGIONS
+            + "SELECT "
+            + _MARKET_COLUMNS
+            + """
+ FROM sv3.price_observations p JOIN sv3.market_series s ON s.id=p.series_id """
+            + _MARKET_JOINS
+            + """
+ JOIN sv3.datasets d ON d.id=p.dataset_id JOIN sv3.providers v ON v.id=d.provider_id
+ WHERE (:observed_only=false OR d.origin='observed') AND p.observed_on <= (now() AT TIME ZONE 'Asia/Kolkata')::date AND """
+            + _MARKET_FILTER
+            + """
+ AND (:year IS NULL OR extract(year from p.observed_on)=:year)
+ AND (:month IS NULL OR extract(month from p.observed_on)=:month)
+ AND (:week IS NULL OR extract(week from p.observed_on)=:week)
+ ORDER BY p.observed_on DESC,(d.origin<>'synthetic') DESC,p.fetched_at DESC,p.series_id LIMIT :limit""",
+            {
+                "crop": commodity.strip(),
+                "crop_aliases": _crop_aliases(commodity),
+                "state": state.strip(),
+                "market": market.strip(),
+                "observed_only": observed_only,
+                "year": year,
+                "month": month,
+                "week": week,
+                "limit": min(3000, max(1, limit)),
+            },
+        )
+    records = _market_records(records)
+    return {
+        "status": "success",
+        "available": bool(records),
+        "count": len(records),
+        "records": records,
+        "source": "Reported mandi prices" if observed_only else "Mandi price history",
+        "observed_only": observed_only,
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+
+
+def market_rates(commodity="", state="", limit=20, market="", observed_only=False):
+    # Index-driven one-point lookup for every matching series. A long history in one
+    # market must never consume the row limit and hide every other market.
+    with connection() as db:
+        records = rows(
+            db,
+            _MARKET_REGIONS
+            + "SELECT "
+            + _MARKET_COLUMNS
+            + """
+ FROM sv3.market_series s """
+            + _MARKET_JOINS
+            + """
+ JOIN LATERAL (
+  SELECT x.* FROM sv3.price_observations x JOIN sv3.datasets dx ON dx.id=x.dataset_id
+  WHERE x.series_id=s.id AND (:observed_only=false OR dx.origin='observed') AND x.observed_on <= (now() AT TIME ZONE 'Asia/Kolkata')::date
+  ORDER BY x.observed_on DESC,(dx.origin<>'synthetic') DESC,x.fetched_at DESC LIMIT 1
+ ) p ON true JOIN sv3.datasets d ON d.id=p.dataset_id JOIN sv3.providers v ON v.id=d.provider_id
+ WHERE (:observed_only=false OR m.dataset_id IN (SELECT id FROM sv3.datasets WHERE origin IN ('observed','curated'))) AND """
+            + _MARKET_FILTER
+            + """
+ ORDER BY p.observed_on DESC,(d.origin<>'synthetic') DESC,m.name,c.name,s.id LIMIT :limit""",
+            {
+                "crop": commodity.strip(),
+                "crop_aliases": _crop_aliases(commodity),
+                "state": state.strip(),
+                "market": market.strip(),
+                "observed_only": observed_only,
+                "limit": min(200, max(1, limit)),
+            },
+        )
+    records = _market_records(records)
+    return {
+        "status": "success",
+        "available": bool(records),
+        "count": len(records),
+        "rates": records,
+        "records": records,
+        "source": "Reported mandi prices" if observed_only else "Mandi prices",
+        "observed_only": observed_only,
+        "note": "Check the reporting date before comparing prices.",
+    }
+
+
+def market_catalogue(commodity="", state="", q="", limit=200, observed_only=False):
+    with connection() as db:
+        crops = rows(db, "SELECT name FROM sv3.crops ORDER BY name")
+        states = rows(
+            db,
+            "SELECT DISTINCT name FROM sv3.regions WHERE level IN ('state','ut') ORDER BY name",
+        )
+        markets = rows(
+            db,
+            _MARKET_REGIONS
+            + """SELECT m.id::text,m.name,coalesce(mr.state,r.name) AS state,mr.district,
+ coalesce(array_agg(DISTINCT c.name ORDER BY c.name) FILTER(WHERE c.name IS NOT NULL),ARRAY[]::text[]) AS commodities,
+ ds.origin AS data_origin,ds.source_url,count(DISTINCT s.id)>0 AS has_price_series
+ FROM sv3.markets m JOIN sv3.datasets ds ON ds.id=m.dataset_id JOIN sv3.regions r ON r.id=m.region_id LEFT JOIN market_regions mr ON mr.id=r.id
+ LEFT JOIN sv3.market_series s ON s.market_id=m.id LEFT JOIN sv3.crops c ON c.id=s.crop_id
+ WHERE """
+            + _MARKET_FILTER.replace(":market", ":unused_market")
+            + """
+ AND (:observed_only=false OR ds.origin IN ('observed','curated'))
+ AND (:q='' OR m.name ILIKE :pattern OR coalesce(mr.state,r.name) ILIKE :pattern OR c.name ILIKE :pattern)
+ GROUP BY m.id,m.name,mr.state,r.name,mr.district,ds.origin,ds.source_url ORDER BY (ds.origin<>'synthetic') DESC,m.name,m.id LIMIT :limit""",
+            {
+                "crop": commodity.strip(),
+                "crop_aliases": _crop_aliases(commodity),
+                "state": state.strip(),
+                "unused_market": "",
+                "observed_only": observed_only,
+                "q": q.strip(),
+                "pattern": "%" + q.strip() + "%",
+                "limit": min(200, max(1, limit)),
+            },
+        )
+    return {
+        "commodities": [r["name"] for r in crops],
+        "states": [r["name"] for r in states],
+        "markets": markets,
+        "returned_markets": len(markets),
+        "market_limit": min(200, max(1, limit)),
+        "as_of_date": datetime.now(UTC)
+        .astimezone(ZoneInfo("Asia/Kolkata"))
+        .date()
+        .isoformat(),
+    }
+
+
+def schemes(state="", crop="", limit=100, q=""):
+    # Search purpose and requirements before applying the display limit. Farmer
+    # language often uses the benefit rather than the official acronym.
+    aliases = {
+        "insurance": "insurance|pmfby|fasal bima|rwbcis",
+        "loan": "credit|loan|kcc|interest",
+        "water": "water|irrigation|sinchai",
+        "solar": "solar|kusum",
+        "organic": "organic|paramparagat|jaivik",
+        "storage": "storage|warehouse|infrastructure",
+        "pension": "pension|maan.*dhan",
+        "women": "women|woman|mahila",
+        "fertilizer": "fertilizer|fertiliser|soil",
+    }
+    query = q.strip().casefold()
+    import re
+
+    pattern = aliases.get(query, re.escape(query))
+    with connection() as db:
+        records = rows(
+            db,
+            """SELECT s.id::text AS scheme_id,s.scheme_code,s.name AS scheme_name,s.application_url AS official_url,s.requirements,s.benefits,s.valid_from,s.valid_to,
+         coalesce(r.name,'India') AS state,d.source_url,d.title AS source_title,d.review_status,s.verified_at,
+         ds.origin,ds.origin AS data_origin,ds.lane,ds.created_at,v.name AS provider_name
+         FROM sv3.scheme_versions s JOIN sv3.documents d ON d.id=s.document_id JOIN sv3.datasets ds ON ds.id=d.dataset_id JOIN sv3.providers v ON v.id=ds.provider_id
+         LEFT JOIN sv3.regions r ON r.id=s.region_id WHERE (s.valid_from IS NULL OR s.valid_from<=(now() AT TIME ZONE 'Asia/Kolkata')::date)
+         AND (s.valid_to IS NULL OR s.valid_to>=(now() AT TIME ZONE 'Asia/Kolkata')::date)
+         AND (:state='' OR r.id IS NULL OR lower(r.name)=lower(:state))
+         AND (:q='' OR (s.name||' '||s.scheme_code||' '||s.requirements::text||' '||s.benefits::text) ~* :pattern)
+         ORDER BY s.name LIMIT :limit""",
+            {
+                "state": state.strip(),
+                "q": query,
+                "pattern": pattern,
+                "limit": min(100, max(1, limit)),
+            },
+        )
+    for row in records:
+        row.update(
+            {
+                "name": row["scheme_name"],
+                "scheme_type": row["scheme_code"],
+                "benefit_description": row["benefits"].get(
+                    "description", "Review the official application details."
+                ),
+                "eligibility": row["requirements"].get(
+                    "summary", "Answer eligibility questions; this is not an approval."
+                ),
+                "status": "Reviewed reference"
+                if row["review_status"] == "reviewed"
+                else "Needs source review",
+                "applicable_crops": "Check official notified crops",
+                "source": row["provider_name"],
+                "provenance": provenance(row),
+            }
+        )
+    return {
+        "status": "success",
+        "available": bool(records),
+        "count": len(records),
+        "schemes": records,
+        "source": "Versioned official scheme references",
+        "note": "Potential matches only; official authority makes eligibility decisions.",
+    }
+
+
+def profile(farmer_id):
+    with connection(farmer_id) as db:
+        profiles = rows(
+            db,
+            "SELECT f.*,r.name AS state,d.origin,d.lane FROM sv3.farmers f LEFT JOIN sv3.regions r ON r.id=f.region_id JOIN sv3.datasets d ON d.id=f.dataset_id WHERE f.id=:id",
+            {"id": farmer_id},
+        )
+        if not profiles:
+            return {"status": "unavailable", "profile": None}
+        farmer = profiles[0]
+        fields = rows(
+            db,
+            "SELECT sum(area_ha)*2.47105381 AS acres,avg(latitude) AS lat,avg(longitude) AS lon FROM sv3.plots",
+        )
+        crops = rows(
+            db,
+            "SELECT DISTINCT c.name FROM sv3.crop_cycles cc JOIN sv3.crops c ON c.id=cc.crop_id WHERE cc.status='growing'",
+        )
+        resources = rows(
+            db, "SELECT name FROM sv3.resources WHERE category='equipment'"
+        )
+    attrs = farmer["profile_attributes"]
+    p = {
+        "id": farmer["id"],
+        "phone": farmer["contact_phone"],
+        "name": farmer["display_name"],
+        "land_size_acres": attrs.get("land_size_acres", fields[0]["acres"]),
+        "mapped_plot_area_acres": fields[0]["acres"],
+        "location": attrs.get("location", farmer["state"]),
+        "state": farmer["state"],
+        "district": attrs.get(
+            "district", "Demo village" if farmer["origin"] == "synthetic" else ""
+        ),
+        "crops": attrs.get("crops", [r["name"] for r in crops]),
+        "active_crop_cycles": [r["name"] for r in crops],
+        "latitude": fields[0]["lat"],
+        "longitude": fields[0]["lon"],
+        "excess_resources": attrs.get(
+            "excess_resources", [r["name"] for r in resources]
+        ),
+        "required_resources": attrs.get("required_resources", []),
+        "whatsapp_number": None,
+        "preferred_language": farmer["preferred_language"],
+        "data_origin": farmer["origin"],
+        "provenance": provenance(farmer),
+    }
+    return {"status": "success", "profile": p}
+
+
+def directory():
+    with connection() as db:
+        records = rows(db, "SELECT * FROM sv3.public_farmer_directory()")
+        notices = rows(
+            db,
+            "SELECT id,farmer_id,title,category,kind,quantity,unit,exchange_for FROM sv3.exchange_listings WHERE status='published' AND sv3.exchange_listing_open(id) ORDER BY updated_at DESC LIMIT 2000",
+        )
+    by_farmer = {}
+    for notice in notices:
+        by_farmer.setdefault(notice["farmer_id"], []).append(notice)
+    for row in records:
+        row.update(
+            {
+                "phone": "listing:" + row["id"],
+                "whatsapp_number": None,
+                "data_origin": row["origin"],
+                "sharing_contact_available": False,
+                "exchange_listings": by_farmer.get(row["id"], [])[:8],
+            }
+        )
+    return {
+        "status": "success",
+        "farmers": records,
+        "source": "Explicit demo neighbors or consenting public listings; contacts withheld",
+    }
