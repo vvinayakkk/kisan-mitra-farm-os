@@ -1,0 +1,124 @@
+.answer-action-block {
+  margin-top: 10px;
+  color: #677a6e;
+}
+.answer-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.answer-actions .answer-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.answer-actions .answer-action svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+.answer-actions .answer-action:hover,
+.answer-actions .answer-action:focus-visible,
+.answer-actions .answer-action[aria-pressed="true"] {
+  color: #244d34;
+  background: #e8eee4;
+}
+.answer-actions .answer-action:focus-visible {
+  outline: 2px solid #8eaa73;
+  outline-offset: 2px;
+}
+.answer-actions .answer-action:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.answer-action[data-hint]:hover:after,
+.answer-action[data-hint]:focus-visible:after {
+  content: attr(data-hint);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 0;
+  z-index: 10;
+  white-space: nowrap;
+  background: #203d2d;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  pointer-events: none;
+}
+.answer-action-notice {
+  display: block;
+  max-width: 480px;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 4px 0 0 4px;
+}
+.answer-options {
+  z-index: 610;
+  padding: 6px;
+  min-width: 195px;
+  border: 1px solid #d9e1d3;
+  border-radius: 12px;
+  background: #fbfcf7;
+  box-shadow: 0 12px 36px #203d2d24;
+  color: #284932;
+  font-size: 12px;
+}
+.answer-options [role="menuitem"] {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-radius: 7px;
+  padding: 10px;
+  cursor: pointer;
+  outline: none;
+}
+.answer-options [data-highlighted] {
+  background: #e9efdf;
+}
+.speech-playback-compact {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.speech-playback-compact [role="alert"] {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  z-index: 12;
+  width: 240px;
+  padding: 8px;
+  border: 1px solid #e6c8bd;
+  border-radius: 8px;
+  background: #fff8f1;
+  font-size: 11px;
+  color: #8b3d2c;
+}
+.answer-alternative {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-left: 2px solid #b8c9a8;
+  color: #2e4836;
+}
+.answer-alternative > summary {
+  font-size: 12px;
+  cursor: pointer;
+}
+.answer-alternative > summary small {
+  display: inline-block;
+  margin-left: 8px;
+  color: #74816d;
+  font-size: 10px;
+}
+.answer-alternative .message-text {
+  padding-top: 8px;
+}
