@@ -1,0 +1,29 @@
+.workspace-voice-field {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.workspace-voice-field.workspace-voice-field > :is(input, textarea) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 46px;
+}
+.workspace-voice-field > .workspace-field-mic {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #647955;
+  background: transparent;
+}
+.workspace-voice-field:focus-within > .workspace-field-mic {
+  color: #405a32;
+}
+@media (max-width: 600px) {
+  .workspace-voice-field.workspace-voice-field > :is(input, textarea) {
+    font-size: 16px;
+  }
+}
