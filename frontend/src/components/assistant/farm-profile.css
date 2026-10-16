@@ -1,0 +1,229 @@
+.farm-profile {
+  max-width: 970px;
+  margin: 0 auto;
+  padding: 30px 28px 70px;
+  color: #35432c;
+}
+.farm-profile-heading,
+.farm-profile-identity,
+.farm-profile-land > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.farm-profile-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #798666;
+}
+.farm-profile h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.045em;
+  margin: 7px 0;
+}
+.farm-profile h2 {
+  font-size: 24px;
+  letter-spacing: -0.035em;
+  margin: 0 0 5px;
+}
+.farm-profile h3 {
+  font-size: 18px;
+  margin: 0 0 7px;
+}
+.farm-profile p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #758069;
+  margin: 6px 0;
+}
+.farm-profile-identity {
+  justify-content: flex-start;
+  padding: 36px 0 26px;
+  border-bottom: 1px solid #d8dece;
+}
+.farm-profile-avatar {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  flex: none;
+  border: 1px solid #c7d2b8;
+  border-radius: 24px;
+  background: #edf2e4;
+  color: #6d8455;
+}
+.farm-profile-edit {
+  margin-left: auto;
+}
+.farm-profile-edit,
+.farm-profile-land button,
+.farm-profile-editor button,
+.farm-profile-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid #c4cdb8;
+  border-radius: 12px;
+  padding: 9px 12px;
+  color: #50623f;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.farm-profile-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 45px;
+  margin: 12px 0 30px;
+}
+.farm-profile-details > div {
+  padding: 19px 0;
+  border-bottom: 1px solid #e0e5d8;
+  min-width: 0;
+}
+.farm-profile dt {
+  font-size: 11px;
+  letter-spacing: 0.035em;
+  color: #7b856e;
+  margin-bottom: 7px;
+}
+.farm-profile dd {
+  font-size: 15px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.farm-profile-land {
+  border-top: 1px solid #d8dece;
+  padding-top: 26px;
+}
+.farm-profile-land ol {
+  list-style: none;
+  padding: 0;
+  margin: 25px 0;
+}
+.farm-profile-land ol > li {
+  padding: 20px 0;
+  border-bottom: 1px solid #dce2d3;
+}
+.farm-profile-land ol > li > div {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.farm-profile-land ol > li > div > span {
+  font-size: 12px;
+  color: #7a866c;
+}
+.farm-profile-land ul {
+  list-style: none;
+  padding: 8px 0 0;
+}
+.farm-profile-land ul li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  color: #758369;
+  font-size: 13px;
+}
+.farm-profile-editor {
+  margin: 24px 0;
+  padding: 22px;
+  background: #f3f6ed;
+  border: 1px solid #d3ddc5;
+  border-radius: 20px;
+}
+.farm-profile-edit-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.farm-profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.farm-profile-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: #697759;
+}
+.farm-profile-form-grid input,
+.farm-profile-form-grid select {
+  width: 100%;
+  min-width: 0;
+  height: 43px;
+  border: 1px solid #c7d0b9;
+  border-radius: 12px;
+  background: #fbfcf8;
+  font: inherit;
+  color: #374a2c;
+  padding: 9px 12px;
+}
+.farm-profile-editor footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 17px;
+}
+.farm-profile-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.farm-profile-retry {
+  margin-left: 10px;
+}
+.farm-profile button:focus-visible,
+.farm-profile input:focus-visible,
+.farm-profile select:focus-visible {
+  outline: 2px solid #6c874c;
+  outline-offset: 3px;
+}
+.farm-profile button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 600px) {
+  .farm-profile {
+    padding: 22px 17px 65px;
+  }
+  .farm-profile-heading {
+    align-items: flex-start;
+  }
+  .farm-profile-identity {
+    flex-wrap: wrap;
+    gap: 13px;
+    padding-top: 25px;
+  }
+  .farm-profile-edit {
+    margin-left: 79px;
+  }
+  .farm-profile-details {
+    column-gap: 19px;
+  }
+  .farm-profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .farm-profile-editor {
+    padding: 17px;
+  }
+  .farm-profile-land > header {
+    align-items: flex-start;
+  }
+  .farm-profile-land ol > li > div {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .farm-profile-land ul li {
+    font-size: 12px;
+  }
+}

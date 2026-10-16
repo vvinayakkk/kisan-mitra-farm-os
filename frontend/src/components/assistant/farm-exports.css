@@ -1,0 +1,80 @@
+.farm-export-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid #c4cbb8;
+  border-radius: 14px;
+  color: #465039;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.farm-export-trigger:hover {
+  background: #edf0e6;
+}
+.farm-export-trigger:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.farm-export-menu {
+  z-index: 610;
+  padding: 7px;
+  min-width: 220px;
+  border: 1px solid #ccd1c1;
+  border-radius: 17px;
+  background: #fafbf7;
+  box-shadow: 0 16px 50px #22301820;
+  color: #303b2c;
+}
+.farm-export-menu [role="menuitem"] {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 11px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.farm-export-menu [role="menuitem"][data-highlighted] {
+  background: #eaf0de;
+}
+.farm-export-menu [data-radix-collection-item] svg {
+  flex: none;
+}
+.farm-export-menu [role="menuitem"]:focus-visible,
+.farm-export-trigger:focus-visible {
+  outline: 2px solid #627d3c;
+  outline-offset: 2px;
+}
+.farm-export-menu .farm-export-label {
+  font-size: 11px;
+  padding: 8px;
+  color: #69715f;
+}
+.farm-section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .farm-section-heading:has(.farm-section-actions) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .farm-section-heading .farm-section-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .farm-section-actions > button {
+    white-space: nowrap;
+  }
+}

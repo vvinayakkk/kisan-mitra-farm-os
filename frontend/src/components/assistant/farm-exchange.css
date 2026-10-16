@@ -1,0 +1,1253 @@
+.farm-exchange {
+  color: #304b36;
+  max-width: 1450px;
+  margin: auto;
+  padding: 26px 24px;
+}
+.farm-exchange button,
+.exchange-modal button {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #cedbc0;
+  border-radius: 10px;
+  padding: 9px 13px;
+  color: #40583a;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.farm-exchange button:hover,
+.exchange-modal button:hover {
+  background: #e3ebd5;
+}
+.farm-exchange button:disabled,
+.exchange-modal button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.farm-exchange .exchange-primary,
+.exchange-modal .exchange-primary {
+  background: #36543d;
+  border-color: #36543d;
+  color: white;
+}
+.exchange-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+.exchange-heading small {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #879574;
+}
+.exchange-heading h1 {
+  font-family: Georgia, serif;
+  font-size: 46px;
+  font-weight: 400;
+  letter-spacing: -1.5px;
+  margin: 6px 0;
+}
+.exchange-heading h1 span {
+  color: #a1b17e;
+}
+.exchange-heading p {
+  font-size: 12px;
+  color: #869577;
+  margin: 0;
+}
+.exchange-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #d4dec8;
+  padding-bottom: 14px;
+}
+.exchange-switch button {
+  border-color: transparent;
+}
+.exchange-switch button[aria-pressed="true"] {
+  background: #e3ead6;
+}
+.exchange-switch small {
+  margin-left: auto;
+  font-size: 9px;
+  color: #8e9b7d;
+}
+.exchange-body {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 530px;
+}
+.has-thread .exchange-body {
+  grid-template-columns: 200px minmax(0, 1fr) 235px;
+}
+.exchange-rail {
+  padding: 24px 18px 20px 0;
+  border-right: 1px solid #d4dec8;
+  min-width: 0;
+}
+.exchange-rail h2,
+.exchange-stream h2,
+.exchange-conversation h2 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+.exchange-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.exchange-search .workspace-voice-field {
+  min-width: 0;
+  flex: 1;
+}
+.exchange-search input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #cedbc0;
+  background: transparent;
+  padding: 9px 40px 9px 0;
+  font-size: 11px;
+  color: #40583a;
+  outline: none;
+}
+.exchange-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.exchange-categories button {
+  justify-content: flex-start;
+  border-color: transparent;
+}
+.exchange-categories button[aria-pressed="true"] {
+  background: #e2ebd3;
+}
+.exchange-principle {
+  margin-top: 36px;
+  padding: 10px;
+  color: #819571;
+}
+.exchange-principle h3 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 25px;
+  line-height: 1.2;
+}
+.exchange-principle p {
+  font-size: 11px;
+  line-height: 1.8;
+}
+.exchange-principle small {
+  font-size: 9px;
+  line-height: 1.7;
+}
+.exchange-stream {
+  padding: 24px 0 24px 28px;
+  min-width: 0;
+}
+.exchange-stream > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.exchange-stream > header small {
+  font-size: 10px;
+  color: #91a07f;
+}
+.exchange-resource {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 23px 0;
+  border-bottom: 1px solid #d4dec8;
+}
+.exchange-resource-line {
+  display: flex;
+  gap: 17px;
+  min-width: 0;
+}
+.exchange-resource-icon {
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  background: #e0e9cf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #829662;
+}
+.exchange-resource small {
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  color: #8a9b78;
+}
+.exchange-resource h3 {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  font-weight: 400;
+  margin: 6px 0;
+}
+.exchange-resource p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #7a8d6a;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 7px 0;
+}
+.exchange-resource-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 9px 0;
+  font-size: 10px;
+  color: #869974;
+}
+.exchange-resource-meta span,
+.exchange-barter {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.exchange-resource > button {
+  flex-shrink: 0;
+}
+.exchange-empty {
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 13px;
+  color: #91a17f;
+}
+.exchange-empty h3 {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 400;
+  color: #607a4e;
+  margin: 0;
+  max-width: 370px;
+}
+.exchange-empty p {
+  font-size: 12px;
+  line-height: 1.7;
+  max-width: 330px;
+  margin: 0;
+}
+.exchange-thread-link {
+  width: 100%;
+  border: 0 !important;
+  justify-content: flex-start !important;
+  text-align: left;
+  padding: 12px 5px !important;
+  gap: 9px !important;
+  margin-top: 8px;
+}
+.exchange-thread-link.selected {
+  background: #e0e9cf;
+}
+.exchange-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d9e5c6;
+  flex-shrink: 0;
+}
+.exchange-thread-link > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.exchange-thread-link strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+}
+.exchange-thread-link small {
+  display: block;
+  font-size: 9px;
+  color: #8c9b7c;
+  margin-top: 4px;
+}
+.exchange-conversation {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 570px;
+  padding: 0 22px;
+}
+.exchange-conversation > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #d4dec8;
+  padding: 21px 0;
+}
+.exchange-conversation > header small {
+  display: block;
+  color: #8a9b77;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.exchange-message-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px 0;
+}
+.exchange-chat-note {
+  text-align: center;
+  font-size: 9px;
+  color: #99a58c;
+  margin: 0 0 10px;
+}
+.exchange-message {
+  max-width: 85%;
+  align-self: flex-start;
+  border-radius: 0 14px 14px 14px;
+  background: #e9eedf;
+  padding: 11px 14px;
+}
+.exchange-message.mine {
+  align-self: flex-end;
+  background: #dce8c9;
+  border-radius: 14px 0 14px 14px;
+}
+.exchange-message small,
+.exchange-message time {
+  font-size: 9px;
+  color: #8b9c78;
+}
+.exchange-message p {
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 4px 0;
+}
+.exchange-message time {
+  display: block;
+  text-align: right;
+}
+.exchange-compose {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 0;
+  border-top: 1px solid #d4dec8;
+}
+.exchange-compose > .workspace-voice-field {
+  flex: 1;
+  min-width: 0;
+}
+.exchange-compose textarea {
+  width: 100%;
+  height: 53px;
+  resize: none;
+  background: transparent;
+  border: 1px solid #c3d3b0;
+  border-radius: 13px;
+  padding: 14px 42px 14px 12px;
+  font: inherit;
+  font-size: 11px;
+  color: #40583a;
+  outline: none;
+}
+.exchange-journey {
+  padding: 24px 0 20px 22px;
+  border-left: 1px solid #d4dec8;
+  min-width: 0;
+}
+.exchange-journey > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.exchange-journey > header small {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #91a07c;
+}
+.exchange-journey h2 {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 18px 0 25px;
+  color: #657d50;
+}
+.exchange-journey ol {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+.exchange-journey li {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 25px;
+  position: relative;
+  color: #97a588;
+}
+.exchange-journey li:not(:last-child):before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  bottom: 0;
+  left: 11px;
+  border-left: 1px dashed #cad8b6;
+}
+.exchange-journey li > span {
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  border: 1px solid #c7d7b3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+.exchange-journey li.reached {
+  color: #627d4b;
+}
+.exchange-journey li.reached > span {
+  background: #829c66;
+  color: white;
+  border-color: #829c66;
+}
+.exchange-journey li strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.exchange-journey li small {
+  display: block;
+  font-size: 9px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.exchange-agreement {
+  border-left: 2px solid #acc48d;
+  padding-left: 12px;
+  margin-bottom: 17px;
+}
+.exchange-agreement small {
+  font-size: 9px;
+  color: #94a77f;
+}
+.exchange-agreement p {
+  font-size: 11px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.exchange-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.exchange-actions .exchange-quiet {
+  border: 0;
+  color: #919b82;
+  font-size: 10px;
+}
+.exchange-journey details {
+  margin-top: 18px;
+  font-size: 10px;
+  color: #8a9b78;
+}
+.exchange-journey details summary {
+  cursor: pointer;
+}
+.exchange-journey details p {
+  border-bottom: 1px solid #d4dec8;
+  padding: 8px 0;
+}
+.exchange-journey details small {
+  display: block;
+  margin-top: 4px;
+}
+.exchange-footnote {
+  font-size: 9px;
+  line-height: 1.7;
+  color: #9ba88e;
+}
+.exchange-error {
+  font-size: 12px;
+  color: #9b5741;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.exchange-overlay {
+  position: fixed;
+  inset: 0;
+  background: #213b2340;
+  backdrop-filter: blur(5px);
+  z-index: 180;
+}
+.exchange-modal {
+  position: fixed;
+  z-index: 181;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(600px, calc(100vw - 28px));
+  max-height: 88vh;
+  overflow: auto;
+  background: #f2f5e9;
+  border: 1px solid #c6d8b4;
+  border-radius: 20px;
+  padding: 25px;
+  color: #40583a;
+  box-shadow: 0 25px 100px #203b2220;
+}
+.exchange-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: Georgia, serif;
+  font-size: 25px;
+}
+.exchange-modal .exchange-dialog-description {
+  font-size: 12px;
+  color: #849676;
+  line-height: 1.7;
+  margin: 15px 0;
+}
+.exchange-editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.exchange-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: #748d60;
+}
+.exchange-field input,
+.exchange-field select,
+.exchange-modal textarea {
+  width: 100%;
+  border: 1px solid #cbdabb;
+  border-radius: 9px;
+  background: transparent;
+  padding: 10px;
+  font: inherit;
+  font-size: 12px;
+  color: #40583a;
+  min-width: 0;
+}
+.exchange-field .workspace-voice-field input {
+  padding-right: 40px;
+}
+.exchange-modal textarea {
+  min-height: 120px;
+  padding-right: 42px;
+}
+.exchange-modal blockquote {
+  border-left: 2px solid #a4be88;
+  padding: 12px;
+  margin: 20px 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.exchange-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 11px;
+  color: #7f926e;
+  line-height: 1.7;
+  margin: 20px 0;
+}
+.exchange-consent input {
+  margin-top: 4px;
+  accent-color: #627d4b;
+}
+.exchange-modal footer {
+  display: flex;
+  gap: 9px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.exchange-mobile-back,
+.exchange-journey-toggle,
+.exchange-journey > header button {
+  display: none !important;
+}
+@media (max-width: 1150px) {
+  .has-thread .exchange-body {
+    grid-template-columns: 170px minmax(0, 1fr) 200px;
+  }
+  .farm-exchange {
+    padding: 23px 16px;
+  }
+  .exchange-journey {
+    padding-left: 14px;
+  }
+  .exchange-conversation {
+    padding: 0 14px;
+  }
+  .exchange-resource {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .exchange-resource > button {
+    align-self: flex-end;
+  }
+}
+@media (max-width: 850px) {
+  .has-thread .exchange-body {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  .farm-exchange {
+    position: relative;
+  }
+  .exchange-journey {
+    display: none;
+    position: absolute;
+    right: 12px;
+    top: 150px;
+    background: #f1f5e7;
+    width: 280px;
+    max-width: calc(100% - 24px);
+    z-index: 20;
+    border: 1px solid #c7d7b4;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 15px 50px #213b2320;
+  }
+  .exchange-journey.is-open {
+    display: block;
+  }
+  .exchange-journey-toggle,
+  .exchange-journey > header button {
+    display: inline-flex !important;
+  }
+  .exchange-journey-toggle {
+    font-size: 9px !important;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .exchange-switch > small {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .farm-exchange {
+    padding: 18px 8px 0;
+  }
+  .exchange-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 20px;
+  }
+  .exchange-heading h1 {
+    font-size: 35px;
+  }
+  .exchange-heading p {
+    font-size: 11px;
+  }
+  .exchange-switch {
+    gap: 2px;
+  }
+  .exchange-switch button {
+    padding: 9px;
+    font-size: 11px;
+  }
+  .exchange-body,
+  .has-thread .exchange-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
+  }
+  .exchange-rail {
+    padding: 17px 0;
+    border: 0;
+  }
+  .exchange-rail.discover {
+    padding-bottom: 0;
+  }
+  .exchange-categories {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 3px;
+  }
+  .exchange-categories button {
+    font-size: 10px;
+    white-space: nowrap;
+    padding: 7px;
+  }
+  .exchange-principle {
+    display: none;
+  }
+  .exchange-search {
+    margin-bottom: 10px;
+  }
+  .exchange-stream {
+    padding: 18px 0;
+  }
+  .exchange-stream h2 {
+    font-size: 13px;
+  }
+  .exchange-resource-line {
+    gap: 12px;
+  }
+  .exchange-resource-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .exchange-resource h3 {
+    font-size: 22px;
+  }
+  .has-thread .exchange-rail:not(.discover) {
+    display: none;
+  }
+  .exchange-conversation {
+    height: 570px;
+    max-height: calc(100dvh - 280px);
+    min-height: 360px;
+    padding: 0;
+  }
+  .exchange-conversation > header {
+    padding: 15px 0;
+  }
+  .exchange-conversation > header h2 {
+    font-size: 12px;
+  }
+  .exchange-mobile-back {
+    display: inline-flex !important;
+    padding: 6px !important;
+    border: 0 !important;
+  }
+  .exchange-editor-grid {
+    grid-template-columns: 1fr;
+  }
+  .exchange-empty {
+    padding: 40px 10px;
+  }
+  .exchange-modal {
+    padding: 20px;
+  }
+  .exchange-journey {
+    top: 185px;
+  }
+}
+.farm-exchange .workspace-field-mic,
+.exchange-modal .workspace-field-mic {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.farm-exchange .workspace-field-mic svg,
+.exchange-modal .workspace-field-mic svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.exchange-connect {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.exchange-connect > small {
+  max-width: 165px;
+  text-align: right;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* Give the conversation and its trail their own scroll regions. */
+.farm-exchange.has-thread {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.has-thread .exchange-heading,
+.has-thread .exchange-switch {
+  flex-shrink: 0;
+}
+.has-thread .exchange-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.has-thread .exchange-conversation {
+  height: 100%;
+  min-height: 0;
+}
+.exchange-journey {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 850px) {
+  .exchange-journey.is-open {
+    position: fixed;
+    top: 140px;
+    right: 12px;
+    bottom: 16px;
+    max-height: none;
+    width: min(310px, calc(100vw - 24px));
+    z-index: 275;
+  }
+}
+@media (max-width: 600px) {
+  .has-thread .exchange-heading {
+    display: none;
+  }
+  .has-thread .exchange-conversation {
+    min-height: 0;
+    max-height: none;
+  }
+}
+.exchange-switch {
+  flex-wrap: wrap;
+}
+
+/* Guided resource trail. */
+.farm-exchange {
+  max-width: 1380px;
+  padding: 24px 28px 40px;
+}
+.exchange-heading {
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+.exchange-heading h1 {
+  font-size: 32px;
+  letter-spacing: -0.8px;
+}
+.exchange-heading small {
+  font-size: 8px;
+  letter-spacing: 1.6px;
+  color: #6f8561;
+}
+.exchange-heading p {
+  font-size: 11px;
+  color: #718266;
+  line-height: 1.7;
+}
+.exchange-heading > .exchange-primary {
+  margin-top: 12px;
+  background: transparent;
+  color: #3f5d36;
+  border-color: #c6d6b5;
+}
+.exchange-route {
+  display: flex;
+  list-style: none;
+  padding: 15px 0 22px;
+  margin: 0;
+  justify-content: center;
+  gap: 18px;
+}
+.exchange-route li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+  white-space: nowrap;
+  color: #728863;
+}
+.exchange-route li > span {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  border: 1px solid #c5d5b0;
+  font-size: 9px;
+}
+.exchange-route li:first-child > span {
+  background: #38553b;
+  color: white;
+  border-color: #38553b;
+}
+.exchange-route li > svg {
+  margin-left: 12px;
+  color: #a6b796;
+}
+.exchange-switch {
+  padding-top: 10px;
+}
+.exchange-switch button[aria-pressed="true"] {
+  border-bottom: 2px solid #6f8955;
+  background: transparent;
+  border-radius: 0;
+}
+.exchange-body {
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+.exchange-rail-note {
+  font-size: 10px;
+  color: #829371;
+  line-height: 1.8;
+  margin: 35px 12px 0 0;
+}
+.exchange-resource {
+  padding: 25px 4px;
+  position: relative;
+}
+.exchange-resource-line {
+  gap: 20px;
+}
+.exchange-resource h3 {
+  font-size: 25px;
+  color: #365438;
+}
+.exchange-resource p {
+  color: #627758;
+}
+.exchange-resource-icon {
+  width: 47px;
+  height: 47px;
+  background: transparent;
+  border: 1px solid #bace9f;
+  position: relative;
+}
+.exchange-resource:not(:last-child) .exchange-resource-icon:after {
+  content: "";
+  position: absolute;
+  top: 48px;
+  left: 22px;
+  height: calc(100% + 65px);
+  border-left: 1px dashed #cbd9ba;
+  pointer-events: none;
+}
+.exchange-resource-meta span {
+  padding-right: 10px;
+  border-right: 1px solid #d2dfc2;
+}
+.exchange-resource-meta span:last-child {
+  border-right: 0;
+}
+.exchange-barter {
+  color: #607b46 !important;
+  font-size: 11px !important;
+}
+.exchange-connect > button:first-of-type {
+  border-color: #b8cca2;
+  border-radius: 18px;
+}
+.exchange-stream > header h2 {
+  font-family: Georgia, serif;
+  font-size: 21px;
+  font-weight: 400;
+}
+.exchange-conversation-mitra {
+  margin-left: auto;
+  font-size: 10px;
+  position: relative;
+}
+.exchange-conversation-mitra summary,
+.exchange-editor-mitra summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  color: #617d49;
+}
+.exchange-conversation-mitra[open] > .exchange-mitra {
+  position: absolute;
+  right: 0;
+  top: 28px;
+  width: 340px;
+  max-width: calc(100vw - 40px);
+  z-index: 22;
+  border: 1px solid #bfcea9;
+  background: #f5f8ee;
+  border-radius: 17px;
+  padding: 16px;
+  box-shadow: 0 20px 60px #2c4b3220;
+  max-height: 450px;
+  overflow: auto;
+}
+.exchange-editor-mitra {
+  margin: 0 0 18px;
+  padding: 12px 0;
+  border-block: 1px solid #d4dfc6;
+  font-size: 12px;
+}
+.exchange-conversation > header > div {
+  min-width: 0;
+}
+.exchange-conversation > header h2 {
+  overflow-wrap: anywhere;
+}
+.exchange-journey .exchange-mitra {
+  margin-bottom: 18px;
+}
+.exchange-mitra-questions {
+  white-space: normal;
+  margin: 12px 0;
+  padding-left: 18px;
+  color: #5c754b;
+}
+@media (max-width: 1150px) {
+  .exchange-route {
+    gap: 10px;
+  }
+  .exchange-route li > svg {
+    margin-left: 3px;
+  }
+  .exchange-heading h1 {
+    font-size: 29px;
+  }
+  .farm-exchange {
+    padding-inline: 18px;
+  }
+  .has-thread .exchange-body {
+    grid-template-columns: 160px minmax(0, 1fr) 235px;
+  }
+  .exchange-route li {
+    font-size: 9px;
+  }
+}
+@media (max-width: 850px) {
+  .has-thread .exchange-body {
+    grid-template-columns: 160px minmax(0, 1fr);
+  }
+  .exchange-route {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 16px;
+  }
+  .exchange-route li {
+    flex-shrink: 0;
+  }
+  .exchange-heading h1 {
+    font-size: 27px;
+  }
+  .exchange-body {
+    grid-template-columns: 160px minmax(0, 1fr);
+  }
+  .exchange-conversation-mitra[open] > .exchange-mitra {
+    right: -60px;
+  }
+  .exchange-journey.is-open .exchange-mitra {
+    padding: 8px 0;
+  }
+  .exchange-route li > svg {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .farm-exchange {
+    padding: 18px 6px 24px;
+  }
+  .exchange-heading h1 {
+    font-size: 25px;
+  }
+  .exchange-heading {
+    gap: 7px;
+    margin-bottom: 0;
+  }
+  .exchange-heading > .exchange-primary {
+    margin-top: 4px;
+    font-size: 10px;
+    padding: 7px 11px;
+  }
+  .exchange-route {
+    gap: 14px;
+    padding-top: 0;
+    margin-bottom: 4px;
+  }
+  .exchange-route li {
+    gap: 5px;
+  }
+  .exchange-route li > span {
+    width: 19px;
+    height: 19px;
+  }
+  .exchange-body,
+  .has-thread .exchange-body {
+    display: flex;
+  }
+  .exchange-rail-note {
+    display: none;
+  }
+  .exchange-stream > header h2 {
+    font-size: 19px;
+  }
+  .exchange-resource h3 {
+    font-size: 23px;
+  }
+  .exchange-resource-line {
+    gap: 12px;
+  }
+  .exchange-resource-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .exchange-resource:not(:last-child) .exchange-resource-icon:after {
+    left: 17px;
+    top: 37px;
+  }
+  .exchange-connect {
+    align-self: flex-end;
+  }
+  .exchange-conversation-mitra[open] > .exchange-mitra {
+    position: fixed;
+    top: 170px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 210px);
+  }
+  .exchange-conversation > header {
+    gap: 7px;
+  }
+  .exchange-conversation-mitra summary {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+}
+
+/* The workspace frame stays fixed; discovery owns its vertical scroll. */
+.farm-exchange.is-browsing {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.farm-exchange .exchange-heading {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+.farm-exchange .exchange-heading > p {
+  margin: 0;
+  color: #738467;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.farm-exchange .exchange-heading > .exchange-primary {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+.farm-exchange > .exchange-mitra {
+  padding-top: 12px;
+  margin-bottom: 15px;
+}
+.farm-exchange > .exchange-mitra h2 {
+  font-size: 25px;
+}
+.farm-exchange > .exchange-mitra .exchange-mitra-intro {
+  margin: 12px 0;
+}
+.farm-exchange .exchange-route {
+  padding: 10px 0 17px;
+}
+@media (max-width: 600px) {
+  .farm-exchange .exchange-heading {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .farm-exchange .exchange-heading > p {
+    font-size: 10px;
+    max-width: 150px;
+  }
+  .farm-exchange .exchange-heading > .exchange-primary {
+    font-size: 10px;
+    padding: 7px 9px;
+  }
+  .farm-exchange > .exchange-mitra h2 {
+    font-size: 22px;
+  }
+  .farm-exchange.has-thread .exchange-heading {
+    display: none;
+  }
+}
+
+/* A shared content edge from the introduction through the resource trail. */
+.farm-exchange {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: 28px 20px 40px;
+}
+.farm-exchange .exchange-heading {
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.farm-exchange .exchange-heading > .exchange-guide-caption {
+  margin: 0;
+  max-width: none;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #405b3b;
+}
+.exchange-prepared { width: 100%; margin: 0; }
+.exchange-prepared .saathi-prepared { margin-bottom: 20px; }
+.farm-exchange > .exchange-mitra {
+  width: 100%;
+  max-width: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.farm-exchange .exchange-route {
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 4px 0 20px;
+  margin: 0;
+  overflow-x: auto;
+}
+.farm-exchange .exchange-switch {
+  padding: 0 0 10px;
+  gap: 6px;
+}
+.farm-exchange .exchange-switch > button:first-child { padding-left: 0; }
+.farm-exchange .exchange-body { grid-template-columns: 200px minmax(0,1fr); }
+.farm-exchange .exchange-stream { padding-left: 24px; }
+.farm-exchange.has-thread .exchange-body { grid-template-columns: 180px minmax(0,1fr) 220px; }
+@media(max-width:850px) {
+  .farm-exchange { padding: 24px 16px 32px; }
+  .farm-exchange .exchange-body,
+  .farm-exchange.has-thread .exchange-body { grid-template-columns: 160px minmax(0,1fr); }
+  .farm-exchange .exchange-route { gap: 12px; }
+}
+@media(max-width:600px) {
+  .farm-exchange { padding: 12px 4px 24px; }
+  .farm-exchange .exchange-heading { align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .farm-exchange .exchange-heading > .exchange-guide-caption { max-width: none; font-size: 14px; flex: 1 1 180px; }
+  .exchange-prepared .saathi-prepared { margin-bottom: 16px; }
+  .farm-exchange .exchange-stream { padding: 18px 0; }
+  .farm-exchange .exchange-route { padding-bottom: 16px; }
+}
