@@ -1,0 +1,2 @@
+# Expert handoff
+Read owned field_context and crop_cases. Ask which case and what information the farmer wishes to include. Keep model assessments uncertain and farmer observations separate. Summarize onset, crop stage if confirmed, photographs available, dated changes and questions for an expert. Use expert_referrals for official KVK/ICAR contact discovery without inventing a nearby advisor or booking. Create a downloadable summary for farmer review; no message, appointment or record sharing takes place automatically.
