@@ -2,136 +2,74 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'screens/splash_screen.dart';
+import 'assistant/chat_screen.dart';
+import 'core/session.dart';
+import 'features/calendar_screen.dart';
+import 'features/crop_doctor_screen.dart';
+import 'features/exchange/exchange_screen.dart';
+import 'features/exchange/thread_screen.dart';
+import 'features/home_shell.dart';
+import 'features/markets_screen.dart';
+import 'features/notebook/notebook_screen.dart';
+import 'features/profile_screen.dart';
+import 'features/saathi.dart';
+import 'features/schemes_screen.dart';
+import 'features/station_screen.dart';
+import 'features/weather_screen.dart';
 import 'screens/language_select_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/chat_screen.dart';
-import 'screens/voice_screen.dart';
-import 'screens/signup_screen.dart';
-import 'screens/choice_screen.dart';
-import 'screens/overview_screen.dart';
-import 'screens/chat_history_screen.dart';
-import 'screens/trends_screen.dart';
-import 'screens/mandi_rates_screen.dart';
-import 'screens/marketplace_screen.dart';
-import 'screens/reports_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/accelerator_screen.dart';
-import 'screens/crop_doctor_screen.dart';
-import 'services/auth_service.dart';
+import 'screens/splash_screen.dart';
+
+const _public = {'/splash', '/language_select', '/login'};
 
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.watch(authProvider);
+  final refresh = ValueNotifier(0);
+  ref.listen(authProvider.select((s) => (s.status, s.session?.id)), (_, __) => refresh.value++);
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: refresh,
     redirect: (context, state) {
-      final isAuth = ref.read(authProvider).isAuthenticated;
-      final onSplash = state.matchedLocation == '/splash';
-      final onLang = state.matchedLocation == '/language_select';
-      final onLogin = state.matchedLocation == '/login';
-      final onSignup = state.matchedLocation == '/signup';
-
-      if (!isAuth && !onSplash && !onLang && !onLogin && !onSignup) {
-        return '/splash';
+      final auth = ref.read(authProvider);
+      final here = state.matchedLocation;
+      if (auth.status == AuthStatus.loading) return here == '/splash' ? null : '/splash';
+      if (!auth.isAuthenticated) {
+        if (_public.contains(here)) return null;
+        // A session that ended mid-use goes straight to sign-in.
+        return '/login';
       }
-
-      if (isAuth && (onSplash || onLang || onLogin || onSignup)) {
-        return '/choice';
-      }
-
+      if (here == '/login' || here == '/language_select') return '/';
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', pageBuilder: (_, s) => _fade(s, const SplashScreen())),
+      GoRoute(path: '/language_select', pageBuilder: (_, s) => _fade(s, const LanguageSelectScreen())),
+      GoRoute(path: '/login', pageBuilder: (_, s) => _fade(s, const LoginScreen())),
+      GoRoute(path: '/', pageBuilder: (_, s) => _fade(s, const HomeShell())),
+      GoRoute(path: '/chat', builder: (_, __) => const ChatScreen()),
+      GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
+      GoRoute(path: '/station', builder: (_, __) => const StationScreen()),
+      GoRoute(path: '/weather', builder: (_, __) => const WeatherScreen()),
+      GoRoute(path: '/crops', builder: (_, __) => const CropDoctorScreen()),
+      GoRoute(path: '/markets', builder: (_, __) => const MarketsScreen()),
+      GoRoute(path: '/schemes', builder: (_, __) => const SchemesScreen()),
+      GoRoute(path: '/notebook', builder: (_, s) => NotebookScreen(initialTab: s.uri.queryParameters['tab'])),
+      GoRoute(path: '/exchange', builder: (_, __) => const ExchangeScreen()),
       GoRoute(
-        path: '/splash',
-        pageBuilder: (_, state) => _fade(state, const SplashScreen()),
+        path: '/exchange/thread/:id',
+        redirect: (_, s) => RegExp(r'^[a-f0-9-]{36}$').hasMatch(s.pathParameters['id'] ?? '') ? null : '/exchange',
+        builder: (_, s) => ThreadScreen(threadId: s.pathParameters['id']!),
       ),
-      GoRoute(
-        path: '/language_select',
-        pageBuilder: (_, state) => _fade(state, const LanguageSelectScreen()),
-      ),
-      GoRoute(
-        path: '/login',
-        pageBuilder: (_, state) => _fade(state, const LoginScreen()),
-      ),
-      GoRoute(
-        path: '/signup',
-        pageBuilder: (_, state) => _fade(state, const SignupScreen()),
-      ),
-      GoRoute(
-        path: '/choice',
-        pageBuilder: (_, state) => _fade(state, const ChoiceScreen()),
-      ),
-      GoRoute(
-        path: '/overview',
-        pageBuilder: (_, state) => _fade(state, const OverviewScreen()),
-      ),
-      GoRoute(
-        path: '/chat_history',
-        pageBuilder: (_, state) => _fade(state, const ChatHistoryScreen()),
-      ),
-      GoRoute(
-        path: '/chat',
-        pageBuilder: (_, state) => _fade(state, const ChatScreen()),
-      ),
-      GoRoute(
-        path: '/voice',
-        pageBuilder: (_, state) => _slide(state, const VoiceScreen()),
-      ),
-      GoRoute(
-        path: '/trends',
-        pageBuilder: (_, state) => _fade(state, const TrendsScreen()),
-      ),
-      GoRoute(
-        path: '/mandi_rates',
-        pageBuilder: (_, state) => _fade(state, const MandiRatesScreen()),
-      ),
-      GoRoute(
-        path: '/marketplace',
-        pageBuilder: (_, state) => _fade(state, const MarketplaceScreen()),
-      ),
-      GoRoute(
-        path: '/reports',
-        pageBuilder: (_, state) => _fade(state, const ReportsScreen()),
-      ),
-      GoRoute(
-        path: '/profile',
-        pageBuilder: (_, state) => _fade(state, const ProfileScreen()),
-      ),
-      GoRoute(
-        path: '/accelerator',
-        pageBuilder: (_, state) => _fade(state, const AcceleratorScreen()),
-      ),
-      GoRoute(
-        path: '/crop_doctor',
-        pageBuilder: (_, state) => _fade(state, const CropDoctorScreen()),
-      ),
+      GoRoute(path: '/saathi', builder: (_, __) => const SaathiScreen()),
+      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
     ],
   );
 });
 
-CustomTransitionPage<void> _fade(GoRouterState state, Widget child) {
-  return CustomTransitionPage<void>(
-    key: state.pageKey,
-    child: child,
-    transitionsBuilder: (_, anim, __, c) =>
-        FadeTransition(opacity: anim, child: c),
-    transitionDuration: const Duration(milliseconds: 280),
-  );
-}
-
-CustomTransitionPage<void> _slide(GoRouterState state, Widget child) {
-  return CustomTransitionPage<void>(
-    key: state.pageKey,
-    child: child,
-    transitionsBuilder: (_, anim, __, c) => SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 1),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-      child: c,
-    ),
-    transitionDuration: const Duration(milliseconds: 320),
-  );
-}
+CustomTransitionPage<void> _fade(GoRouterState state, Widget child) => CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionsBuilder: (_, anim, __, c) => FadeTransition(opacity: anim, child: c),
+      transitionDuration: const Duration(milliseconds: 240),
+    );

@@ -1,0 +1,177 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import 'config.dart';
+
+/// Server-issued assistant session capability. The farmer identity behind it is
+/// resolved by the backend; the app never sends a farmer id.
+class SessionCapability {
+  const SessionCapability({required this.id, required this.token});
+
+  final String id;
+  final String token;
+
+  static final _id = RegExp(r'^[a-f0-9]{32}$');
+
+  static SessionCapability? tryParse(Object? value) {
+    if (value is! Map) return null;
+    final id = value['id'] ?? value['session_id'];
+    final token = value['token'];
+    if (id is! String || !_id.hasMatch(id) || token is! String || token.isEmpty) {
+      return null;
+    }
+    return SessionCapability(id: id, token: token);
+  }
+
+  Map<String, String> get headers => {
+        'Authorization': 'Bearer $token',
+        'X-Assistant-Session': id,
+      };
+
+  Map<String, String> toJson() => {'id': id, 'token': token};
+}
+
+class ApiException implements Exception {
+  ApiException(this.status, this.message);
+
+  /// 0 means the request never reached the server.
+  final int status;
+  final String message;
+
+  bool get unauthorized => status == 401;
+  bool get conflict => status == 409;
+  bool get offline => status == 0;
+
+  @override
+  String toString() => message;
+}
+
+String _detail(String body, int status) {
+  try {
+    final data = jsonDecode(body);
+    final detail = data is Map ? data['detail'] : null;
+    if (detail is String && detail.isNotEmpty) return detail;
+    if (detail is List && detail.isNotEmpty && detail.first is Map) {
+      final msg = (detail.first as Map)['msg'];
+      if (msg is String) return msg;
+    }
+  } catch (_) {}
+  return 'Request failed ($status). Please retry.';
+}
+
+/// Thin JSON client. One instance per session capability so a request started
+/// for one farmer can never complete into another farmer's state.
+class ApiClient {
+  ApiClient({this.session, http.Client? client, String? baseUrl})
+      : _client = client ?? http.Client(),
+        base = (baseUrl ?? AppConfig.apiBaseUrl).replaceAll(RegExp(r'/$'), '');
+
+  final SessionCapability? session;
+  final http.Client _client;
+  final String base;
+
+  /// Called when the server rejects the capability; the app signs out.
+  void Function()? onUnauthorized;
+
+  Uri uri(String path, [Map<String, Object?>? query]) {
+    final q = <String, String>{};
+    query?.forEach((k, v) {
+      if (v != null && '$v'.isNotEmpty) q[k] = '$v';
+    });
+    return Uri.parse('$base$path').replace(queryParameters: q.isEmpty ? null : q);
+  }
+
+  Map<String, String> headers({bool json = true}) => {
+        if (json) 'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...?session?.headers,
+      };
+
+  Future<dynamic> get(String path,
+          {Map<String, Object?>? query, Duration timeout = const Duration(seconds: 25)}) =>
+      _send(() => _client.get(uri(path, query), headers: headers()), timeout);
+
+  Future<dynamic> post(String path,
+          {Object? body, Map<String, String>? extraHeaders, Duration timeout = const Duration(seconds: 30)}) =>
+      _send(
+          () => _client.post(uri(path),
+              headers: {...headers(), ...?extraHeaders},
+              body: body == null ? null : jsonEncode(body)),
+          timeout);
+
+  Future<dynamic> put(String path, {Object? body}) => _send(
+      () => _client.put(uri(path), headers: headers(), body: jsonEncode(body ?? {})),
+      const Duration(seconds: 30));
+
+  Future<dynamic> patch(String path, {Object? body, Map<String, String>? extraHeaders}) => _send(
+      () => _client.patch(uri(path),
+          headers: {...headers(), ...?extraHeaders}, body: jsonEncode(body ?? {})),
+      const Duration(seconds: 30));
+
+  Future<dynamic> delete(String path, {Map<String, String>? extraHeaders}) => _send(
+      () => _client.delete(uri(path), headers: {...headers(), ...?extraHeaders}),
+      const Duration(seconds: 30));
+
+  /// Multipart upload (audio, images). Returns decoded JSON.
+  Future<dynamic> multipart(String path, http.MultipartFile file,
+      {Map<String, String> fields = const {}, Duration timeout = const Duration(seconds: 60)}) {
+    return _send(() async {
+      final request = http.MultipartRequest('POST', uri(path))
+        ..headers.addAll(headers(json: false))
+        ..fields.addAll(fields)
+        ..files.add(file);
+      return http.Response.fromStream(await _client.send(request));
+    }, timeout);
+  }
+
+  /// Raw bytes (file downloads).
+  Future<http.Response> bytes(String path) async {
+    final response = await _guard(
+        () => _client.get(uri(path), headers: headers(json: false)),
+        const Duration(seconds: 60));
+    _check(response);
+    return response;
+  }
+
+  /// Streaming POST used by assistant runs. Caller owns cancellation via
+  /// [http.Client.close] on [client].
+  Future<http.StreamedResponse> stream(String path, Object body, http.Client client) async {
+    final request = http.Request('POST', uri(path))
+      ..headers.addAll({...headers(), 'Accept': 'application/x-ndjson'})
+      ..body = jsonEncode(body);
+    final response = await client.send(request).timeout(const Duration(seconds: 30));
+    if (response.statusCode >= 400) {
+      final text = await response.stream.bytesToString();
+      if (response.statusCode == 401) onUnauthorized?.call();
+      throw ApiException(response.statusCode, _detail(text, response.statusCode));
+    }
+    return response;
+  }
+
+  Future<http.Response> _guard(Future<http.Response> Function() call, Duration timeout) async {
+    try {
+      return await call().timeout(timeout);
+    } on TimeoutException {
+      throw ApiException(0, 'The server took too long to respond. Please retry.');
+    } on http.ClientException {
+      throw ApiException(0, 'Could not reach the Kisan Mitra server. Check your connection.');
+    }
+  }
+
+  void _check(http.Response response) {
+    if (response.statusCode < 400) return;
+    if (response.statusCode == 401) onUnauthorized?.call();
+    throw ApiException(response.statusCode, _detail(response.body, response.statusCode));
+  }
+
+  Future<dynamic> _send(Future<http.Response> Function() call, Duration timeout) async {
+    final response = await _guard(call, timeout);
+    _check(response);
+    if (response.body.isEmpty) return null;
+    return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+
+  void close() => _client.close();
+}

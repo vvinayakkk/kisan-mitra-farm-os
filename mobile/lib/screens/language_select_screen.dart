@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/language.dart';
 import '../services/theme_service.dart';
 import '../utils/constants.dart';
 
@@ -53,14 +54,14 @@ class _LanguageSelectScreenState extends ConsumerState<LanguageSelectScreen> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final languageCodes = const ['en', 'hi', 'pa', 'mr', 'te', 'ta', 'bn'];
+    const languageCodes = ['en', 'hi', 'pa', 'mr', 'te', 'ta', 'bn'];
 
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
     final subColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final surface = isDark
-        ? AppColors.darkCard.withOpacity(0.96)
-        : Colors.white.withOpacity(0.55);
+        ? AppColors.darkCard.withValues(alpha: 0.96)
+        : Colors.white.withValues(alpha: 0.55);
 
     return Scaffold(
       body: Container(
@@ -157,11 +158,12 @@ class _LanguageSelectScreenState extends ConsumerState<LanguageSelectScreen> {
                                 _selectedUiCode = code;
                               });
 
-                              if (code == 'en') {
-                                await context.setLocale(const Locale('en'));
-                              } else {
-                                await context.setLocale(const Locale('hi'));
-                              }
+                              // Assistant answers and voice use this language;
+                              // the interface falls back to English where no
+                              // translation ships.
+                              await ref.read(languageProvider.notifier).choose(code);
+                              if (!context.mounted) return;
+                              await context.setLocale(Locale(kUiLocales.contains(code) ? code : 'en'));
                             },
                             child: Container(
                               width: double.infinity,
@@ -171,17 +173,17 @@ class _LanguageSelectScreenState extends ConsumerState<LanguageSelectScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: selected
-                                    ? AppColors.primary.withOpacity(0.22)
+                                    ? AppColors.primary.withValues(alpha: 0.22)
                                     : (isDark
-                                          ? Colors.white.withOpacity(0.05)
-                                          : Colors.white.withOpacity(0.6)),
+                                          ? Colors.white.withValues(alpha: 0.05)
+                                          : Colors.white.withValues(alpha: 0.6)),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: selected
                                       ? AppColors.primary
                                       : (isDark
-                                          ? Colors.white.withOpacity(0.1)
-                                          : Colors.white.withOpacity(0.8)),
+                                          ? Colors.white.withValues(alpha: 0.1)
+                                          : Colors.white.withValues(alpha: 0.8)),
                                   width: selected ? 1.8 : 1.0,
                                 ),
                               ),

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../services/auth_service.dart';
+import '../core/session.dart';
 import '../services/theme_service.dart';
 import '../utils/constants.dart';
 
@@ -47,7 +47,7 @@ class SplashScreen extends ConsumerWidget {
                   style: IconButton.styleFrom(
                     backgroundColor: isDark
                         ? Colors.transparent
-                        : Colors.white.withOpacity(0.6),
+                        : Colors.white.withValues(alpha: 0.6),
                     side: isDark
                         ? null
                         : const BorderSide(color: Colors.white),
@@ -96,7 +96,7 @@ class SplashScreen extends ConsumerWidget {
                             onPressed: () {
                               HapticFeedback.mediumImpact();
                               context.go(
-                                isLoggedIn ? '/chat' : '/language_select',
+                                isLoggedIn ? '/' : '/language_select',
                               );
                             },
                             style: ElevatedButton.styleFrom(
