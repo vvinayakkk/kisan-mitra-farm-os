@@ -42,7 +42,7 @@ def test_official_directory_names_never_get_fictional_prices(monkeypatch):
     m = load(monkeypatch)
     body = m.reference_sql(date(2026, 10, 15))
     directory = json.loads(
-        (ROOT / "data_platform/v3/enam_market_reference.json").read_text()
+        (ROOT / "data_platform/v3/catalog/enam_market_reference.json").read_text()
     )
     assert len(directory["markets"]) == 158
     assert directory["source_url"] == "https://enam.gov.in/aspirational-districts"

@@ -37,7 +37,7 @@ def test_essential_solar_credit_soil_irrigation_references_are_actionable_not_en
     from pathlib import Path
 
     path = (
-        Path(__file__).resolve().parents[2] / "data_platform/v3/reviewed_sources.json"
+        Path(__file__).resolve().parents[2] / "data_platform/v3/catalog/reviewed_sources.json"
     )
     document = json.loads(path.read_text())
     schemes = {

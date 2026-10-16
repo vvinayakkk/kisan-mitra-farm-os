@@ -62,7 +62,7 @@ def main():
         results.append({"test": name, "passed": ok})
         assert ok, (name, r.stderr, r.stdout)
 
-    query((HERE / "roles.sql").read_text())
+    query((HERE / "sql/roles.sql").read_text())
     query("ANALYZE;")
     manifest = json.loads(a.manifest.read_text())
     actual = {}
@@ -232,7 +232,7 @@ def main():
         "DROP DATABASE IF EXISTS skyview_v3_live; CREATE DATABASE skyview_v3_live;",
         db="postgres",
     )
-    query((HERE / "schema.sql").read_text(), db="skyview_v3_live")
+    query((HERE / "sql/schema.sql").read_text(), db="skyview_v3_live")
     query(
         "INSERT INTO sv3.providers(code,name,homepage,access_method,attribution) VALUES('test','test','https://example.invalid','test','test');",
         db="skyview_v3_live",

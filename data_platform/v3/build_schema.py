@@ -603,8 +603,8 @@ CREATE VIEW latest_prices WITH (security_invoker=true) AS
 CREATE VIEW current_memories WITH (security_invoker=true) AS SELECT * FROM memories WHERE valid_to IS NULL;
 COMMIT;
 """
-(HERE / "schema.sql").write_text(sql)
-(HERE / "schema-catalog.json").write_text(
+(HERE / "sql/schema.sql").write_text(sql)
+(HERE / "catalog/schema-catalog.json").write_text(
     json.dumps(
         {"base_tables": len(TABLES), "tables": TABLES, "explicit_indexes": indexes},
         indent=2,
@@ -627,7 +627,7 @@ REVOKE ALL ON FUNCTION sv3.ensure_month_partitions(text,date,date) FROM PUBLIC;
 -- API-authenticated application sets SET LOCAL app.farmer_id using a bound validated UUID.
 -- Grant mutation privileges only to selected application services, not browser SQL clients.
 """
-(HERE / "roles.sql").write_text(roles)
+(HERE / "sql/roles.sql").write_text(roles)
 print(
     f"Generated {len(TABLES)} base tables and {len(indexes)} explicit access-path indexes plus ownership indexes."
 )

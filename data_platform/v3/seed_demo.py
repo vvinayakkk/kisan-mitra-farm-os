@@ -753,7 +753,7 @@ def generate(out: Path, asof: date, seed: int):
     extend(add, uid, rng, dataset, asof, created, farmers, plots, cycle_ids, REGIONS)
     for f in files.values():
         f.close()
-    catalog = json.loads((Path(__file__).parent / "schema-catalog.json").read_text())
+    catalog = json.loads((Path(__file__).parent / "catalog/schema-catalog.json").read_text())
     for t in catalog["tables"]:
         counts.setdefault(t["name"], 0)
     sql = out / "seed.sql"

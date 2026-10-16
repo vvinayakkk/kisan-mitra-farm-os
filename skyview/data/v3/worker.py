@@ -207,7 +207,7 @@ def _telemetry(selected=True, offset=0):
 
 def _reviewed():
     path = (
-        Path(__file__).resolve().parents[3] / "data_platform/v3/reviewed_sources.json"
+        Path(__file__).resolve().parents[3] / "data_platform/v3/catalog/reviewed_sources.json"
     )
     document = json.loads(path.read_text())
     with connection(ingest=True, write=True) as db:

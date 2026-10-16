@@ -50,7 +50,7 @@ Action receipts bind replay keys to exact submitted payloads. Replaying identica
 
 ## Storage and rollout
 
-`exchange-runtime.sql` is an additive, repeatable migration; it does not repoint the legacy database. Provisioning and test-database preparation apply it. Existing databases must apply it before serving the new routes.
+`sql/exchange-runtime.sql` is an additive, repeatable migration; it does not repoint the legacy database. Provisioning and test-database preparation apply it. Existing databases must apply it before serving the new routes.
 
 It adds four tables: `exchange_listings`, `exchange_conversations`, `exchange_messages` and `exchange_events`. Listings have discovery/owner indexes; conversation indexes serve each participant's inbox; message/event sequence indexes serve a specific conversation. Messages and action receipts are append-only for the application writer. Private conversation access does not expand access to other farm tables.
 

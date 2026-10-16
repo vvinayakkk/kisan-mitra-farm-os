@@ -62,7 +62,7 @@ docker start skyview_v3_backend_db
 
 In another terminal, run `npm run dev` from `frontend`. Its ignored `.env.local` must point both `VITE_API_URL` and `VITE_ASSISTANT_API_URL` to port 8001. Existing browser sessions, calendar records, files and transcripts survive API restarts.
 
-For a fresh installation, generate a seed with `seed_demo.py`, then call `provision.py --seed-dir /absolute/path/to/generated/seed`. Provisioning creates private runtime settings with random credentials and refuses to reset an existing database. Run using Python 3.12 and `infra/requirements.txt`. `schema.sql` is a fresh-database migration, not a migration to reapply to populated storage. Runtime migrations are independently idempotent.
+For a fresh installation, generate a seed with `seed_demo.py`, then call `provision.py --seed-dir /absolute/path/to/generated/seed`. Provisioning creates private runtime settings with random credentials and refuses to reset an existing database. Run using Python 3.12 and `infra/requirements.txt`. `sql/schema.sql` is a fresh-database migration, not a migration to reapply to populated storage. Runtime migrations are independently idempotent.
 
 Credentials are stored in ignored `.v3-data/runtime.env` and `.v3-data/postgres.env` with restricted permissions. Do not publish them. Back up PostgreSQL **and** `.assistant-data-v3` artifact bytes and `.v3-data` raw-object storage together; database metadata alone does not reconstruct downloaded files.
 
@@ -96,7 +96,7 @@ Prepare the isolated database with `python data_platform/v3/prepare_test_db.py -
 
 The four core controls and four side icons remain. Farm notebook progressively opens Today, fields/crop seasons, money, crop follow-ups, plans, memory and files. Services and family/FPO checklists are secondary collapsed sections under Plans. Farming pages work before hardware commissioning; this does not mark a station connected. Classic remains the default entry.
 
-Additive `workflows-runtime.sql` and `shared-work-runtime.sql` migrations preserve existing data. They introduce private ledger entries, crop notes, missions/receipts, replay receipts, service records and isolated group plans. Plot names extend the existing onboarding migration. Provisioning and test preparation apply these repeatable migrations; existing installations must apply them before starting this release.
+Additive `sql/workflows-runtime.sql` and `sql/shared-work-runtime.sql` migrations preserve existing data. They introduce private ledger entries, crop notes, missions/receipts, replay receipts, service records and isolated group plans. Plot names extend the existing onboarding migration. Provisioning and test preparation apply these repeatable migrations; existing installations must apply them before starting this release.
 
 The actual runtime catalog contains **20 skills and 45 tools**. Today uses India-local due dates and open crop cases. Ledger keeps paid/received amounts separate from estimates and receivables, labels synthetic fixtures, and shares the canonical path with older assistant expenses. Approved workflow writes commit their results and replay receipts atomically. Mission work invokes actual assistant tools and retains progress receipts across questions, approvals and restarts; it does not infer physical checklist completion or run indefinitely without a farmer request.
 
@@ -118,7 +118,7 @@ Release checks include backend owner/role isolation, exact review/replay handlin
 
 ## Farmer exchange release
 
-The additive `exchange-runtime.sql` migration adds four tables (93 total in this local v3 schema). Existing databases must apply it before the exchange router is started. New provisioning and isolated-test preparation include it. See [EXCHANGE.md](EXCHANGE.md) for identity, publication consent, bilateral state transitions, indexes, replay rules and live-community rollout limits.
+The additive `sql/exchange-runtime.sql` migration adds four tables (93 total in this local v3 schema). Existing databases must apply it before the exchange router is started. New provisioning and isolated-test preparation include it. See [EXCHANGE.md](EXCHANGE.md) for identity, publication consent, bilateral state transitions, indexes, replay rules and live-community rollout limits.
 
 The workspace's Farmer exchange icon opens the resource stream and private in-site inbox; the mandi page links to the same workflow. Resource matching is explained by named-resource and exchange-wish fit plus stated district/state context, never invented road distances. Whole notices remain reserved after agreement, completion or dispute. Messages are incrementally polled only while visible, with bounded history and per-participant volume limits. Mitra's farmer-exchange skill and three read tools can inspect listings, matches and owned exchange progress; they cannot publish, send messages or accept terms on a farmer's behalf.
 
@@ -173,7 +173,7 @@ The current TTS response speaks at most 2,500 characters; full answers remain in
 
 `expand_domain_demo.py --apply` enriches only the fixed `skyview_v3_demo` database. It preserves existing ownership, edited records, prices and all live data. The bounded catalogue supplies 150 named crop codes across 36 states/UTs, 1,080 explicitly named sample markets, two years of daily illustrative price history and a separate 365-day scenario horizon. Existing lookup/user crops remain. Current history is never populated with future dates. Stable series IDs and cross-release day guards prevent duplicating the entire history or scenario horizon when an operator reruns on another date. Missing monthly partitions are provisioned and committed before the large transaction; run the initial bulk import during a maintenance window.
 
-`enam_market_reference.json` contains 158 market names from the official eNAM aspirational-district mapping, retrieved 2026-10-15. This is a partial name/district directory, not all Indian mandis. Directory references are a separate curated release, with no fabricated quotes, exact GPS, contacts or trading-status claims. Fictional quotations belong only to sample market IDs. AGMARKNET observations require the separately configured live connector and source mappings.
+`catalog/enam_market_reference.json` contains 158 market names from the official eNAM aspirational-district mapping, retrieved 2026-10-15. This is a partial name/district directory, not all Indian mandis. Directory references are a separate curated release, with no fabricated quotes, exact GPS, contacts or trading-status claims. Fictional quotations belong only to sample market IDs. AGMARKNET observations require the separately configured live connector and source mappings.
 
 `domain_roll.statements(local_today)` is the ingestion-worker maintenance contract. It adds at most 30 missing history days per sample series and only missing future scenario tail points. It never invokes the bulk seed or overwrites existing observations. A 365-day scenario is an illustrative envelope, not a weather/price forecast, and does not establish future observed prices. New releases retain the synthetic origin. Historical API queries must continue to bound dates by India local today; scenario storage is separate and hidden from ordinary historical charts.
 
@@ -183,7 +183,7 @@ Ten common vegetable/fruit crops additionally have three sample market series pe
 
 ### Saathi follow-ups and WhatsApp
 
-`companion-runtime.sql` installs owner-scoped preferences and a narrow, leased worker
+`sql/companion-runtime.sql` installs owner-scoped preferences and a narrow, leased worker
 sweep. Follow-ups are **off by default**. The farmer chooses a name, cadence and
 quiet hours in Saathi. Only due farm tasks and ageing open crop cases generate
 in-app receipts; checks never invent a weather alert, run an endless model loop,

@@ -227,7 +227,7 @@ def extend(add, uid, rng, dataset, asof, created, farmers, plots, cycle_ids, reg
                 valid_to=None,
             )
             parent = rid
-    registry = json.loads((HERE / "agent-catalog.json").read_text())
+    registry = json.loads((HERE / "catalog/agent-catalog.json").read_text())
     for skill in registry["skills"]:
         add(
             "skill_versions",

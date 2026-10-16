@@ -69,13 +69,11 @@ def provenance(row, origin=None):
 
 
 def _station(db, station_id):
-    # WS01 is an alias for the authenticated farmer's first installation, never another owner.
+    # The stored function executes with invoker rights and owner RLS.
     return (
         db.execute(
-            text(
-                "SELECT id,station_key FROM sv3.stations WHERE (:alias OR station_key=:key OR id::text=:key) ORDER BY (station_key=:key) DESC,(device_type<>'mock-v3') DESC,station_key LIMIT 1"
-            ),
-            {"alias": station_id == "WS01", "key": station_id},
+            text("SELECT * FROM sv3.pick_station(:key,:first_station)"),
+            {"key": station_id, "first_station": station_id == "WS01"},
         )
         .mappings()
         .first()
@@ -92,13 +90,15 @@ def station_snapshot(farmer_id, station_id="WS01"):
                 "message": "No station is registered to this farm.",
                 "data_origin": "unavailable",
             }
-        records = rows(
-            db,
-            """SELECT p.*,d.origin,d.lane,d.as_of_date,d.source_url,v.name AS provider_name
-         FROM sv3.sensor_packets p JOIN sv3.datasets d ON d.id=p.dataset_id JOIN sv3.providers v ON v.id=d.provider_id
-         WHERE p.station_id=:station AND observed_at<=now()+interval '2 minutes' ORDER BY observed_at DESC LIMIT 1""",
-            {"station": station["id"]},
-        )
+        records = [
+            row["record"]
+            for row in rows(
+                db,
+                "SELECT sv3.latest_station_packet(:station) AS record",
+                {"station": station["id"]},
+            )
+            if row["record"] is not None
+        ]
     if not records:
         return {
             "available": False,
@@ -163,20 +163,18 @@ def weather_history(farmer_id, station_id="WS01", hours=24, limit=100):
                 "totalRecords": 0,
                 "returnedRecords": 0,
             }
-        records = rows(
-            db,
-            """SELECT p.observed_at AS timestamp,p.temperature_c AS temperature,p.humidity_pct AS humidity,p.pressure_hpa AS pressure,
-         p.wind_kmh AS "windSpeed",p.wind_direction_degrees AS "windDirection",p.rainfall_increment_mm AS rainfall,p.soil_temperature_c AS "soilTemperature",
-         p.soil_moisture_pct AS "soilMoisture",p.pm25_ug_m3 AS "airQualityPM25",p.pm10_ug_m3 AS "airQualityPM10",p.uv_index AS "uvIndex",
-         p.lux AS "lightIntensity",p.battery_v AS "batteryVoltage",p.solar_v AS "solarVoltage",d.origin AS data_origin
-         FROM sv3.sensor_packets p JOIN sv3.datasets d ON d.id=p.dataset_id WHERE station_id=:station AND observed_at<=now()
-         AND observed_at>=now()-make_interval(hours=>:hours) ORDER BY observed_at DESC LIMIT :limit""",
-            {
-                "station": station["id"],
-                "hours": min(8760, max(1, hours)),
-                "limit": min(2000, max(1, limit)),
-            },
-        )
+        records = [
+            row["record"]
+            for row in rows(
+                db,
+                "SELECT sv3.station_packet_history(:station,:hours,:limit) AS record",
+                {
+                    "station": station["id"],
+                    "hours": min(8760, max(1, hours)),
+                    "limit": min(2000, max(1, limit)),
+                },
+            )
+        ]
     return {
         "station_id": station_id,
         "data": records,
@@ -201,15 +199,6 @@ _MARKET_REGIONS = """WITH RECURSIVE market_regions AS (
  UNION ALL SELECT r.id,p.state,CASE WHEN r.level='district' THEN r.name ELSE p.district END
  FROM sv3.regions r JOIN market_regions p ON r.parent_id=p.id
 ) """
-_MARKET_COLUMNS = """p.series_id,p.observed_on AS arrival_date,p.min_price,p.max_price,p.modal_price,p.arrivals_quantity,
- s.unit_code AS unit,c.name AS commodity,cv.name AS variety,s.grade,m.name AS market,
- coalesce(mr.state,r.name) AS state,mr.district,
- extract(year from p.observed_on)::int AS year,extract(month from p.observed_on)::int AS month,
- extract(week from p.observed_on)::int AS week,p.fetched_at,d.origin,d.origin AS data_origin,
- d.lane,d.source_url,v.name AS provider_name,d.as_of_date"""
-_MARKET_JOINS = """ JOIN sv3.markets m ON m.id=s.market_id JOIN sv3.crops c ON c.id=s.crop_id
- JOIN sv3.crop_varieties cv ON cv.id=s.variety_id JOIN sv3.regions r ON r.id=m.region_id
- LEFT JOIN market_regions mr ON mr.id=r.id """
 _MARKET_FILTER = """(:crop='' OR lower(c.name)=ANY(CAST(:crop_aliases AS text[])) OR lower(c.code)=ANY(CAST(:crop_aliases AS text[]))
  OR EXISTS (SELECT 1 FROM jsonb_each_text(c.names) a WHERE lower(a.value)=lower(:crop)))
  AND (:state='' OR lower(coalesce(mr.state,r.name))=lower(:state))
@@ -251,35 +240,27 @@ def market_history(
     observed_only=False,
 ):
     with connection() as db:
-        records = rows(
-            db,
-            _MARKET_REGIONS
-            + "SELECT "
-            + _MARKET_COLUMNS
-            + """
- FROM sv3.price_observations p JOIN sv3.market_series s ON s.id=p.series_id """
-            + _MARKET_JOINS
-            + """
- JOIN sv3.datasets d ON d.id=p.dataset_id JOIN sv3.providers v ON v.id=d.provider_id
- WHERE (:observed_only=false OR d.origin='observed') AND p.observed_on <= (now() AT TIME ZONE 'Asia/Kolkata')::date AND """
-            + _MARKET_FILTER
-            + """
- AND (:year IS NULL OR extract(year from p.observed_on)=:year)
- AND (:month IS NULL OR extract(month from p.observed_on)=:month)
- AND (:week IS NULL OR extract(week from p.observed_on)=:week)
- ORDER BY p.observed_on DESC,(d.origin<>'synthetic') DESC,p.fetched_at DESC,p.series_id LIMIT :limit""",
-            {
-                "crop": commodity.strip(),
-                "crop_aliases": _crop_aliases(commodity),
-                "state": state.strip(),
-                "market": market.strip(),
-                "observed_only": observed_only,
-                "year": year,
-                "month": month,
-                "week": week,
-                "limit": min(3000, max(1, limit)),
-            },
-        )
+        records = [
+            row["record"]
+            for row in rows(
+                db,
+                """SELECT sv3.market_price_history(
+                :crop,CAST(:crop_aliases AS text[]),:state,:market,
+                :year,:month,:week,:observed_only,:limit
+            ) AS record""",
+                {
+                    "crop": commodity.strip(),
+                    "crop_aliases": _crop_aliases(commodity),
+                    "state": state.strip(),
+                    "market": market.strip(),
+                    "observed_only": observed_only,
+                    "year": year,
+                    "month": month,
+                    "week": week,
+                    "limit": min(3000, max(1, limit)),
+                },
+            )
+        ]
     records = _market_records(records)
     return {
         "status": "success",
@@ -296,33 +277,24 @@ def market_rates(commodity="", state="", limit=20, market="", observed_only=Fals
     # Index-driven one-point lookup for every matching series. A long history in one
     # market must never consume the row limit and hide every other market.
     with connection() as db:
-        records = rows(
-            db,
-            _MARKET_REGIONS
-            + "SELECT "
-            + _MARKET_COLUMNS
-            + """
- FROM sv3.market_series s """
-            + _MARKET_JOINS
-            + """
- JOIN LATERAL (
-  SELECT x.* FROM sv3.price_observations x JOIN sv3.datasets dx ON dx.id=x.dataset_id
-  WHERE x.series_id=s.id AND (:observed_only=false OR dx.origin='observed') AND x.observed_on <= (now() AT TIME ZONE 'Asia/Kolkata')::date
-  ORDER BY x.observed_on DESC,(dx.origin<>'synthetic') DESC,x.fetched_at DESC LIMIT 1
- ) p ON true JOIN sv3.datasets d ON d.id=p.dataset_id JOIN sv3.providers v ON v.id=d.provider_id
- WHERE (:observed_only=false OR m.dataset_id IN (SELECT id FROM sv3.datasets WHERE origin IN ('observed','curated'))) AND """
-            + _MARKET_FILTER
-            + """
- ORDER BY p.observed_on DESC,(d.origin<>'synthetic') DESC,m.name,c.name,s.id LIMIT :limit""",
-            {
-                "crop": commodity.strip(),
-                "crop_aliases": _crop_aliases(commodity),
-                "state": state.strip(),
-                "market": market.strip(),
-                "observed_only": observed_only,
-                "limit": min(200, max(1, limit)),
-            },
-        )
+        records = [
+            row["record"]
+            for row in rows(
+                db,
+                """SELECT sv3.market_latest_prices(
+                :crop,CAST(:crop_aliases AS text[]),:state,:market,
+                :observed_only,:limit
+            ) AS record""",
+                {
+                    "crop": commodity.strip(),
+                    "crop_aliases": _crop_aliases(commodity),
+                    "state": state.strip(),
+                    "market": market.strip(),
+                    "observed_only": observed_only,
+                    "limit": min(200, max(1, limit)),
+                },
+            )
+        ]
     records = _market_records(records)
     return {
         "status": "success",

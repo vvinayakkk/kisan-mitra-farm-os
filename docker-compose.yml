@@ -1,89 +1,75 @@
-version: "3.9"
+name: kisan-mitra
 
 services:
-  # ==============================
-  # 🗄️ PostgreSQL Database
-  # ==============================
   db:
     image: postgres:16-alpine
-    container_name: skyview_db
-    restart: unless-stopped
     environment:
-      POSTGRES_DB: skyview
-      POSTGRES_USER: skyview_user
-      POSTGRES_PASSWORD: skyview_pass
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: skyview_v3_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.docker}
     volumes:
-      - skyview_pgdata:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U skyview_user -d skyview"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ==============================
-  # 📡 MQTT Broker (Mosquitto)
-  # ==============================
-  mqtt:
-    image: eclipse-mosquitto:2
-    container_name: skyview_mqtt
+      test: ["CMD-SHELL", "pg_isready -U postgres -d skyview_v3_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
-    ports:
-      - "1883:1883"
-    volumes:
-      - ./infra/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-    healthcheck:
-      test: ["CMD", "mosquitto_sub", "-h", "localhost", "-t", "$$SYS/broker/version", "-C", "1", "-W", "3"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
-  # ==============================
-  # 🧠 Backend API (SkyView)
-  # ==============================
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.backend
+    command: ["python", "data_platform/v3/bootstrap.py", "--seed-demo"]
+    environment:
+      PGHOST: db
+      PGDATABASE: skyview_v3_demo
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.docker}
+      V3_APP_PASSWORD: ${V3_APP_PASSWORD:?Set V3_APP_PASSWORD in .env.docker}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
   backend:
     build:
       context: .
       dockerfile: infra/Dockerfile.backend
-    container_name: skyview_backend
-    depends_on:
-      db:
-        condition: service_healthy
-      mqtt:
-        condition: service_healthy
-    env_file:
-      - skyview/.env
     environment:
-      DATABASE_URL: postgresql://skyview_user:skyview_pass@db:5432/skyview
-      MQTT_BROKER: mqtt
-      MQTT_PORT: 1883
-      API_HOST: 0.0.0.0
-      API_PORT: 8000
-    ports:
-      - "8000:8000"
-    restart: unless-stopped
+      SKYVIEW_DATA_MODE: v3_demo
+      V3_DATABASE_URL: postgresql+psycopg2://skyview_v3_api:${V3_APP_PASSWORD:?Set V3_APP_PASSWORD in .env.docker}@db:5432/skyview_v3_demo
+      V3_DEMO_FARMER_KEY: DEMO-F0001
+      V3_RAW_STORAGE_DIR: /app-data/raw
+      ASSISTANT_STORAGE_DIR: /app-data/assistant
+      ENABLE_MQTT: "False"
+      PORT: "8001"
+    volumes:
+      - app-data:/app-data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 15s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
 
-  # ==============================
-  # 🌐 Frontend (Vite + React)
-  # ==============================
-  # Uncomment to run frontend in Docker
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: infra/Dockerfile.frontend
-  #   container_name: skyview_frontend
-  #   ports:
-  #     - "5173:80"
-  #   depends_on:
-  #     - backend
-  #   restart: unless-stopped
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.frontend
+      args:
+        VITE_API_URL: ""
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  skyview_pgdata:
+  postgres-data:
+  app-data:

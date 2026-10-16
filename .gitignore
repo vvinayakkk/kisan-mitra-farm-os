@@ -2,6 +2,7 @@
 *.env
 .env.*
 !.env.example
+!.env.docker.example
 __pycache__/
 *.pyc
 *.pyo
@@ -47,3 +48,5 @@ admin-portal/
 .v3-data
 
 .assistant-data-v3/
+
+.env.docker

@@ -230,7 +230,7 @@ def field_sql(dataset, asof):
 
 def reference_sql(asof):
     payload = json.loads(
-        Path(__file__).with_name("enam_market_reference.json").read_text()
+        (Path(__file__).parent / "catalog/enam_market_reference.json").read_text()
     )
     provider = uid("enam-reference-provider")
     dataset = uid("enam-reference-2026-10-15")

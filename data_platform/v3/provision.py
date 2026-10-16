@@ -9,6 +9,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from layout import RUNTIME_MIGRATIONS, SQL
+
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).parent
 STATE = ROOT / ".v3-data"
@@ -109,25 +111,11 @@ def main():
     )
     for name in ("skyview_v3_demo", "skyview_v3_live"):
         sql(f"CREATE DATABASE {name};")
-        sql((HERE / "schema.sql").read_text(), name)
+        sql((SQL / "schema.sql").read_text(), name)
         if name.endswith("demo"):
             sql((args.seed_dir / "seed.sql").read_text(), name)
-        for migration in [
-            "roles.sql",
-            "roles-runtime.sql",
-            "assistant-runtime.sql",
-            "application-runtime.sql",
-            "onboarding-runtime.sql",
-            "workflows-runtime.sql",
-            "shared-work-runtime.sql",
-            "exchange-runtime.sql",
-            "companion-runtime.sql",
-            "companion-plans-runtime.sql",
-            "support-folder-runtime.sql",
-            "whatsapp-runtime.sql",
-        ]:
-            if (HERE / migration).exists():
-                sql((HERE / migration).read_text(), name)
+        for migration in RUNTIME_MIGRATIONS:
+            sql((SQL / migration).read_text(), name)
         sql("GRANT sv3_app,sv3_writer,sv3_ingest TO skyview_v3_api;", name)
         sql("REVOKE CREATE ON SCHEMA public FROM PUBLIC;", name)
     config.write_text(

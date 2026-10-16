@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from urllib.request import urlopen
 
 from dotenv import dotenv_values
+from layout import RUNTIME_MIGRATIONS, SQL
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -50,8 +51,8 @@ def run():
         time.sleep(0.25)
     else:
         raise SystemExit("PostgreSQL did not start on port 15433.")
-    # Only additive new-feature migrations, not seed scripts or destructive schema creation.
-    for filename in ("companion-plans-runtime.sql", "support-folder-runtime.sql"):
+    # Reapply the ordered, additive inventory; never rerun the fresh schema or seed.
+    for filename in RUNTIME_MIGRATIONS:
         subprocess.run(
             [
                 "docker",
@@ -68,7 +69,7 @@ def run():
                 "-v",
                 "ON_ERROR_STOP=1",
             ],
-            input=(ROOT / "data_platform/v3" / filename).read_bytes(),
+            input=(SQL / filename).read_bytes(),
             check=True,
             stdout=subprocess.DEVNULL,
         )
