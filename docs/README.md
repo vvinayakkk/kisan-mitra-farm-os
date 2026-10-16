@@ -14,7 +14,8 @@ The [project README](../README.md) introduces the AI Builder Cup application and
 | [Configuration](configuration.md) | Backend environment inventory and secret boundaries. |
 | [Operations](operations.md) | Configuration, background jobs, backup, deployment and checks. |
 | [Local operation](local-setup.md) | Native Python/Node development and test database setup. |
-| [Mobile](mobile/README.md) | Flutter project, API origin, APK build and signing boundary. |
+| [Mobile](mobile/README.md) | Flutter Farm OS client, identity lifecycle, permissions and release signing. |
+| [Mobile parity](mobile/parity.md) | Feature and API parity between the web Farm OS and the phone app. |
 | [Hardware](hardware/README.md) | HLS/RTL source, station packets and commissioning boundary. |
 | [Project map](project-map.md) | Source directory responsibilities. |
 

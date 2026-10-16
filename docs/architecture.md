@@ -35,4 +35,4 @@ The browser cache in `frontend/src/lib/ultraCache.ts` deduplicates reads and inv
 
 ## Runtime boundaries
 
-The Docker stack includes PostgreSQL, one-time schema initialization, the API and an Nginx frontend. A hosted service needs managed PostgreSQL, persistent file storage, secrets, HTTPS identity and a separately scheduled worker. The repository does not contain a deployment workflow. The Flutter project in `mobile/` is a separate client build target; no APK is tracked.
+The Docker stack includes PostgreSQL, one-time schema initialization, the API and an Nginx frontend. A hosted service needs managed PostgreSQL, persistent file storage, secrets, HTTPS identity and a separately scheduled worker. The repository does not contain a deployment workflow. The Flutter project in `mobile/` is the phone client for the same assistant session and farm routes ([mobile guide](mobile/README.md)); no APK is tracked.

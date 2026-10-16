@@ -1,6 +1,6 @@
 # Configuration inventory
 
-This inventory identifies common configuration entry points from literal `os.getenv` calls in the backend and data-platform Python source; it does not contain credentials. Some values are used only in the classic lane, optional provider adapters or local tools. A client-side `VITE_` or Flutter `--dart-define` value is bundled into the app and must never contain a secret.
+This inventory identifies common configuration entry points from literal `os.getenv` calls in the backend and data-platform Python source; it does not contain credentials. Some values are used only in the classic lane, optional provider adapters or local tools. A client-side `VITE_` or Flutter `--dart-define` value is bundled into the app and must never contain a secret. The Flutter defines (`API_BASE_URL`, `OIDC_*`, `STATION_ID`) are listed in the [mobile guide](mobile/README.md).
 
 | Variable | Code path | Source default |
 | --- | --- | --- |

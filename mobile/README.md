@@ -1,7 +1,11 @@
-# Kisan Mitra mobile client
+# Kisan Mitra mobile
 
-This is the Flutter source project for the companion mobile client. The web Farm OS and API live at the repository root. Mobile architecture, supported screens, configuration and build steps are in the [mobile guide](../docs/mobile/README.md).
+The Flutter client for Farm OS: agentic chat, voice, calendar, Saathi, station, weather, crop doctor, markets, schemes, notebook, exchange and profile. It uses the canonical backend and the same farmer records as the web workspace. The architecture, identity lifecycle, configuration, permissions and release steps are in the [mobile guide](../docs/mobile/README.md); feature coverage is in the [parity matrix](../docs/mobile/parity.md).
 
-Run `flutter pub get` from this directory, then provide an API origin with `--dart-define=API_BASE_URL=https://your-api.example`. Android emulator development defaults to `http://10.0.2.2:8001`; a physical device or iOS simulator needs an explicitly reachable origin. Android's release configuration currently uses the debug signing key, so its APK is suitable for local review only. Configure a private release keystore before distribution.
+```bash
+flutter pub get
+flutter test
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8001
+```
 
-`flutter build apk --release` writes to `mobile/build/app/outputs/flutter-apk/app-release.apk`. Build outputs are ignored by Git; no APK is stored in this repository.
+Release builds sign only with a private keystore configured in the ignored `android/key.properties`. Without one, the release APK stays unsigned. Build outputs are ignored by Git.
