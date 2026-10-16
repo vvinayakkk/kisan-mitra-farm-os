@@ -25,3 +25,23 @@ The assistant can use typed farm tools to read relevant records, compare prices,
 
 Voice input and read-aloud are available across the workspace when speech providers and browser microphone permissions are configured. The live conversation flow records a turn, transcribes it, runs the same agent tools, then speaks the reply. It is turn-based speech rather than a full-duplex call. Language preference follows the farmer across chat and workspace; translation and speech quality depend on their configured providers.
 
+## How it fits together
+
+```text
+React + TypeScript + Vite
+    ├── classic SkyView screens
+    └── Kisan Mitra workspace (chat, Saathi, notebook, calendar,
+        crop doctor, markets, exchange, weather, Three.js station)
+                         │
+                         ▼
+FastAPI: authenticated routes, assistant runs, reviewed actions,
+        artifact previews, media and voice adapters
+                         │
+                         ▼
+PostgreSQL v3: farmer-scoped records, conversations, tasks,
+               market series, source provenance and worker state
+                         │
+                         ▼
+Bounded background workers and optional external data/services
+```
+
