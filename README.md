@@ -12,12 +12,20 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-Agent%20%2B%20API-31573a?style=for-the-badge&logo=fastapi&logoColor=white)](skyview/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Farm%20memory-31573a?style=for-the-badge&logo=postgresql&logoColor=white)](data_platform/v3/)
 [![Three.js](https://img.shields.io/badge/Three.js-Visual%20station-31573a?style=for-the-badge&logo=threedotjs&logoColor=white)](frontend/src/components/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-31573a?style=for-the-badge)](LICENSE)
 
 </div>
 
 ---
 
 Kisan Mitra joins two ways of working. **Classic SkyView** keeps focused dashboards and specialist screens. The **new Farm OS workspace** brings chat, Saathi, weather, the 3D farm station, crop care, markets, an exchange, calendar and a notebook into one coherent flow. A farmer can start with a question, inspect what the assistant checked, provide a missing detail, review a proposed change and find the finished record or file where it belongs.
+
+<table>
+<tr><th>Farm OS · the agent workspace</th><th>Classic SkyView · the visual station</th></tr>
+<tr><td><img src="docs/media/farm-os-chat.png" alt="Kisan Mitra chat workspace with Saathi, skills, plan and file access" width="700"></td><td><img src="docs/media/classic-station.png" alt="Classic SkyView interactive farm station" width="700"></td></tr>
+<tr><th>Weather · a regional outlook</th><th>Notebook · a farm story</th></tr>
+<tr><td><img src="docs/media/farm-weather.png" alt="Farm weather with hourly conditions and forecast" width="700"></td><td><img src="docs/media/farm-notebook.png" alt="Spiral farm notebook with daily work and Saathi suggestion" width="700"></td></tr>
+</table>
 
 > [!NOTE]
 > This private competition repository includes a reproducible local farm dataset. Seeded people, observations and price scenarios are fictional. External weather is regional model data, not a sensor reading from a field. Source and date context prevent a useful prototype from implying a verified market trade, diagnosis or hardware action.

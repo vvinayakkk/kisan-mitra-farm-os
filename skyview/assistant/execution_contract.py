@@ -227,6 +227,13 @@ def language_instruction(messages, start=0, ui_language="en"):
         english_words = {"what", "which", "when", "where", "how", "can", "could", "should", "please", "tell", "show", "explain", "compare", "make", "create", "give", "help", "about", "with", "for", "the", "my", "me", "prices", "weather"}
         if len(words) >= 3 and len(set(words) & english_words) >= 2:
             return "Reply in English, matching the farmer's current English question. Write questions, choices, headings and the final answer in English even if the interface is set to another language."
+    if any(re.search(r"\w", content, re.UNICODE) for content in user_messages):
+        return (
+            "Reply in the same language and writing system as the farmer's current "
+            "natural-language request, including questions, choices, headings and "
+            "the final answer. If the wording does not reveal a language, use the "
+            "selected interface language."
+        )
     return ""
 
 

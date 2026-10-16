@@ -44,5 +44,6 @@ admin-portal/
 
 # Local v3 database configuration, downloaded source payloads and device credentials
 .v3-data/
+.v3-data
 
 .assistant-data-v3/
