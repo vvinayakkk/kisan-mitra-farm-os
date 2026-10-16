@@ -1,0 +1,504 @@
+{
+  "reviewed_on": "2026-10-14",
+  "revision": "3.1.0",
+  "decision": "Freeze this as the current-feature data build baseline, not a claim of launch readiness or permanently final agricultural knowledge",
+  "base_tables": 75,
+  "source_categories": 26,
+  "findings": [
+    {
+      "id": "A01",
+      "priority": "P0",
+      "feature": "Tenant privacy",
+      "finding": "Whole-schema SELECT exposed partition children outside parent RLS",
+      "resolution": "Revoke whole-schema grants; grant base tables/views only, keep direct partition reads denied; tested under non-owner role",
+      "status": "fixed in schema/roles",
+      "tables": [
+        "sensor_packets",
+        "price_observations"
+      ],
+      "references": [
+        "https://www.postgresql.org/docs/16/ddl-rowsecurity.html"
+      ]
+    },
+    {
+      "id": "A02",
+      "priority": "P0",
+      "feature": "Raw payload privacy",
+      "finding": "Raw ingest/quality metadata can include untrusted or sensitive contents",
+      "resolution": "Keep ingest_runs/raw_objects/quality_issues admin-only and redact secrets in logs",
+      "status": "fixed in roles",
+      "tables": [
+        "raw_objects",
+        "quality_issues",
+        "ingest_runs"
+      ],
+      "references": []
+    },
+    {
+      "id": "A03",
+      "priority": "P0",
+      "feature": "Soil and irrigation",
+      "finding": "Three sample properties were insufficient for soil-report and nutrient workflows",
+      "resolution": "Add 12 SHC parameter fixtures, 21 property definitions, explicit original nutrient basis and separate total N/available N",
+      "status": "fixed in schema/demo",
+      "tables": [
+        "measurement_definitions",
+        "soil_samples",
+        "soil_indicators"
+      ],
+      "references": [
+        "https://support.soilhealth.dac.gov.in/kb/faq.php?id=38%3Fid%3D38&lang=en-US",
+        "https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_01.html"
+      ]
+    },
+    {
+      "id": "A04",
+      "priority": "P0",
+      "feature": "Moisture semantics",
+      "finding": "Generic sensor percentage cannot establish volumetric root-zone water",
+      "resolution": "Add per-sensor basis/calibration, depth-specific field-capacity/wilting-point records; demo moisture remains relative and uncalibrated",
+      "status": "fixed in schema/demo; runtime calculator gate",
+      "tables": [
+        "station_sensors",
+        "soil_calibrations"
+      ],
+      "references": [
+        "https://www.fao.org/4/X0490E/x0490e0e.htm"
+      ]
+    },
+    {
+      "id": "A05",
+      "priority": "P0",
+      "feature": "Farm income",
+      "finding": "Expenses alone cannot support income or sell/hold planning",
+      "resolution": "Add harvest batches, quality/storage evidence and decimal sale proceeds/costs; enforce matching units, stock and dates",
+      "status": "fixed in schema/demo",
+      "tables": [
+        "harvest_batches",
+        "sale_records"
+      ],
+      "references": [
+        "https://www.enam.gov.in/web/commodity/commodity-quality"
+      ]
+    },
+    {
+      "id": "A06",
+      "priority": "P0",
+      "feature": "Canonical sources",
+      "finding": "External aliases can silently mix crops, varieties, regions and units",
+      "resolution": "Add reviewed time-valid typed source mappings and current-key uniqueness; preserve one stable canonical market identity across daily releases",
+      "status": "fixed storage; adapter gate",
+      "tables": [
+        "source_mappings",
+        "market_series"
+      ],
+      "references": []
+    },
+    {
+      "id": "A07",
+      "priority": "P0",
+      "feature": "Freshness",
+      "finding": "HTTP success is not proof a source is fresh, complete or reliable",
+      "resolution": "Track per-provider/scope last-good data, source-valid-through, outages and rate limits; keep stale badges and service degraded modes",
+      "status": "fixed storage/demo; adapter gate",
+      "tables": [
+        "source_health",
+        "ingest_runs"
+      ],
+      "references": []
+    },
+    {
+      "id": "A08",
+      "priority": "P0",
+      "feature": "Agent interface",
+      "finding": "Messages and tool calls alone do not reliably resume visible progress after disconnect",
+      "resolution": "Add owned sequenced run events and cursor-based reconnect contract; persist public progress only",
+      "status": "fixed storage/demo; SSE runtime gate",
+      "tables": [
+        "run_events",
+        "agent_runs"
+      ],
+      "references": []
+    },
+    {
+      "id": "A09",
+      "priority": "P0",
+      "feature": "Questions",
+      "finding": "Input forms and answers need durable ownership and resume identity",
+      "resolution": "Persist question schema, waiting status, answer revisions and execution keys; service validates JSON against the request schema",
+      "status": "fixed storage/demo; answer-validation gate",
+      "tables": [
+        "question_requests",
+        "question_answers"
+      ],
+      "references": []
+    },
+    {
+      "id": "A10",
+      "priority": "P0",
+      "feature": "Skills/tools",
+      "finding": "Unversioned tool definitions make capabilities and approval policy difficult to audit",
+      "resolution": "Snapshot current 11 skills/19 tools with exact argument schemas, workflow hashes and side-effect policy; registry stays inactive until bound to runtime outputs",
+      "status": "fixed storage/catalog; execution-binding gate",
+      "tables": [
+        "skill_versions",
+        "tool_versions",
+        "tool_calls"
+      ],
+      "references": []
+    },
+    {
+      "id": "A11",
+      "priority": "P0",
+      "feature": "Memory",
+      "finding": "One current fact does not alone provide compaction checkpoints or correction history",
+      "resolution": "Add compaction coverage, pending work and token accounting; test correction chain preserves one current fact; semantic retrieval remains evaluated runtime work",
+      "status": "fixed storage/demo; compaction-quality gate",
+      "tables": [
+        "context_compactions",
+        "memories",
+        "conversations"
+      ],
+      "references": []
+    },
+    {
+      "id": "A12",
+      "priority": "P0",
+      "feature": "Images/files",
+      "finding": "Uploaded photos/reports/audio need an owned ingestion state distinct from generated artifacts",
+      "resolution": "Add owned attachments with hash, scan/quarantine status and extraction metadata; placeholder fixtures explicitly have no actual file",
+      "status": "fixed storage/demo; upload-security gate",
+      "tables": [
+        "attachments",
+        "artifacts"
+      ],
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"
+      ]
+    },
+    {
+      "id": "A13",
+      "priority": "P0",
+      "feature": "Crop doctor",
+      "finding": "Station trends and model images do not prove a diagnosis",
+      "resolution": "Add field observations; ask actual image/crop/stage/location; evaluate real field images, permit abstention and expert referral",
+      "status": "fixed storage/demo; diagnosis-evaluation gate",
+      "tables": [
+        "field_observations",
+        "disease_cases"
+      ],
+      "references": [
+        "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2289031&lang=2&reg=48"
+      ]
+    },
+    {
+      "id": "A14",
+      "priority": "P0",
+      "feature": "Warnings",
+      "finding": "Warnings need expiry, acknowledgment, scope and source identity",
+      "resolution": "Add owned alert lifecycle; retain source update/cancel keys and validity; separate mock alerts from official feed",
+      "status": "fixed storage/demo; CAP parser gate",
+      "tables": [
+        "alert_events",
+        "notifications"
+      ],
+      "references": [
+        "https://sachet.ndma.gov.in/About"
+      ]
+    },
+    {
+      "id": "A15",
+      "priority": "P0",
+      "feature": "Hardware tasks",
+      "finding": "Telemetry does not mean the assistant can execute a pump command",
+      "resolution": "Add bounded command intent/events, station lane matching, expiry and exact target/action/payload approval hash; no dispatch connector or credentials enabled",
+      "status": "fixed storage/guards; authenticated dispatcher gate",
+      "tables": [
+        "device_commands",
+        "device_command_events",
+        "approvals"
+      ],
+      "references": [
+        "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html",
+        "https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html"
+      ]
+    },
+    {
+      "id": "A16",
+      "priority": "P0",
+      "feature": "Calendar/offline edits",
+      "finding": "Concurrent calendar edits can overwrite each other",
+      "resolution": "Add increasing row_version; API must compare expected version and return conflict, preserve soft-delete/undo and idempotency; recurrence expands to owned occurrence keys",
+      "status": "fixed storage; offline/conflict API gate",
+      "tables": [
+        "tasks",
+        "task_events"
+      ],
+      "references": []
+    },
+    {
+      "id": "A17",
+      "priority": "P0",
+      "feature": "Mock side effects",
+      "finding": "A default delivery_allowed=false flag alone could later be changed",
+      "resolution": "Reject demo external email/SMS/WhatsApp delivery at DB level and live command mode on mock station; delivery and actuator services remain disabled",
+      "status": "fixed constraints/tests",
+      "tables": [
+        "notifications",
+        "device_commands"
+      ],
+      "references": []
+    },
+    {
+      "id": "A18",
+      "priority": "P0",
+      "feature": "Forecast truth",
+      "finding": "A manually validated label could allow a synthetic price path to be called a forecast",
+      "resolution": "Reject synthetic-origin real forecasts even when model is marked validated; keep past versus next-year scenarios physically separate Daily weather forecasts also obey each weather series configured maximum lead; next-year daily weather remains scenario-only.",
+      "status": "fixed constraint/test",
+      "tables": [
+        "forecast_runs",
+        "price_projections"
+      ],
+      "references": []
+    },
+    {
+      "id": "A19",
+      "priority": "P0",
+      "feature": "Demo geography",
+      "finding": "State-only anchors do not exercise local hierarchy joins",
+      "resolution": "Add explicit fictional district/block/village hierarchy under each state/UT and connect farms to demo villages; no fake LGD or cadastral claim",
+      "status": "fixed demo",
+      "tables": [
+        "regions",
+        "farms"
+      ],
+      "references": []
+    },
+    {
+      "id": "A20",
+      "priority": "P0",
+      "feature": "Mock coverage",
+      "finding": "Synthetic happy paths cannot exercise source outages, unanswered questions or bad hardware intents",
+      "resolution": "Add outage/waiting/answered/stock/soil fixtures and regression failures. Reserve file/model/provider integration tests for actual adapters",
+      "status": "expanded fixtures/tests",
+      "tables": [
+        "source_health",
+        "question_requests",
+        "sale_records"
+      ],
+      "references": []
+    },
+    {
+      "id": "A21",
+      "priority": "P0",
+      "feature": "Backup/recovery",
+      "finding": "DDL load and fixture counts do not prove a backup can restore usable permissions",
+      "resolution": "Run pg_dump/pg_restore rehearsal into isolated demo DB; compare every base table and owner isolation; production PITR/object backups still required",
+      "status": "tested database rehearsal; operations gate",
+      "tables": [],
+      "references": [
+        "https://www.postgresql.org/docs/16/backup.html",
+        "https://www.postgresql.org/docs/16/continuous-archiving.html"
+      ]
+    },
+    {
+      "id": "A22",
+      "priority": "P0",
+      "feature": "Actual deployments",
+      "finding": "No sources are ingested and the current app still points to old storage",
+      "resolution": "Create separate live/demo services, implement repositories/adapters, authenticate identities, verify endpoints/labels, perform reconciled reversible cutover",
+      "status": "launch gate; deliberately not cut over",
+      "tables": [],
+      "references": []
+    },
+    {
+      "id": "A23",
+      "priority": "P0",
+      "feature": "Real knowledge",
+      "finding": "Official tables are still empty and public source catalogs are not a usable agronomic corpus",
+      "resolution": "Import licensed/versioned regional crop documents, scheme rules, MSP and reviewed treatment references; citations must resolve, stale advice must expire",
+      "status": "launch gate",
+      "tables": [
+        "documents",
+        "document_chunks",
+        "crop_guides",
+        "scheme_versions",
+        "msp_announcements"
+      ],
+      "references": []
+    },
+    {
+      "id": "A24",
+      "priority": "P0",
+      "feature": "Mock agronomy",
+      "finding": "Demo sowing dates, crop mixes and 120-day cycles are illustrative, especially for perennials",
+      "resolution": "Never train agronomic/yield models or give real growing instructions from demo; real cycles need local season rules, variety, planting/transplanting and orchard age confirmation",
+      "status": "explicit demo limit; region-rule gate",
+      "tables": [
+        "crop_cycles",
+        "crop_guides"
+      ],
+      "references": []
+    },
+    {
+      "id": "A25",
+      "priority": "P1",
+      "feature": "Voice/language",
+      "finding": "Hosted language PoC endpoints are not a guaranteed free production service",
+      "resolution": "BHASHINI approved commercial terms or evaluate pinned self-hosted AI4Bharat models. Confirm crop names, units, dates and numbers across target languages; keep original text",
+      "status": "researched; implementation/evaluation gate",
+      "tables": [
+        "attachments",
+        "messages"
+      ],
+      "references": [
+        "https://dibd-bhashini.gitbook.io/bhashini-apis",
+        "https://github.com/AI4Bharat/IndicTrans2"
+      ]
+    },
+    {
+      "id": "A26",
+      "priority": "P1",
+      "feature": "Expert fallback",
+      "finding": "Crop doctor needs a useful referral when evidence or confidence is low",
+      "resolution": "Curate dated ICAR KVK directory entries and official NPSS links; no assumed public diagnosis API, fake contacts or appointment booking",
+      "status": "researched; curated import gate",
+      "tables": [
+        "documents",
+        "document_chunks"
+      ],
+      "references": [
+        "https://www.icar.gov.in/en/krishi-vigyan-kendras",
+        "https://npss.dac.gov.in/"
+      ]
+    },
+    {
+      "id": "A27",
+      "priority": "P1",
+      "feature": "Budget assumptions",
+      "finding": "Model project costs are not today\u2019s local prices or a loan offer",
+      "resolution": "Use reviewed NABARD cost structure, farmer/local quote inputs, transport/commission/quality differences, sensitivity and actual sale/expense records",
+      "status": "researched; budget tool gate",
+      "tables": [
+        "documents",
+        "sale_records",
+        "expenses"
+      ],
+      "references": [
+        "https://www.nabard.org/info-centre-model-bankable-projects.aspx"
+      ]
+    },
+    {
+      "id": "A28",
+      "priority": "P1",
+      "feature": "Geospatial matching",
+      "finding": "Centroids/GeoJSON do not provide validated land geometry or precise neighbor/weather overlap",
+      "resolution": "Validate geometries and coordinate order; add PostGIS/GiST when distance/containment endpoints are built; do not equate public town anchors to real farms",
+      "status": "implementation gate",
+      "tables": [
+        "plots",
+        "locations",
+        "resource_listings"
+      ],
+      "references": []
+    },
+    {
+      "id": "A29",
+      "priority": "P1",
+      "feature": "Sharing",
+      "finding": "Private listing storage is not an implemented marketplace",
+      "resolution": "Sanitized opt-in listing endpoint, bounded availability/reservations, agreed terms, coarse geography and participant-only contacts; no fabricated accepted trades",
+      "status": "implementation gate",
+      "tables": [
+        "resources",
+        "resource_listings",
+        "resource_matches"
+      ],
+      "references": []
+    },
+    {
+      "id": "A30",
+      "priority": "P1",
+      "feature": "Embedding retrieval",
+      "finding": "Text search is a cheap baseline, not full multilingual semantic memory",
+      "resolution": "Optional pgvector in the same DB after crop/language retrieval evaluations; pin embedding model/version/dimension and apply owner/consent filters before retrieval",
+      "status": "researched optional; not installed",
+      "tables": [
+        "memories",
+        "document_chunks"
+      ],
+      "references": [
+        "https://github.com/pgvector/pgvector"
+      ]
+    },
+    {
+      "id": "A31",
+      "priority": "P0",
+      "feature": "Retention/consent",
+      "finding": "A consent table does not itself enforce revocation or deletion of objects",
+      "resolution": "Enforce purpose at gateway; revoke ingestion/sharing, process explicit deletion of records/derived memory/files, expire signed URLs, retain minimum evidence by policy",
+      "status": "implementation gate",
+      "tables": [
+        "consents",
+        "artifacts",
+        "attachments",
+        "memories"
+      ],
+      "references": []
+    },
+    {
+      "id": "A32",
+      "priority": "P1",
+      "feature": "Scope boundary",
+      "finding": "Adding every agriculture domain would undermine a stable first release",
+      "resolution": "Livestock/veterinary, fisheries, lending/payments, land-title validation and autonomous machinery are future modules, not represented as working features in this baseline",
+      "status": "explicitly deferred",
+      "tables": [],
+      "references": []
+    }
+  ],
+  "critical_next_steps": [
+    "Import and review actual source data under verified access/usage terms",
+    "Bind v3 repositories, authenticated ownership and scoped write services to app endpoints",
+    "Implement question/SSE/compaction/artifact/offline runtime acceptance checks",
+    "Calibrate actual hardware; keep actuator dispatch unavailable until tested",
+    "Rehearse full application/object-storage restore, reconcile legacy data and reversible cutover"
+  ],
+  "free_stack": {
+    "core": "PostgreSQL + existing Python backend/worker + object storage",
+    "optional": "pgvector/PostGIS/self-hosted language models after measured need",
+    "limits": "Software/model code availability does not imply free hosted APIs, cloud compute, unlimited messaging or validated farming accuracy"
+  },
+  "validation_scope": "Foundation constraints/restore rehearsal plus implemented API, assistant persistence, source adapters, document bytes, isolation and UI acceptance. Model accuracy and physical actuation are not claimed.",
+  "files_sha256": {
+    "schema.sql": "c0add9b1c9b3b22f5b4160a0db0b5cd9f81904bee49ff0801c2670cb9fcbe229",
+    "roles.sql": "a06630167ebcc33f53e4f9d516f3bb8911e023b02d8bfb94e14575f5d2fd92d5",
+    "schema-catalog.json": "a91bbe8fdae964691cbf056d019323a4520ba12ddc2ad2044c695b33cfa99be6",
+    "source-catalog.json": "fcec4c13aecfa91c2df2588ac902534611e1d56022be6f08f630338e67514d50",
+    "agent-catalog.json": "e31a8e5c9ea3a3dece051ab36ee8b8f8464373c3fd45614265ace23add857811"
+  },
+  "baseline_status": "Reviewed current-feature data build baseline v3.1.0; change future schema through versioned migrations",
+  "runtime_update": {
+    "implemented_on": "2026-10-14",
+    "mode": "v3_demo local application cutover",
+    "database": "persistent PostgreSQL 16; 79 sv3 base/runtime tables",
+    "implemented": [
+      "Canonical authenticated API and classic compatibility",
+      "Farmer RLS and scoped write/ingestion roles",
+      "Durable assistant events, questions, approvals, archives and compaction",
+      "Task row versions and artifact previews/downloads",
+      "Crop-photo validation, persisted uncertainty, configured vision and voice",
+      "Deployed Open-Meteo/ERA5/NASA POWER ingestion with leases and source health",
+      "Consented live onboarding, farm/plot/cycle/soil ingress and hashed device enrollment"
+    ],
+    "external_conditions": [
+      "Configured OGD source timed out; actual mandi import remains unverified",
+      "Physical hardware absent; no actuator/external delivery dispatcher enabled",
+      "Live OIDC needs deployment issuer/JWKS/audience",
+      "Research source catalog includes undeployed optional categories",
+      "Multilingual agronomic/vision model evaluation and production restore drill remain separate launch criteria"
+    ],
+    "evidence": "OPERATIONS.md and outputs/skyview-v3-integration; findings above preserve the foundation review at the time it was written"
+  }
+}
