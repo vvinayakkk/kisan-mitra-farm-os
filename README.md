@@ -95,3 +95,16 @@ The backend test wrapper expects a separately prepared test database for databas
 | [`skyview_flutter_app/`](skyview_flutter_app/) | Companion mobile application source. |
 | [`docs/`](docs/) | Architecture, API and feature details. |
 
+## Principles
+
+- **A farmer stays in control.** The assistant explains its proposed work and waits for review before changing records.
+- **Evidence stays attached.** Weather models, observed readings, synthetic fixtures and scenario projections have different meanings and storage paths.
+- **Graceful gaps beat invented certainty.** Missing sensor packets, unverified crop photos or unavailable mandi observations remain explicit.
+- **Speed comes from bounded work.** Shared caches, incremental reads and leased background jobs keep the interface responsive without hiding freshness.
+- **One journey, many surfaces.** Chat, voice, station, notebook, exchange and calendar share the same owner-scoped farm context.
+
+## Contributing
+
+We welcome focused fixes, accessible design work, regional crop and language testing, and source connectors with clear licensing and provenance. Start with [CONTRIBUTING.md](CONTRIBUTING.md), add tests for meaningful behavior, and keep credentials, generated databases and private farmer data out of commits. A public release license will be selected before this private competition repository is opened for external contributions.
+
+**Team init.io · AI Builder Cup**
