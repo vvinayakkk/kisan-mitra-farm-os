@@ -1,0 +1,70 @@
+/* Quiet decision surfaces; all prices and programmes come from workspace reads. */
+.experience-eyebrow { display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:1.4px; color:#728463; }
+.mandi-comparison { padding:24px 0 28px; margin:18px 0 30px; border-top:1px solid #d6e1cc; border-bottom:1px solid #d6e1cc; color:#34503a; }
+.compass-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
+.compass-heading h2 { margin:12px 0 8px; font-size:clamp(20px,2vw,28px); font-weight:500; letter-spacing:-.7px; line-height:1.2; }
+.compass-heading p { margin:0; font-size:12px; line-height:1.7; color:#72836a; }
+.compass-heading > label { display:grid; gap:8px; font-size:11px; color:#72836a; flex-shrink:0; }
+.compass-heading > label > span { display:flex; align-items:center; gap:7px; }
+.compass-heading input { width:78px; }
+.mandi-comparison input { min-width:0; padding:10px; border:1px solid #cbd9bf; border-radius:9px; background:#fcfdf9; color:#34503a; font:inherit; }
+.mandi-comparison input:focus-visible,.support-folder button:focus-visible,.market-compare-button:focus-visible { outline:2px solid #76915e; outline-offset:3px; }
+.comparison-invitation { display:flex; align-items:center; gap:9px; color:#7b8b6f; font-size:12px; margin:22px 0 0; }
+.comparison-stops { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr)); gap:14px; margin:24px 0 0; }
+.comparison-stop { padding:18px; border-left:2px solid #c9d7bc; background:#eef4e780; border-radius:0 14px 14px 0; min-width:0; }
+.comparison-stop.is-best { border-left-color:#486b36; background:#e7efdc; }
+.comparison-stop header { display:flex; gap:8px; justify-content:space-between; }
+.comparison-stop header strong { font-size:15px; font-weight:500; }
+.comparison-stop small { display:block; font-size:10px; margin-top:6px; color:#758568; line-height:1.5; }
+.comparison-stop header button { background:none; border:0; color:#708362; align-self:flex-start; padding:4px; cursor:pointer; }
+.comparison-costs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0; }
+.comparison-costs label { display:grid; gap:7px; font-size:10px; color:#72836a; }
+.comparison-costs input { width:100%; font-size:12px; }
+.comparison-stop footer { display:grid; gap:6px; border-top:1px solid #d5e0ca; padding-top:13px; }
+.comparison-stop footer span { font-size:10px; color:#72836a; }
+.comparison-stop footer strong { font-size:20px; font-weight:500; letter-spacing:-.5px; }
+.market-compare-button { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin-top:17px; padding:10px 8px; border:1px solid #cbd8bf; border-radius:9px; background:transparent; color:#547042; font-size:11px; cursor:pointer; }
+.market-compare-button[aria-pressed=true] { background:#e8f0df; border-color:#92ad7e; }
+.market-compare-button:disabled { opacity:.45; cursor:not-allowed; }
+.market-observation.is-comparing { border-color:#91ac7e; }
+.support-folder { display:grid; grid-template-columns:minmax(180px,.72fr) minmax(0,1.3fr); margin-top:28px; border:1px solid #d2dec6; border-radius:18px; overflow:hidden; color:#34503a; background:#f9fbf5; }
+.support-folder-tabs { padding:22px 14px; background:#edf3e6; min-width:0; max-height:680px; overflow-y:auto; scrollbar-width:thin; }
+.support-folder-tabs > span { margin:0 8px 20px; font-size:9px; letter-spacing:1px; }
+.support-folder-tabs > button { display:grid; position:relative; width:100%; gap:7px; padding:16px 28px 16px 14px; border:0; border-bottom:1px solid #d9e3cf; color:#64785a; background:transparent; text-align:left; border-radius:10px; cursor:pointer; }
+.support-folder-tabs > button.is-selected { background:#fffef8; color:#344e2f; box-shadow:0 4px 16px #304c2410; }
+.support-folder-tabs > button:hover { background:#f7faef; }
+.support-folder-tabs button > span { font-size:9px; text-transform:uppercase; letter-spacing:.8px; }
+.support-folder-tabs button strong { font-size:13px; line-height:1.5; font-weight:500; overflow-wrap:anywhere; }
+.support-folder-tabs button small { font-size:10px; color:#7a8d6b; }
+.support-folder-tabs button svg { position:absolute; right:10px; top:19px; }
+.support-folder-page { padding:28px; min-width:0; background:linear-gradient(90deg,#d8e2ce30,transparent 18px),#fbfcf7; }
+.support-page-heading { display:flex; align-items:center; gap:10px; font-size:10px; color:#829474; }
+.support-folder-page h2 { margin:20px 0 14px; font-size:clamp(23px,2.3vw,32px); line-height:1.2; font-weight:500; letter-spacing:-.8px; overflow-wrap:anywhere; }
+.support-folder-page p { font-size:13px; line-height:1.8; color:#6b7e60; }
+.support-folder-page .support-benefit { font-size:14px; color:#506647; }
+.support-folder-page section { padding-top:20px; margin-top:22px; border-top:1px solid #dce5d3; }
+.support-folder-page h3 { font-size:14px; font-weight:500; margin:0; }
+.support-readiness > div { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.support-readiness small { font-size:10px; color:#7b8b6c; white-space:nowrap; }
+.support-readiness p { font-size:11px; }
+.support-readiness label { display:flex; align-items:flex-start; gap:10px; margin:15px 0; font-size:12px; line-height:1.5; cursor:pointer; }
+.support-readiness input { accent-color:#5c7e45; margin:3px 0 0; flex-shrink:0; width:15px; height:15px; }
+.support-folder-actions { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:28px 0 20px; }
+.support-folder-actions .feature-primary { font-size:12px; }
+.support-folder-actions .scheme-official { margin:0; font-size:11px; }
+.support-folder-page > .feature-footnote { display:block; font-size:10px; line-height:1.7; }
+@media(max-width:1100px) {
+  .compass-heading { flex-wrap:wrap; }
+  .support-folder { grid-template-columns:minmax(150px,.65fr) minmax(0,1fr); }
+  .support-folder-page { padding:23px 20px; }
+  .support-readiness > div { flex-wrap:wrap; gap:8px; }
+}
+@media(max-width:700px) {
+  .support-folder { display:block; }
+  .support-folder-tabs { display:flex; gap:8px; overflow:auto; padding:12px; max-height:none; }
+  .support-folder-tabs > span { display:none; }
+  .support-folder-tabs > button { min-width:190px; width:190px; border-bottom:0; }
+  .support-folder-page { padding:23px 20px; }
+  .compass-heading > label { width:100%; display:flex; align-items:center; justify-content:space-between; }
+  .comparison-stops { grid-template-columns:1fr; }
+}
