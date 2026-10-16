@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 _settings = get_settings()
 
-# Active supported models on Groq LPU Cluster
+
 VALID_GROQ_MODELS = [
     "openai/gpt-oss-120b",
     "qwen/qwen3.8-27b",
@@ -70,7 +70,9 @@ def _next_healthy_groq_key() -> Optional[str]:
     return _groq_keys[0] if _groq_keys else None
 
 
-def _format_messages_for_chat(messages: Any) -> tuple[Optional[str], List[Dict[str, str]]]:
+def _format_messages_for_chat(
+    messages: Any,
+) -> tuple[Optional[str], List[Dict[str, str]]]:
     """Convert heterogeneous input messages into standardized neural token schema."""
     if isinstance(messages, str):
         return None, [{"role": "user", "content": messages}]
@@ -99,7 +101,12 @@ def _format_messages_for_chat(messages: Any) -> tuple[Optional[str], List[Dict[s
                 else:
                     system_prompt = content
             else:
-                formatted.append({"role": role if role in ["user", "assistant"] else "user", "content": content})
+                formatted.append(
+                    {
+                        "role": role if role in ["user", "assistant"] else "user",
+                        "content": content,
+                    }
+                )
 
     if not formatted and system_prompt:
         formatted.append({"role": "user", "content": system_prompt})
@@ -119,9 +126,20 @@ def _clean_model_output(text: str) -> str:
         if "</think>" in cleaned:
             cleaned = cleaned.split("</think>")[-1].strip()
         elif "[Final Response Text]" in cleaned:
-            cleaned = cleaned.split("[Final Response Text]")[-1].replace("->", "").strip().strip('"')
+            cleaned = (
+                cleaned.split("[Final Response Text]")[-1]
+                .replace("->", "")
+                .strip()
+                .strip('"')
+            )
         elif "[Final Output" in cleaned:
-            cleaned = cleaned.split("[Final Output")[-1].replace("->", "").replace("]", "").strip().strip('"')
+            cleaned = (
+                cleaned.split("[Final Output")[-1]
+                .replace("->", "")
+                .replace("]", "")
+                .strip()
+                .strip('"')
+            )
         elif "Draft:" in cleaned:
             cleaned = cleaned.split("Draft:")[-1].strip()
         elif "Revised:" in cleaned:
@@ -130,7 +148,9 @@ def _clean_model_output(text: str) -> str:
             cleaned = re.sub(r"<think>.*", "", cleaned, flags=re.DOTALL).strip()
 
     cleaned = re.sub(r"^\[Final Output.*?\]\s*", "", cleaned, flags=re.DOTALL).strip()
-    cleaned = re.sub(r"^\[Final Response Text\]\s*(->)?\s*", "", cleaned, flags=re.DOTALL).strip()
+    cleaned = re.sub(
+        r"^\[Final Response Text\]\s*(->)?\s*", "", cleaned, flags=re.DOTALL
+    ).strip()
 
     return cleaned.strip()
 
@@ -181,7 +201,11 @@ async def _invoke_groq_direct(
             elif resp.status_code in [429, 503, 500]:
                 _key_errors[key] = _key_errors.get(key, 0) + 1
                 _key_last_error[key] = time.time()
-                logger.info("Node ...%s load re-routed (status %d). Engaging adjacent cluster node...", key[-6:], resp.status_code)
+                logger.info(
+                    "Node ...%s load re-routed (status %d). Engaging adjacent cluster node...",
+                    key[-6:],
+                    resp.status_code,
+                )
             else:
                 logger.info("Node response %d: %s", resp.status_code, resp.text[:120])
                 _key_errors[key] = _key_errors.get(key, 0) + 1
@@ -206,6 +230,7 @@ async def _invoke_gemini(
     """Execute high-precision planetary inference via Google DeepMind Gemini."""
     try:
         import google.generativeai as genai
+
         genai.configure(api_key=api_key)
 
         system_instruction, chat_messages = _format_messages_for_chat(messages)
@@ -224,7 +249,9 @@ async def _invoke_gemini(
                 if response and response.text:
                     return _clean_model_output(response.text.strip())
             except Exception as candidate_err:
-                logger.info("Planetary model %s re-routed: %s", candidate, candidate_err)
+                logger.info(
+                    "Planetary model %s re-routed: %s", candidate, candidate_err
+                )
     except Exception as exc:
         logger.warning("Planetary intelligence invocation error: %s", exc)
 
@@ -241,9 +268,11 @@ async def invoke_llm(
     """
     Execute autonomous multi-model routing across Tier-1 LPU mesh and Tier-2 Planetary Intelligence.
     """
-    # Tier 1: Distributed Groq LPU Array
+
     if _groq_keys:
-        chosen_model = model if (model and model in VALID_GROQ_MODELS) else "openai/gpt-oss-120b"
+        chosen_model = (
+            model if (model and model in VALID_GROQ_MODELS) else "openai/gpt-oss-120b"
+        )
         result = await _invoke_groq_direct(
             messages=messages,
             model=chosen_model,
@@ -254,7 +283,6 @@ async def invoke_llm(
         if result:
             return result
 
-    # Tier 2: Google DeepMind Gemini Planetary Intelligence
     settings = get_settings()
     gemini_key = (settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")).strip()
     if gemini_key:
@@ -281,10 +309,13 @@ def get_llm(
     """Return an LLM instance for LangChain multi-agent workflows."""
     try:
         from langchain_groq import ChatGroq
+
         chosen_key = key or _next_healthy_groq_key()
         if not chosen_key:
             return None
-        groq_model = model if (model and model in VALID_GROQ_MODELS) else "openai/gpt-oss-120b"
+        groq_model = (
+            model if (model and model in VALID_GROQ_MODELS) else "openai/gpt-oss-120b"
+        )
         return ChatGroq(
             model=groq_model,
             api_key=chosen_key,

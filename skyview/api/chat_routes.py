@@ -5,15 +5,18 @@ POST /api/weather-insight   — weather-focused LLM insight
 POST /api/agriculture/qa    — structured farm Q&A
 """
 
+import json
 from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+from sqlalchemy import inspect, text
 
 from skyview.agents import mandi_agent, supervisor
 from skyview.agents.agricultural_qa import generate_response as qa_generate
 from skyview.data.queries import get_latest_weather, get_weather_history
+from skyview.data.db import get_session
 from skyview.utils.config import get_settings
 from skyview.utils.logger import get_logger
 from skyview.utils.llm_pool import invoke_llm
@@ -60,7 +63,6 @@ def _sensor_context(station_id: str = "WS01") -> str:
 async def chat(req: ChatReq):
     sensor_ctx = _sensor_context()
 
-    # Inject mandi context for commodity queries
     commodity = mandi_agent.detect_commodity(req.message)
     if commodity:
         rates = mandi_agent.fetch_rates(commodity=commodity, limit=10)
@@ -77,7 +79,11 @@ async def chat(req: ChatReq):
         sensor_context=sensor_ctx,
         mandi_context=mandi_ctx,
     )
-    return {**result, "user_id": req.user_id, "timestamp": datetime.utcnow().isoformat()}
+    return {
+        **result,
+        "user_id": req.user_id,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
 @router.post("/api/weather-insight")
@@ -113,8 +119,15 @@ async def agriculture_qa(req: QAReq):
     sensor_data = {}
     if latest:
         sensor_data = {
-            "env": {"t": latest.get("temperature"), "h": latest.get("humidity"), "p": latest.get("pressure")},
-            "soil": {"t": latest.get("soil_temperature"), "m": latest.get("soil_moisture")},
+            "env": {
+                "t": latest.get("temperature"),
+                "h": latest.get("humidity"),
+                "p": latest.get("pressure"),
+            },
+            "soil": {
+                "t": latest.get("soil_temperature"),
+                "m": latest.get("soil_moisture"),
+            },
             "wind": {"s": latest.get("wind_speed"), "d": latest.get("wind_direction")},
             "rain": latest.get("rainfall"),
         }
@@ -129,12 +142,6 @@ async def agriculture_qa(req: QAReq):
     }
 
 
-# ── AI OVERVIEW ENDPOINTS ───────────────────────────────────────────────────
-
-import json
-from sqlalchemy import inspect, text
-from skyview.data.db import get_session
-
 LANG_MAP = {
     "en": "English",
     "hi": "Hindi (हिंदी)",
@@ -148,11 +155,13 @@ LANG_MAP = {
     "pa": "Punjabi (ਪੰਜਾਬੀ)",
 }
 
+
 class OverviewReq(BaseModel):
     page: str
     user_phone: Optional[str] = None
     language: Optional[str] = "en"
     extra_context: Optional[dict] = None
+
 
 class OverviewAskReq(BaseModel):
     page: str
@@ -169,7 +178,9 @@ def _get_user_profile(phone: Optional[str]) -> Optional[dict]:
     db = get_session()
     try:
         row = db.execute(
-            text("SELECT phone, name, land_size_acres, location, crops FROM users WHERE phone = :p"),
+            text(
+                "SELECT phone, name, land_size_acres, location, crops FROM users WHERE phone = :p"
+            ),
             {"p": phone},
         ).fetchone()
         if row:
@@ -194,9 +205,11 @@ def _get_mandi_context(state: str, crops: List[str]) -> str:
             rates = mandi_agent.fetch_rates(limit=10)
         lines = []
         for r in rates[:6]:
-            lines.append(f"- {r['commodity']} ({r['variety']}): ₹{r['modal_price']}/qtl at {r['market']}, {r['state']}")
+            lines.append(
+                f"- {r['commodity']} ({r['variety']}): ₹{r['modal_price']}/qtl at {r['market']}, {r['state']}"
+            )
         return "\n".join(lines)
-    except Exception as exc:
+    except Exception:
         return "No recent commodity pricing available."
 
 
@@ -204,20 +217,27 @@ def _get_schemes_context(state: str) -> str:
     db = get_session()
     try:
         from skyview.api.profile_routes import _catalog_from_db, FALLBACK_SCHEMES
+
         schemes = []
         try:
             schemes = _catalog_from_db(db, state=state, limit=4)
         except Exception:
             pass
         if not schemes:
-            schemes = [s for s in FALLBACK_SCHEMES if state.lower() in str(s.get("state", "")).lower()][:4]
+            schemes = [
+                s
+                for s in FALLBACK_SCHEMES
+                if state.lower() in str(s.get("state", "")).lower()
+            ][:4]
         if not schemes:
             schemes = FALLBACK_SCHEMES[:3]
         lines = []
         for s in schemes:
-            lines.append(f"- {s['scheme_name']}: {s['benefit_description'][:120]}... (Helpline: {s.get('helpline', 'N/A')})")
+            lines.append(
+                f"- {s['scheme_name']}: {s['benefit_description'][:120]}... (Helpline: {s.get('helpline', 'N/A')})"
+            )
         return "\n".join(lines)
-    except Exception as exc:
+    except Exception:
         return "No schemes found for state."
     finally:
         db.close()
@@ -228,14 +248,21 @@ def _get_trends_context() -> str:
     try:
         inspector = inspect(db.get_bind())
         if "sensor_trends" in inspector.get_table_names():
-            rows = db.execute(text("SELECT metric, direction, rate, avg, min, max FROM sensor_trends ORDER BY id DESC LIMIT 3")).fetchall()
+            rows = db.execute(
+                text(
+                    "SELECT metric, direction, rate, avg, min, max FROM sensor_trends ORDER BY id DESC LIMIT 3"
+                )
+            ).fetchall()
             if rows:
-                return "\n".join(f"- {r[0].capitalize()} Trend: {r[1]} (rate: {r[2]}, avg: {r[3]}, min: {r[4]}, max: {r[5]})" for r in rows)
+                return "\n".join(
+                    f"- {r[0].capitalize()} Trend: {r[1]} (rate: {r[2]}, avg: {r[3]}, min: {r[4]}, max: {r[5]})"
+                    for r in rows
+                )
     except Exception:
         pass
     finally:
         db.close()
-    
+
     latest = get_latest_weather("WS01")
     if latest:
         return f"Current readings: Temp {latest.get('temperature')}°C, Moisture {latest.get('soil_moisture')}%, Rain {latest.get('rainfall')}mm. A current snapshot alone cannot establish a trend."
@@ -251,14 +278,18 @@ async def get_overview(req: OverviewReq):
 
     profile = _get_user_profile(user_phone) if user_phone else None
     user_state = profile.get("location", "India") if profile else "India"
-    
-    user_crops: List[str] = [c.strip() for c in profile.get("crops", "").split(",") if c.strip()] if profile and profile.get("crops") else ["Wheat", "Rice"]
+
+    user_crops: List[str] = (
+        [c.strip() for c in profile.get("crops", "").split(",") if c.strip()]
+        if profile and profile.get("crops")
+        else ["Wheat", "Rice"]
+    )
 
     context_lines = []
     if page == "dashboard":
         latest = get_latest_weather("WS01")
         if latest:
-            context_lines.append(f"Current Weather Sensor Snapshot (Station WS01):")
+            context_lines.append("Current Weather Sensor Snapshot (Station WS01):")
             context_lines.append(f"- Temp: {latest.get('temperature')}°C")
             context_lines.append(f"- Humidity: {latest.get('humidity')}%")
             context_lines.append(f"- Rainfall: {latest.get('rainfall')}mm")
@@ -269,7 +300,7 @@ async def get_overview(req: OverviewReq):
     elif page == "schemes":
         context_lines.append(f"Farmer Location: {user_state}")
         context_lines.append(f"Farmer Crops: {', '.join(user_crops)}")
-        context_lines.append(f"Government Welfare Schemes Catalog Summary:")
+        context_lines.append("Government Welfare Schemes Catalog Summary:")
         schemes_text = _get_schemes_context(user_state)
         context_lines.append(schemes_text)
     elif page == "mandi":
@@ -284,32 +315,51 @@ async def get_overview(req: OverviewReq):
         context_lines.append(trends_text)
     elif page == "growth":
         from skyview.agents.fpga_agent import get_fpga_bridge
+
         try:
             bridge = get_fpga_bridge()
             hw_mode = "Real ZC706 FPGA"
             status = bridge.get_status()
-            context_lines.append(f"AI Edge Hardware Accelerator (ZC706 FPGA) Diagnostics:")
+            context_lines.append(
+                "AI Edge Hardware Accelerator (ZC706 FPGA) Diagnostics:"
+            )
             context_lines.append(f"- Mode: {hw_mode}")
-            context_lines.append(f"- Pipeline latency: 12ms")
-            context_lines.append(f"- Neural Fusion Core score: 82% efficiency")
+            context_lines.append("- Pipeline latency: 12ms")
+            context_lines.append("- Neural Fusion Core score: 82% efficiency")
             context_lines.append(f"- Diagnostics details: {json.dumps(status)}")
         except Exception:
-            context_lines.append("FPGA Accelerator is online. Processing telemetry with 98% prediction confidence.")
+            context_lines.append(
+                "FPGA Accelerator is online. Processing telemetry with 98% prediction confidence."
+            )
     elif page == "marketplace":
-        context_lines.append("Resource matching marketplace overview. Farmers list tools (Tractor, Seeder, Harvester, Compost, Labor).")
+        context_lines.append(
+            "Resource matching marketplace overview. Farmers list tools (Tractor, Seeder, Harvester, Compost, Labor)."
+        )
         if profile:
             context_lines.append(f"Farmer Name: {profile.get('name')}")
-            context_lines.append(f"Farmer excess resources: {profile.get('excess_resources')}")
-            context_lines.append(f"Farmer required resources: {profile.get('required_resources')}")
-        context_lines.append("Top matches are calculated using the Haversine distance formula to match nearest providers/consumers with cooperative mutual barters highlighted.")
+            context_lines.append(
+                f"Farmer excess resources: {profile.get('excess_resources')}"
+            )
+            context_lines.append(
+                f"Farmer required resources: {profile.get('required_resources')}"
+            )
+        context_lines.append(
+            "Top matches are calculated using the Haversine distance formula to match nearest providers/consumers with cooperative mutual barters highlighted."
+        )
     elif page == "map":
-        context_lines.append("Interactive Geographic India Map. Displays active farmers across different Indian states.")
-        context_lines.append("Pins are plotted by coordinates (Latitude & Longitude). Clicking details displays crop selections, excess resources, and required resources, facilitating smart regional pooling.")
+        context_lines.append(
+            "Interactive Geographic India Map. Displays active farmers across different Indian states."
+        )
+        context_lines.append(
+            "Pins are plotted by coordinates (Latitude & Longitude). Clicking details displays crop selections, excess resources, and required resources, facilitating smart regional pooling."
+        )
     else:
         context_lines.append("General farm state overview.")
 
     if req.extra_context:
-        context_lines.append(f"Additional live page context: {json.dumps(req.extra_context)}")
+        context_lines.append(
+            f"Additional live page context: {json.dumps(req.extra_context)}"
+        )
 
     context_str = "\n".join(context_lines)
 
@@ -329,12 +379,11 @@ async def get_overview(req: OverviewReq):
     if not response or len(response.strip()) < 10:
         response = "The AI overview is temporarily unavailable. Review the dated readings and records on this page; no current conditions or recommendations have been inferred."
 
-
     return {
         "status": "success",
         "page": page,
         "overview": response,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -343,9 +392,6 @@ async def ask_overview_followup(req: OverviewAskReq):
     page = req.page.lower()
     lang_code = req.language or "en"
     lang_name = LANG_MAP.get(lang_code, "English")
-
-    profile = _get_user_profile(req.user_phone) if req.user_phone else None
-    user_state = profile.get("location", "India") if profile else "India"
 
     prompt = (
         f"You are Kisan Mitra, answering a follow-up question regarding the '{page.capitalize()}' screen.\n\n"
@@ -366,5 +412,5 @@ async def ask_overview_followup(req: OverviewAskReq):
     return {
         "status": "success",
         "answer": response,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

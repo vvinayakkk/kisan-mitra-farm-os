@@ -88,7 +88,7 @@ export default function Signup() {
             crops: crops.split(',').map(c => c.trim()).filter(Boolean),
           }),
         });
-      } catch { /* backend unavailable, continue */ }
+      } catch {                                     }
 
       const sanitizeStorage = (val: string) => val.replace(/[^a-zA-Z0-9\s,.-]/g, '').trim().slice(0, 100);
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -126,7 +126,7 @@ export default function Signup() {
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* Background */}
+      {                }
       <div style={{
         position: 'fixed', inset: 0,
         backgroundImage: 'url(/frames/ezgif-frame-284.jpg)',
@@ -140,15 +140,15 @@ export default function Signup() {
           : 'radial-gradient(ellipse at 20% 80%, rgba(16,185,129,0.07) 0%, transparent 55%)',
       }} />
 
-      {/* Controls */}
+      {              }
       <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 100, display: 'flex', gap: '8px' }}>
         <ThemeToggle /><LanguageSelector />
       </div>
 
-      {/* Content */}
+      {             }
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '32px 16px' }}>
 
-        {/* Logo row */}
+        {              }
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
           <SkyViewLogo size={38} isDark={isDark} showText={false} />
           <div>
@@ -157,7 +157,7 @@ export default function Signup() {
           </div>
         </div>
 
-        {/* Main card — two columns */}
+        {                             }
         <div style={{
           width: '100%', maxWidth: '860px',
           background: cardBg, backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
@@ -169,7 +169,7 @@ export default function Signup() {
           display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 1px minmax(0,1fr)', gap: '32px',
         }}>
 
-          {/* LEFT — Voice setup */}
+          {                        }
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <Mic style={{ width: '15px', height: '15px', color: '#10B981' }} />
@@ -197,10 +197,10 @@ export default function Signup() {
             )}
           </div>
 
-          {/* Divider */}
+          {             }
           <div style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
 
-          {/* RIGHT — Manual form */}
+          {                         }
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
               <Leaf style={{ width: '15px', height: '15px', color: '#10B981' }} />
@@ -208,7 +208,7 @@ export default function Signup() {
             </div>
 
             <form style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Full Name - Dedicated full-width row */}
+              {                                          }
               <div style={{ width: '100%' }}>
                 <label htmlFor="signup-name" style={labelStyle}>Full Name *</label>
                 <div style={{ position: 'relative', width: '100%' }}>
@@ -230,7 +230,7 @@ export default function Signup() {
                 </div>
               </div>
 
-              {/* Phone - Dedicated full-width row */}
+              {                                      }
               <div style={{ width: '100%' }}>
                 <label htmlFor="signup-phone-input" style={labelStyle}>Phone Number *</label>
                 <div id="signup-phone-input" style={{ width: '100%' }}>
@@ -243,7 +243,7 @@ export default function Signup() {
                 </div>
               </div>
 
-              {/* Land & Location row */}
+              {                         }
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
                   <label htmlFor="signup-land" style={labelStyle}>Land Size (acres)</label>
@@ -261,7 +261,7 @@ export default function Signup() {
                 </div>
               </div>
 
-              {/* Crops */}
+              {           }
               <div>
                 <label htmlFor="signup-crops" style={labelStyle}>Crops Grown</label>
                 <div style={{ position: 'relative' }}>
@@ -270,7 +270,7 @@ export default function Signup() {
                 </div>
               </div>
 
-              {/* SMS Dispatched confirmation */}
+              {                                 }
               {otpSent && (
                 <div style={{
                   padding: '12px 16px', borderRadius: '12px',
@@ -290,7 +290,7 @@ export default function Signup() {
                 </div>
               )}
 
-              {/* OTP Entry */}
+              {               }
               {otpSent && (
                 <div>
                   <label htmlFor="signup-otp-input" style={labelStyle}>Enter OTP</label>
@@ -306,7 +306,7 @@ export default function Signup() {
                 </div>
               )}
 
-              {/* Submit */}
+              {            }
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
                 {(() => {
                   const isSignupDisabled = isLoading || (!otpSent && (!name.trim() || !phone.trim())) || (otpSent && otp.length < 6);
@@ -356,7 +356,7 @@ export default function Signup() {
               </div>
             </form>
 
-            {/* Login link */}
+            {                }
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 0 0' }}>
               <div style={{ flex: 1, height: '1px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
               <span style={{ fontSize: '12px', color: textMuted }}>Already have an account?</span>

@@ -88,7 +88,10 @@ async def test_price_comparison_also_runs_when_model_only_calls_trend(monkeypatc
         monkeypatch,
         [
             call("market_trend", {"commodity": "Rice", "state": "Maharashtra"}),
-            {"role": "assistant", "content": "The chart and dated mandi quotes are ready."},
+            {
+                "role": "assistant",
+                "content": "The chart and dated mandi quotes are ready.",
+            },
         ],
     )
     original_run = Executor.run
@@ -125,16 +128,17 @@ async def test_price_comparison_also_runs_when_model_only_calls_trend(monkeypatc
 
     monkeypatch.setattr(Executor, "run", market_run)
     events = [
-        event async for event in engine.run(
+        event
+        async for event in engine.run(
             sid,
-            models.RunRequest(message="Compare rice markets in Maharashtra and show a 30-day price trend."),
+            models.RunRequest(
+                message="Compare rice markets in Maharashtra and show a 30-day price trend."
+            ),
             store.load(sid),
         )
     ]
     completed = {
-        event["tool"]: event
-        for event in events
-        if event["type"] == "tool_completed"
+        event["tool"]: event for event in events if event["type"] == "tool_completed"
     }
     assert {"market_trend", "market_prices"} <= completed.keys()
     prices_started = next(

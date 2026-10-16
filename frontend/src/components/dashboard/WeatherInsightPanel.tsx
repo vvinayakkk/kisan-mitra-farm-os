@@ -28,7 +28,7 @@ export function WeatherInsightPanel() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
 
-  // Parse recommendations from numbered list
+
   const parseRecommendations = (text: string): Recommendation[] => {
     const lines = text.split('\n').filter(line => line.trim());
     const parsed: Recommendation[] = [];
@@ -38,7 +38,7 @@ export function WeatherInsightPanel() {
       if (match) {
         const number = parseInt(match[1]);
         const text = match[2].trim();
-        // Assign priority based on keywords
+
         let priority: 'high' | 'medium' | 'low' = 'low';
         if (text.toLowerCase().includes('urgent') || text.toLowerCase().includes('immediately') || text.toLowerCase().includes('critical')) {
           priority = 'high';
@@ -95,7 +95,7 @@ export function WeatherInsightPanel() {
         recommendation: responseText
       });
 
-      // Parse recommendations for visual display
+
       const parsed = parseRecommendations(responseText);
       setRecommendations(parsed);
 
@@ -138,7 +138,7 @@ export function WeatherInsightPanel() {
 
   return (
     <div style={{ padding: '24px' }}>
-      {/* Header */}
+      {            }
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {getWeatherIcon()}
@@ -166,7 +166,7 @@ export function WeatherInsightPanel() {
         </button>
       </div>
 
-      {/* Content */}
+      {             }
       {isLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[100, 85, 65].map((w, i) => (
@@ -198,7 +198,7 @@ export function WeatherInsightPanel() {
                 alignItems: 'flex-start',
               }}
             >
-              {/* Priority indicator - bar on left */}
+              {                                      }
               <div style={{
                 width: '4px',
                 height: '100%',
@@ -207,7 +207,7 @@ export function WeatherInsightPanel() {
                 flexShrink: 0,
               }} />
 
-              {/* Number circle */}
+              {                   }
               <div style={{
                 width: '28px',
                 height: '28px',
@@ -225,7 +225,7 @@ export function WeatherInsightPanel() {
                 {rec.number}
               </div>
 
-              {/* Text */}
+              {          }
               <p style={{
                 fontSize: '13px',
                 lineHeight: '1.5',
@@ -237,7 +237,7 @@ export function WeatherInsightPanel() {
             </div>
           ))}
 
-          {/* Disclaimer */}
+          {                }
           <p style={{
             fontSize: '11px', fontStyle: 'italic',
             color: isDark ? '#4A6A4A' : '#8A9A8C',

@@ -72,8 +72,6 @@ def migrate(source, destination):
                     .first()
                 )
                 if existing and existing["legacy_imported_at"] is not None:
-                    # Older imports may have durable records but no canonical file rows.
-                    # Never replay session state over newer conversations during repair.
                     from .v3_reconcile import reconcile_files
 
                     report = reconcile_files(
@@ -148,7 +146,6 @@ def migrate(source, destination):
                             source / "photos", destination / "photos", data["filename"]
                         )
                     else:
-                        # Old uploads kept only extracted text, so never invent original PDF/Office bytes.
                         filename = rid.hex + ".txt"
                         folder = destination / "uploads"
                         folder.mkdir(parents=True, exist_ok=True)
@@ -187,8 +184,7 @@ def migrate(source, destination):
                 if kind == "task" and data.get("deleted"):
                     v3_store.edit_task(sid, rid.hex, {"deleted": True})
                 counts["records"] += 1
-            # Interrupted old imports can also leave existing record IDs without
-            # canonical file rows before the session's imported marker is set.
+
             from .v3_reconcile import reconcile_files
 
             report = reconcile_files(

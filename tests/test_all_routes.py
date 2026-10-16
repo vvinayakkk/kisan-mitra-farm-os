@@ -7,13 +7,10 @@ Requirements:
     pip install httpx pytest pytest-asyncio
 
 Usage:
-    # Make sure the server is running first:
     uvicorn skyview.main:app --reload --port 8000
 
-    # Then in another terminal:
     pytest test_all_routes.py -v
 
-    # Or run directly (no pytest):
     python test_all_routes.py
 
 Environment:
@@ -26,14 +23,10 @@ import os
 import sys
 
 import httpx
-import pytest
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
-client   = httpx.Client(base_url=BASE_URL, timeout=30)
+client = httpx.Client(base_url=BASE_URL, timeout=30)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _ok(resp, label=""):
     """Assert 2xx and print result."""
@@ -64,10 +57,6 @@ def _warn(resp, label=""):
         return resp.text
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1. System / Core
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TestCore:
     def test_root(self):
         print("\n── Core ──")
@@ -88,10 +77,6 @@ class TestCore:
         assert r.status_code in (200, 204), f"OPTIONS returned {r.status_code}"
         print(f"  ✅ [OPTIONS /api/sensors/data] {r.status_code}")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 2. Auth
-# ─────────────────────────────────────────────────────────────────────────────
 
 class TestAuth:
     PHONE = "+919876543210"
@@ -119,10 +104,6 @@ class TestAuth:
         )
         _warn(r, "POST /api/auth/signup")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 3. Sensors
-# ─────────────────────────────────────────────────────────────────────────────
 
 SENSOR_PAYLOAD = {
     "station_id": "WS01",
@@ -162,10 +143,6 @@ class TestSensors:
         _warn(r, "GET /api/sensors/stations")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 4. FPGA Accelerator
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TestFPGA:
     def test_status(self):
         print("\n── FPGA ──")
@@ -182,8 +159,13 @@ class TestFPGA:
     def test_rain_predict(self):
         r = client.post(
             "/api/fpga/rain-predict",
-            json={"humidity": 85.0, "pressure": 1005.0, "temperature": 24.0,
-                  "wind_speed": 8.0, "rainfall_24h": 2.0},
+            json={
+                "humidity": 85.0,
+                "pressure": 1005.0,
+                "temperature": 24.0,
+                "wind_speed": 8.0,
+                "rainfall_24h": 2.0,
+            },
         )
         _warn(r, "POST /api/fpga/rain-predict")
 
@@ -199,23 +181,25 @@ class TestFPGA:
         _warn(r, "POST /api/fpga/test")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 5. AI / Chat
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TestChat:
     def test_chat(self):
         print("\n── AI / Chat ──")
         r = client.post(
             "/api/chat",
-            json={"message": "What is the current soil moisture?", "user_id": "test_user"},
+            json={
+                "message": "What is the current soil moisture?",
+                "user_id": "test_user",
+            },
         )
         _warn(r, "POST /api/chat")
 
     def test_weather_insight(self):
         r = client.post(
             "/api/weather-insight",
-            json={"station_id": "WS01", "message": "Is it good weather for wheat today?"},
+            json={
+                "station_id": "WS01",
+                "message": "Is it good weather for wheat today?",
+            },
         )
         _warn(r, "POST /api/weather-insight")
 
@@ -230,10 +214,6 @@ class TestChat:
         )
         _warn(r, "POST /api/agriculture/qa")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 6. Advisor
-# ─────────────────────────────────────────────────────────────────────────────
 
 class TestAdvisor:
     def test_insights_overview(self):
@@ -259,10 +239,6 @@ class TestAdvisor:
         _warn(r, "POST /api/advisor/insights (water)")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 7. Mandi
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TestMandi:
     def test_rates(self):
         print("\n── Mandi ──")
@@ -286,10 +262,6 @@ class TestMandi:
         _warn(r, "GET /api/mandi/msp")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 8. Voice
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TestVoice:
     def test_vapi_call(self):
         print("\n── Voice ──")
@@ -302,7 +274,10 @@ class TestVoice:
     def test_translate(self):
         r = client.post(
             "/api/translate",
-            json={"texts": ["Hello farmer", "What is the weather today?"], "target_language": "hi-IN"},
+            json={
+                "texts": ["Hello farmer", "What is the weather today?"],
+                "target_language": "hi-IN",
+            },
         )
         _warn(r, "POST /api/translate")
 
@@ -315,18 +290,9 @@ class TestVoice:
 
     def test_speech_transcribe(self):
         audio_content = b"RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x11\x2b\x00\x00\x11\x2b\x00\x00\x01\x00\x08\x00data\x00\x00\x00\x00"
-        files = {
-            "file": ("test.webm", audio_content, "audio/webm")
-        }
-        data = {
-            "language_code": "hi-IN",
-            "model": "saaras:v3"
-        }
-        r = client.post(
-            "/api/speech/transcribe",
-            files=files,
-            data=data
-        )
+        files = {"file": ("test.webm", audio_content, "audio/webm")}
+        data = {"language_code": "hi-IN", "model": "saaras:v3"}
+        r = client.post("/api/speech/transcribe", files=files, data=data)
         _warn(r, "POST /api/speech/transcribe")
 
     def test_profile_voice_update(self):
@@ -340,25 +306,11 @@ class TestVoice:
 
     def test_voice_process(self):
         audio_content = b"RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x11\x2b\x00\x00\x11\x2b\x00\x00\x01\x00\x08\x00data\x00\x00\x00\x00"
-        files = {
-            "audio": ("test.webm", audio_content, "audio/webm")
-        }
-        data = {
-            "language_code": "hi-IN",
-            "model": "saaras:v3"
-        }
-        r = client.post(
-            "/api/voice/process",
-            files=files,
-            data=data
-        )
+        files = {"audio": ("test.webm", audio_content, "audio/webm")}
+        data = {"language_code": "hi-IN", "model": "saaras:v3"}
+        r = client.post("/api/voice/process", files=files, data=data)
         _ok(r, "POST /api/voice/process")
 
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 9. Webhooks
-# ─────────────────────────────────────────────────────────────────────────────
 
 class TestWebhooks:
     def test_whatsapp_verify(self):
@@ -390,10 +342,6 @@ class TestWebhooks:
         _warn(r, "POST /webhook/whatsapp/farm-qa")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 10. Admin
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TestAdmin:
     def test_list_tables(self):
         print("\n── Admin ──")
@@ -421,15 +369,18 @@ class TestAdmin:
         _warn(r, "GET /admin/analytics/mandi")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Direct runner (no pytest)
-# ─────────────────────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
     test_classes = [
-        TestCore, TestAuth, TestSensors, TestFPGA,
-        TestChat, TestAdvisor, TestMandi, TestVoice,
-        TestWebhooks, TestAdmin,
+        TestCore,
+        TestAuth,
+        TestSensors,
+        TestFPGA,
+        TestChat,
+        TestAdvisor,
+        TestMandi,
+        TestVoice,
+        TestWebhooks,
+        TestAdmin,
     ]
 
     passed = failed = 0
@@ -447,7 +398,7 @@ if __name__ == "__main__":
                 print(f"  ❌ ERROR {cls.__name__}.{m}: {e}")
                 failed += 1
 
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print(f"Results: {passed} passed, {failed} failed")
-    print(f"{'='*55}")
+    print(f"{'=' * 55}")
     sys.exit(0 if failed == 0 else 1)

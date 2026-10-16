@@ -44,17 +44,17 @@ import { ThemeProvider } from "next-themes";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // ── Ultra-Cache read-only enterprise caching defaults ──────────
-      staleTime: 5 * 60_000, // data fresh for 5 min — zero repeated network stalls
-      gcTime: 30 * 60_000, // retain memory cache for 30 min
-      refetchOnWindowFocus: false, // instant background performance without tab flutter
+
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+      refetchOnWindowFocus: false,
       retry: 1,
     },
   },
 });
 
-// Redirect authenticated users away from login
-// Farming tools work before hardware commissioning; station APIs disclose missing data.
+
+
 function LoginRoute() {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Login />;
@@ -63,7 +63,7 @@ function LoginRoute() {
 
 import { AnimatePresence, motion } from "framer-motion";
 
-// ─── DB Explorer Background Pre-fetching Types & Helpers ─────────────────────
+
 type ColumnMeta = {
   name: string;
   type: string;
@@ -225,7 +225,7 @@ const AppContent = () => {
   useEffect(() => {
     if (!isAuthenticated || pathname !== "/db") return;
 
-    // The explorer's metadata is only needed when that page is opened.
+
     const prefetchDatabaseData = async () => {
       try {
         const tablesRes = await apiFetch(`${API_URL}/admin/tables`);
@@ -307,7 +307,7 @@ const AppContent = () => {
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* Hardware onboarding — protected but no HardwareGate */}
+          {                                                         }
           <Route
             path="/hardware-setup"
             element={
@@ -325,7 +325,7 @@ const AppContent = () => {
             }
           />
 
-          {/* Profile — protected, no HardwareGate (user needs to connect hardware here) */}
+          {                                                                                }
           <Route
             path="/profile"
             element={
@@ -335,7 +335,7 @@ const AppContent = () => {
             }
           />
 
-          {/* Farmer pages use authenticated data, with independent station availability. */}
+          {                                                                                 }
           <Route
             path="/dashboard"
             element={
@@ -449,7 +449,7 @@ const AppContent = () => {
             }
           />
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {                                                         }
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

@@ -54,7 +54,7 @@ export function FloatingAssistant() {
       try {
         localStorage.setItem(positionKey, JSON.stringify(position));
       } catch {
-        /* Keep dragging usable when storage is unavailable. */
+
       }
     }, 250);
     return () => clearTimeout(timer);

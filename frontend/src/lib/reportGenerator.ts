@@ -1,6 +1,3 @@
-/**
- * Report Generator - Creates various weather and system reports
- */
 import { getSecureId } from '@/lib/secureRandom';
 
 export interface ReportData {
@@ -22,18 +19,18 @@ export interface ReportMetrics {
   alertCount?: number;
 }
 
-/**
- * Generate CSV content from report data
- */
+
+
+
 export const generateCSVContent = (report: ReportData): string => {
   let csv = '';
 
-  // Header
+
   csv += `${report.title}\n`;
   csv += `Generated: ${report.generatedAt}\n`;
   csv += `Period: ${report.period}\n\n`;
 
-  // Metrics Section
+
   csv += 'Metrics Summary\n';
   csv += '---\n';
   Object.entries(report.metrics).forEach(([key, value]) => {
@@ -45,7 +42,7 @@ export const generateCSVContent = (report: ReportData): string => {
 
   csv += '\n';
 
-  // Detailed Data
+
   if (report.data.readings && Array.isArray(report.data.readings)) {
     csv += 'Detailed Readings\n';
     csv += 'Timestamp,Temperature (°C),Humidity (%),Pressure (hPa),Wind Speed (m/s),Rainfall (mm)\n';
@@ -65,9 +62,9 @@ export const generateCSVContent = (report: ReportData): string => {
   return csv;
 };
 
-/**
- * Generate HTML content for PDF export
- */
+
+
+
 export const generateHTMLContent = (report: ReportData): string => {
   const html = `
 <!DOCTYPE html>
@@ -91,7 +88,7 @@ export const generateHTMLContent = (report: ReportData): string => {
       --border: #e0f2f1;
       --shadow: 0 10px 30px rgba(46, 204, 113, 0.08);
     }
-    
+
     * {
       box-sizing: border-box;
       -webkit-print-color-adjust: exact;
@@ -436,9 +433,9 @@ export const generateHTMLContent = (report: ReportData): string => {
   return html;
 };
 
-/**
- * Download file helper
- */
+
+
+
 export const downloadFile = (content: string, filename: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType });
   const url = window.URL.createObjectURL(blob);
@@ -451,36 +448,36 @@ export const downloadFile = (content: string, filename: string, mimeType: string
   window.URL.revokeObjectURL(url);
 };
 
-/**
- * Export report as CSV
- */
+
+
+
 export const exportAsCSV = (report: ReportData) => {
   const csv = generateCSVContent(report);
   const timestamp = new Date().toISOString().split('T')[0];
   downloadFile(csv, `weather-report-${timestamp}.csv`, 'text/csv');
 };
 
-/**
- * Export report as JSON
- */
+
+
+
 export const exportAsJSON = (report: ReportData) => {
   const json = JSON.stringify(report, null, 2);
   const timestamp = new Date().toISOString().split('T')[0];
   downloadFile(json, `weather-report-${timestamp}.json`, 'application/json');
 };
 
-/**
- * Export report as HTML (can be printed/saved as PDF)
- */
+
+
+
 export const exportAsHTML = (report: ReportData) => {
   const html = generateHTMLContent(report);
   const timestamp = new Date().toISOString().split('T')[0];
   downloadFile(html, `weather-report-${timestamp}.html`, 'text/html');
 };
 
-/**
- * Create a daily weather report
- */
+
+
+
 export const createDailyReport = (weatherData: any, alerts: any[], systemHealth: any): ReportData => {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
@@ -506,9 +503,9 @@ export const createDailyReport = (weatherData: any, alerts: any[], systemHealth:
   };
 };
 
-/**
- * Create a weekly summary report
- */
+
+
+
 export const createWeeklySummaryReport = (weatherData: any, alerts: any[], systemHealth: any): ReportData => {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -534,9 +531,9 @@ export const createWeeklySummaryReport = (weatherData: any, alerts: any[], syste
   };
 };
 
-/**
- * Create an alerts report
- */
+
+
+
 export const createAlertsReport = (alerts: any[]): ReportData => {
   const now = new Date();
 
@@ -553,9 +550,9 @@ export const createAlertsReport = (alerts: any[]): ReportData => {
   };
 };
 
-/**
- * Create a system health report
- */
+
+
+
 export const createSystemHealthReport = (systemHealth: any, alerts: any[]): ReportData => {
   const now = new Date();
 

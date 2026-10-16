@@ -51,7 +51,7 @@ def run():
         time.sleep(0.25)
     else:
         raise SystemExit("PostgreSQL did not start on port 15433.")
-    # Reapply the ordered, additive inventory; never rerun the fresh schema or seed.
+
     for filename in RUNTIME_MIGRATIONS:
         subprocess.run(
             [

@@ -17,7 +17,7 @@ interface VoiceInputProps {
   onOpen?: () => void;
 }
 
-/** Compact input affordance: dictate, edit, then insert. Never sends a chat or saves a form. */
+
 export function VoiceInput({ onTranscript, disabled, label = 'Speak your words', language, className = '', presentation = 'dialog', panelContainer, onOpen }: VoiceInputProps) {
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);

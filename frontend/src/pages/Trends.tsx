@@ -36,7 +36,7 @@ interface TrendInfo {
   max: number;
 }
 
-// ─── Shared design tokens (mirrored from MandiRates) ──────────────────────────
+
 const css = {
   card: (isDark: boolean) => ({
     background: isDark ? 'rgba(20, 20, 25, 0.7)' : 'rgba(255, 255, 255, 0.75)',
@@ -59,7 +59,7 @@ const css = {
   },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function computeTrend(data: HistoricalDataPoint[], key: keyof Omit<HistoricalDataPoint, 'time'>): TrendInfo {
   if (!data || data.length < 2) return { direction: 'stable', rate: 0, avg: 0, min: 0, max: 0 };
   const values = data.map(d => d[key] as number);
@@ -91,10 +91,10 @@ async function storeTrends(tempTrend: TrendInfo, humidTrend: TrendInfo, rainTren
         ],
       }),
     });
-  } catch { /* silent */ }
+  } catch {              }
 }
 
-// ─── Badge (shared pattern from Mandi) ───────────────────────────────────────
+
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
     <span style={{
@@ -108,7 +108,7 @@ function Badge({ label, color, bg }: { label: string; color: string; bg?: string
   );
 }
 
-// ─── Stat card (identical to MandiRates StatCard) ─────────────────────────────
+
 function StatCard({ label, value, icon, accentColor, isDark }: {
   label: string; value: string | number;
   icon: React.ReactNode; accentColor: string; isDark: boolean;
@@ -130,7 +130,7 @@ function StatCard({ label, value, icon, accentColor, isDark }: {
   );
 }
 
-// ─── Trend badge row ──────────────────────────────────────────────────────────
+
 function TrendBadge({ trend, unit, isDark }: { trend: TrendInfo; unit: string; isDark: boolean }) {
   const map = {
     rising:  { color: css.text.danger,  bg: `${css.text.danger}14`,  icon: <TrendingUp size={12} /> },
@@ -149,7 +149,7 @@ function TrendBadge({ trend, unit, isDark }: { trend: TrendInfo; unit: string; i
   );
 }
 
-// ─── Chart section card (mirrors Mandi chart card) ────────────────────────────
+
 function ChartCard({
   title, subtitle, dataPoints, isCacheHit, isLoading, isDark,
   children,
@@ -185,7 +185,7 @@ function ChartCard({
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+
 export default function Trends() {
   const { t } = useLanguage();
   const { theme } = useTheme();
@@ -224,7 +224,7 @@ export default function Trends() {
     if (historicalData.length >= 2) storeTrends(tempTrend, humidTrend, rainTrend);
   }, [historicalData]);
 
-  // Marquee items — mirrors Mandi marquee structure
+
   const marqueeItems = useMemo(() => {
     if (!historicalData.length) return [
       { label: 'TEMP',     value: '25°C',   change: 0.2,  location: 'WS01' },
@@ -242,7 +242,7 @@ export default function Trends() {
     ];
   }, [historicalData, tempTrend, humidTrend, rainTrend, systemHealth]);
 
-  // Theme tokens
+
   const textPrimary   = css.text.primary(isDark);
   const textSecondary = css.text.secondary(isDark);
   const borderColor   = isDark ? 'rgba(46,204,113,0.12)' : 'rgba(30,100,50,0.1)';
@@ -252,7 +252,7 @@ export default function Trends() {
 
   const chartHeight = 320;
 
-  // ── Loading / Error states ────────────────────────────────────────────────
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', position: 'relative' }}>
@@ -276,12 +276,12 @@ export default function Trends() {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
       <FarmBackground />
 
-      {/* Header */}
+      {            }
       <div style={{ position: 'relative', zIndex: 50 }}>
         <DashboardHeader
           lastUpdateSeconds={systemHealth.lastUpdateSeconds}
@@ -296,7 +296,7 @@ export default function Trends() {
         boxSizing: 'border-box',
       }}>
 
-        {/* ── Page header ── */}
+        {                       }
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
@@ -313,7 +313,7 @@ export default function Trends() {
               )}
             </div>
 
-            {/* Refresh button — styled like Mandi refresh */}
+            {                                                }
             <button
               onClick={() => refetchHistory()}
               disabled={isRefreshing}
@@ -340,7 +340,7 @@ export default function Trends() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          {/* ── Marquee ticker (mirrors Mandi ticker) ── */}
+          {                                                 }
           <div style={{
             ...css.card(isDark),
             overflow: 'hidden',
@@ -374,7 +374,7 @@ export default function Trends() {
             </div>
           </div>
 
-          {/* ── Summary stat cards ── */}
+          {                              }
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
             <StatCard
               label="Data Points"
@@ -406,13 +406,13 @@ export default function Trends() {
             />
           </div>
 
-          {/* ── Main grid: charts + sidebar ── */}
+          {                                       }
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 16, alignItems: 'start' }}>
 
-            {/* Charts column */}
+            {                   }
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-              {/* ── Temperature chart ── */}
+              {                             }
               <ChartCard
                 title="Temperature Trend"
                 subtitle="Real-time · Avg Reference Line"
@@ -454,7 +454,7 @@ export default function Trends() {
                 </div>
               </ChartCard>
 
-              {/* ── Humidity chart ── */}
+              {                          }
               <ChartCard
                 title="Humidity Trend"
                 subtitle="24-hour Area · Min/Max Band"
@@ -502,7 +502,7 @@ export default function Trends() {
                 </div>
               </ChartCard>
 
-              {/* ── Rainfall chart ── */}
+              {                          }
               <ChartCard
                 title="Rainfall Accumulation"
                 subtitle="Step-after Area · Cumulative"
@@ -550,9 +550,9 @@ export default function Trends() {
               </ChartCard>
             </div>
 
-            {/* ── Sidebar (mirrors Mandi sidebar) ── */}
+            {                                           }
             <div style={{ ...css.card(isDark), padding: '20px', display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 20 }}>
-              {/* Header */}
+              {            }
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Activity size={16} color="#2ECC71" />
                 <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: textPrimary }}>
@@ -560,7 +560,7 @@ export default function Trends() {
                 </span>
               </div>
 
-              {/* Stats list */}
+              {                }
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {[
                   { label: 'Station ID',   value: 'WS01',                                         mono: true },
@@ -589,7 +589,7 @@ export default function Trends() {
                 ))}
               </div>
 
-              {/* Data quality bar */}
+              {                      }
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 11, color: textSecondary }}>Signal Quality</span>
@@ -600,7 +600,7 @@ export default function Trends() {
                 </div>
               </div>
 
-              {/* Live trend summary panel */}
+              {                              }
               <div style={{
                 background: 'transparent',
                 border: `1.5px solid ${isDark ? 'rgba(46,204,113,0.25)' : 'rgba(30,100,50,0.22)'}`,
@@ -636,7 +636,7 @@ export default function Trends() {
                 </div>
               </div>
 
-              {/* Refresh countdown hint */}
+              {                            }
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '8px 12px', borderRadius: 10,

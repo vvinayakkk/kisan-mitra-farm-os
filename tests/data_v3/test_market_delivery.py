@@ -148,7 +148,7 @@ def test_ogd_indian_midnight_is_not_rejected_as_future(
     from skyview.data.v3.ingestion import Ingestor
 
     monkeypatch.setenv("V3_RAW_STORAGE_DIR", str(tmp_path))
-    # 20:00 UTC is already the next farming day in India.
+
     now = datetime(2026, 10, 14, 20, tzinfo=UTC)
     payload = {
         "records": [
@@ -192,7 +192,7 @@ def test_observed_market_mode_never_falls_back_to_synthetic(canonical):
     assert all(
         row["data_origin"] in {"curated", "observed"} for row in catalogue["markets"]
     )
-    # The normal explicit sample path is retained; no source rows are destroyed.
+
     assert any(
         row["data_origin"] == "synthetic"
         for row in canonical.market_rates(limit=200)["records"]

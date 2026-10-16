@@ -20,7 +20,7 @@ import { useTheme } from "next-themes";
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-// ─── Shared design tokens (same as MandiRates / Trends) ──────────────────────
+
 const css = {
   card: (isDark: boolean) => ({
     background: isDark ? 'rgba(20, 20, 25, 0.7)' : 'rgba(255, 255, 255, 0.75)',
@@ -40,7 +40,7 @@ const css = {
   },
 };
 
-// ─── Reusable primitives ──────────────────────────────────────────────────────
+
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
     <span style={{
@@ -111,7 +111,7 @@ function StatCard({ label, value, icon, accentColor, isDark }: {
   );
 }
 
-// ─── Field row (view mode) ────────────────────────────────────────────────────
+
 function FieldRow({ label, icon, value, onAdd, isDark }: {
   label: string; icon: React.ReactNode;
   value: string; onAdd?: () => void; isDark: boolean;
@@ -136,7 +136,7 @@ function FieldRow({ label, icon, value, onAdd, isDark }: {
   );
 }
 
-// ─── Field input (edit mode) ──────────────────────────────────────────────────
+
 function FieldInput({ label, value, onChange, placeholder, isDark }: {
   label: string; value: string;
   onChange: (v: string) => void; placeholder: string; isDark: boolean;
@@ -167,7 +167,7 @@ function FieldInput({ label, value, onChange, placeholder, isDark }: {
   );
 }
 
-// ─── Scheme card ──────────────────────────────────────────────────────────────
+
 function SchemeCard({ scheme, isMatch, index, isDark }: {
   scheme: any; isMatch: boolean; index: number; isDark: boolean;
 }) {
@@ -190,7 +190,7 @@ function SchemeCard({ scheme, isMatch, index, isDark }: {
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Local match ribbon */}
+        {                        }
         {isMatch && (
           <div style={{
             position: 'absolute', top: 0, right: 0,
@@ -203,7 +203,7 @@ function SchemeCard({ scheme, isMatch, index, isDark }: {
           </div>
         )}
 
-        {/* Badges row */}
+        {                }
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           <Badge
             label={scheme.state || 'All India'}
@@ -226,17 +226,17 @@ function SchemeCard({ scheme, isMatch, index, isDark }: {
           )}
         </div>
 
-        {/* Name */}
+        {          }
         <h3 style={{ fontSize: 18, fontWeight: 800, color: textPrimary, margin: '0 0 8px', paddingRight: isMatch ? 80 : 0, fontFamily: "'Nunito', sans-serif" }}>
           {scheme.scheme_name}
         </h3>
 
-        {/* Description */}
+        {                 }
         <p style={{ fontSize: 13, color: textSecondary, lineHeight: 1.6, margin: '0 0 16px' }}>
           {scheme.benefit_description || scheme.description}
         </p>
 
-        {/* Info grid */}
+        {               }
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px', marginBottom: 16 }}>
           {scheme.applicable_crops && (
             <div>
@@ -258,7 +258,7 @@ function SchemeCard({ scheme, isMatch, index, isDark }: {
           )}
         </div>
 
-        {/* Contact strip */}
+        {                   }
         {(scheme.helpline || scheme.email || scheme.contact_address) && (
           <div style={{
             padding: '12px 0 12px',
@@ -288,7 +288,7 @@ function SchemeCard({ scheme, isMatch, index, isDark }: {
           </div>
         )}
 
-        {/* Action buttons */}
+        {                    }
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <PrimaryBtn onClick={() => {
             const url = scheme.official_url || scheme.link || '';
@@ -328,7 +328,7 @@ function SchemeCard({ scheme, isMatch, index, isDark }: {
   );
 }
 
-// ─── LOCAL SCHEMES FALLBACK ───────────────────────────────────────────────────
+
 const LOCAL_SCHEMES = [
   { scheme_id: "pm_kisan", scheme_name: "PM-Kisan Samman Nidhi", scheme_type: "income_support", state: "India", applicable_crops: "All eligible crops", benefit_description: "Direct income support of Rs. 6,000 per year in three equal instalments to all landholding farmer families.", eligibility: "Landholding farmer family", status: "Active", official_url: "https://pmkisan.gov.in/", helpline: "155261", email: "pmkisan-ict@gov.in", contact_address: "Department of Agriculture & Farmers Welfare, Government of India" },
   { scheme_id: "pmfby", scheme_name: "Pradhan Mantri Fasal Bima Yojana (PMFBY)", scheme_type: "insurance", state: "India", applicable_crops: "All notified crops", benefit_description: "Financial support to farmers suffering crop loss or damage due to natural calamities, pests and diseases.", eligibility: "Insured farmer sowing notified crops in notified areas", status: "Active", official_url: "https://pmfby.gov.in/", helpline: "14447", email: "helpdesk-pmfby@gov.in", contact_address: "Pradhan Mantri Fasal Bima Yojana portal" },
@@ -337,7 +337,7 @@ const LOCAL_SCHEMES = [
   { scheme_id: "pkvy", scheme_name: "Paramparagat Krishi Vikas Yojana (PKVY)", scheme_type: "organic_farming", state: "India", applicable_crops: "Organic clusters", benefit_description: "Promotes organic farming through a cluster approach and PGS certification to improve soil health.", eligibility: "Organic farming cluster members", status: "Active", official_url: "https://pgsindia-ncof.dac.gov.in/pkvy/", helpline: "1800-180-1551", email: "pkvy-support@gov.in", contact_address: "National Centre of Organic Farming, Government of India" },
 ];
 
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+
 export default function Profile() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -386,7 +386,7 @@ export default function Profile() {
         if (p.land_size_acres) localStorage.setItem("user_land_size", String(p.land_size_acres));
         if (p.location)        localStorage.setItem("user_location", p.location);
         if (cropsList?.length) localStorage.setItem("user_crops", cropsList.join(", "));
-        
+
         localStorage.setItem("user_latitude", p.latitude ? String(p.latitude) : "");
         localStorage.setItem("user_longitude", p.longitude ? String(p.longitude) : "");
         localStorage.setItem("user_state", p.state || "");
@@ -561,7 +561,7 @@ export default function Profile() {
         boxSizing: 'border-box',
       }}>
 
-        {/* ── Page header ── */}
+        {                       }
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 30, fontWeight: 800, margin: '0 0 4px', fontFamily: "'Nunito', sans-serif", color: isDark ? '#A8D89A' : '#1B3A20' }}>
             {t('profile_title')}
@@ -573,7 +573,7 @@ export default function Profile() {
 
         <AIOverview page="schemes" />
 
-        {/* ── Top stat cards ── */}
+        {                          }
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 24 }}>
           <StatCard label="Farmer Name"  value={profileData.name}            icon={<UserCircle size={20} />} accentColor="#2ECC71" isDark={isDark} />
           <StatCard label="Land Size"    value={profileData.land_size_acres ? `${profileData.land_size_acres} Acres` : ''} icon={<LayoutGrid size={20} />} accentColor="#3B82F6" isDark={isDark} />
@@ -581,13 +581,13 @@ export default function Profile() {
           <StatCard label="Crops Grown"  value={profileData.crops.join(', ')} icon={<Wheat size={20} />}    accentColor="#EF4444" isDark={isDark} />
         </div>
 
-        {/* ── Main two-column grid ── */}
+        {                                }
         <div style={{ display: 'grid', gridTemplateColumns: '300px minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
 
-          {/* ── LEFT SIDEBAR ── */}
+          {                        }
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 20 }}>
 
-            {/* Profile card */}
+            {                  }
             <div
               className="scrollable-card"
               style={{
@@ -597,7 +597,7 @@ export default function Profile() {
                 overflowY: 'auto',
               }}
             >
-              {/* Header */}
+              {            }
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${borderColor}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Activity size={16} color="#2ECC71" />
@@ -642,7 +642,7 @@ export default function Profile() {
                   <FieldInput label="Excess Resources (To Rent/Share)" value={editForm.excess_resources} onChange={v => setEditForm(f => ({ ...f, excess_resources: v }))} placeholder="e.g. Tractor, Labor" isDark={isDark} />
                   <FieldInput label="Required Resources (To Find)" value={editForm.required_resources} onChange={v => setEditForm(f => ({ ...f, required_resources: v }))} placeholder="e.g. Harvester, Compost" isDark={isDark} />
                   <FieldInput label="WhatsApp / Contact Number" value={editForm.whatsapp_number} onChange={v => setEditForm(f => ({ ...f, whatsapp_number: v }))} placeholder="e.g. +919011012345" isDark={isDark} />
-                  
+
                   <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                     <PrimaryBtn onClick={saveProfile} disabled={saving}>
                       {saving ? <Loader2 size={15} style={{ animation: 'profile-spin 1s linear infinite' }} /> : <Check size={15} />}
@@ -668,7 +668,7 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Hardware card */}
+            {                   }
             <div style={{ ...css.card(isDark), padding: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, paddingBottom: 14, borderBottom: `1.5px solid ${borderColor}` }}>
                 <Cpu size={16} color="#2ECC71" />
@@ -721,9 +721,9 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* ── RIGHT: SCHEMES ── */}
+          {                          }
           <div>
-            {/* Schemes header card */}
+            {                         }
             <div style={{
               ...css.card(isDark),
               padding: '18px 22px',
@@ -766,8 +766,8 @@ export default function Profile() {
                 </button>
               </div>
             </div>
-            
-            {/* Scheme cards list */}
+
+            {                       }
             {schemesLoading && schemes.length === 0 ? (
               <div style={{
                 ...css.card(isDark), padding: '60px 20px',
@@ -808,7 +808,6 @@ export default function Profile() {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.3; }
         }
-        /* Custom scrollbar for scrollable cards */
         .scrollable-card::-webkit-scrollbar {
           width: 6px;
         }

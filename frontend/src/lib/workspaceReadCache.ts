@@ -1,5 +1,5 @@
 import { onWorkspaceCacheInvalidated } from "./workspaceCacheLifecycle";
-/** Bounded, session-only cache for read tools. Never stores photos or mutations. */
+
 export class WorkspaceReadCache {
   private entries = new Map<string, { value: unknown; expires: number }>();
   private pending = new Map<string, Promise<unknown>>();

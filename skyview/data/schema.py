@@ -3,7 +3,7 @@ Schema initializer — creates all tables (IF NOT EXISTS).
 Run once before seeding: python -m skyview.data.schema
 """
 
-from skyview.data.db import execute_update, init_db
+from skyview.data.db import init_db
 from skyview.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -203,9 +203,10 @@ CREATE INDEX IF NOT EXISTS idx_trends_station ON trends(station_id);
 def init_schema() -> None:
     init_db()
     logger.info("Applying schema (CREATE IF NOT EXISTS)…")
-    # Execute statement by statement to handle semicolons
+
     from skyview.data.db import get_session
     from sqlalchemy import text
+
     db = get_session()
     try:
         for stmt in _SCHEMA.split(";"):

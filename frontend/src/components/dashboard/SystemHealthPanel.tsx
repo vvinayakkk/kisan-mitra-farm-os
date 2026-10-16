@@ -66,7 +66,7 @@ export function SystemHealthPanel({ health }: SystemHealthPanelProps) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        {/* Battery Voltage */}
+        {                     }
         <div style={{ background: cardBg, borderRadius: '14px', padding: '14px', border: cardBorder }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Battery style={{ width: '14px', height: '14px', color: labelColor || '#8A9A8C' }} />
@@ -77,7 +77,7 @@ export function SystemHealthPanel({ health }: SystemHealthPanelProps) {
           </p>
         </div>
 
-        {/* Battery Status */}
+        {                    }
         <div className={cn(batteryConfig.bg)} style={{ borderRadius: '14px', padding: '14px', border: cardBorder }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <BatteryStatusIcon className={cn('w-3.5 h-3.5', batteryConfig.class)} />
@@ -88,7 +88,7 @@ export function SystemHealthPanel({ health }: SystemHealthPanelProps) {
           </p>
         </div>
 
-        {/* Solar Charging */}
+        {                    }
         <div style={{ background: cardBg, borderRadius: '14px', padding: '14px', border: cardBorder }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Sun className={cn('w-3.5 h-3.5', health.solarCharging ? 'text-amber-500 animate-pulse' : '')} style={!health.solarCharging ? { color: labelColor || '#8A9A8C' } : {}} />
@@ -101,7 +101,7 @@ export function SystemHealthPanel({ health }: SystemHealthPanelProps) {
 
       </div>
 
-      {/* Edge System Status */}
+      {                        }
       <div style={{
         marginTop: '18px', paddingTop: '18px',
         borderTop: isDark ? '1px solid rgba(46,204,113,0.08)' : '1px solid rgba(200,220,200,0.3)',

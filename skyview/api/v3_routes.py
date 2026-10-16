@@ -475,7 +475,6 @@ def loops(owner: Owner, body: MatchRequest):
             None,
         )
 
-    # Only real resource edges; bounded search, no LLM-invented farmers or routes.
     for b in people[1:]:
         ab = overlap(own, b)
         if not ab:
@@ -713,7 +712,7 @@ def weather_city_dashboard(owner: Owner, city_id: int = Query(..., ge=1)):
 @router.post("/api/sensors/ingest")
 @router.post("/api/sensors/data")
 async def ingest(request: Request, authorization: str | None = Header(None)):
-    # Device credentials are distinct from farmer/chat capability tokens.
+
     from skyview.data.v3.ingestion import ingest_sensor_envelope
 
     payload = await request.json()

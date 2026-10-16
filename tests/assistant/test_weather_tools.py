@@ -25,17 +25,25 @@ def test_archive_schema_and_catalog_explain_grid_vs_station():
     assert {"weather_forecast", "weather_archive"} <= {
         tool["function"]["name"] for tool in schemas()
     }
-    assert "city_weather" in {tool["function"]["name"] for tool in schemas(["weather-outlook"])}
+    assert "city_weather" in {
+        tool["function"]["name"] for tool in schemas(["weather-outlook"])
+    }
 
 
 @pytest.mark.asyncio
 async def test_city_weather_tool_uses_named_location(monkeypatch):
     from skyview.api import weather_dashboard
 
-    monkeypatch.setattr(weather_dashboard, "city_weather", lambda city, days: {"available": True, "city": city, "days": days})
+    monkeypatch.setattr(
+        weather_dashboard,
+        "city_weather",
+        lambda city, days: {"available": True, "city": city, "days": days},
+    )
     async with httpx.AsyncClient() as client:
         executor = Executor("trusted-session", "WS01", client)
-        result = await executor.run("city_weather", {"city": "Mumbai, Maharashtra", "days": 3})
+        result = await executor.run(
+            "city_weather", {"city": "Mumbai, Maharashtra", "days": 3}
+        )
     assert result == {"available": True, "city": "Mumbai, Maharashtra", "days": 3}
     with pytest.raises(ValidationError):
         models.CityWeatherArgs(city="M", days=3)

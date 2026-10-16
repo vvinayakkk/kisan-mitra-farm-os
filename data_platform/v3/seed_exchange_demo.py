@@ -63,7 +63,7 @@ def statements(farmers):
             "resource_catalog_version": "demo-sharing-v2",
             "resource_catalog_origin": "synthetic",
         }
-        # Do not overwrite explicit existing farmer-edited sharing preferences.
+
         result.append(
             f"UPDATE sv3.farmers SET profile_attributes=profile_attributes||{literal(json.dumps(attrs))}::jsonb WHERE id={literal(fid)} AND ((NOT(profile_attributes ? 'resource_catalog_version') AND coalesce(profile_attributes->'required_resources','[]'::jsonb)='[]'::jsonb) OR (profile_attributes->>'resource_catalog_version'='demo-sharing-v1' AND profile_attributes->'required_resources'={literal(json.dumps([need[0]]))}::jsonb));"
         )
@@ -119,7 +119,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
-    # The database target is a constant; only existing synthetic demo records qualify.
+
     query = "SELECT coalesce(json_agg(t),'[]'::json) FROM (SELECT f.id,f.display_name,r.name AS state,f.profile_attributes->>'district' AS district FROM sv3.farmers f JOIN sv3.datasets d ON d.id=f.dataset_id JOIN sv3.regions r ON r.id=f.region_id WHERE f.profile_key LIKE 'DEMO-F%' AND f.status='demo' AND d.origin='synthetic' AND d.lane='demo' ORDER BY f.profile_key LIMIT 400) t"
     farmers = json.loads(sql(query, DATABASE))
     if len(farmers) != 400:

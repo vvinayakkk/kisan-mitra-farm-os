@@ -97,7 +97,7 @@ function whole(words: string[]): number {
   }
   return result;
 }
-/** Strict English number phrases and Latin/Devanagari numerals; never infers or converts units. */
+
 export function parseSpokenNumber(
   input: string,
   {
@@ -161,7 +161,7 @@ export function parseSpokenNumber(
     );
   return value;
 }
-/** ISO dates only: relative or ambiguous spoken dates must use the date picker. */
+
 export function parseSpokenDate(text: string): string {
   const clean = text
     .trim()

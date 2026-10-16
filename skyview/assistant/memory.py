@@ -29,7 +29,6 @@ def tokens(value):
     try:
         return len(tokenizer().encode(text, disallowed_special=()))
     except (ImportError, OSError, ValueError, RequestException):
-        # Offline cold starts remain safe: bytes conservatively overestimate tokens.
         return len(text.encode("utf-8"))
 
 
@@ -43,19 +42,17 @@ async def context(client, sid, state, *, budget=None):
             i for i in range(start + 1, len(messages)) if messages[i]["role"] == "user"
         ]
         cut = start
-        # Retain at least two complete turns whenever possible.
+
         for index in boundaries[:-1]:
             if await asyncio.to_thread(tokens, messages[index:]) <= budget // 2:
                 cut = index
                 break
         if cut == start and len(boundaries) >= 2:
-            # Offline conservative token estimates may exceed the half-budget even
-            # for two small turns. Still compact older complete turns safely.
             cut = boundaries[-2]
         if cut > start:
             previous = state.get("memory_summary", "")
             source = json.dumps(messages[start:cut], ensure_ascii=False, default=str)
-            # Bounded compaction input. No original transcript is lost.
+
             prompt = [
                 {
                     "role": "system",
@@ -85,7 +82,6 @@ async def context(client, sid, state, *, budget=None):
                 if not summary.strip():
                     raise provider.ProviderUnavailable("Memory summary was empty")
                 if summary.strip():
-                    # Store the exact summarized range for audit/recovery.
                     try:
                         codec = tokenizer()
                         state["memory_summary"] = codec.decode(
@@ -98,7 +94,6 @@ async def context(client, sid, state, *, budget=None):
                     store.save(sid, state)
                     start = cut
             except (provider.ProviderUnavailable, TimeoutError):
-                # Safe fallback preserves verbatim user evidence, not fabricated summary.
                 facts = [
                     m["content"][:600]
                     for m in messages[start:cut]
@@ -112,8 +107,7 @@ async def context(client, sid, state, *, budget=None):
                 state["memory_cursor"] = start = cut
                 state["compactions"] = state.get("compactions", 0) + 1
                 store.save(sid, state)
-    # Large tool outputs in the active turn cannot be summarized across an open
-    # tool boundary. Shrink only the model's copy, retaining valid JSON envelopes.
+
     result = copy.deepcopy(messages[start:])
     if await asyncio.to_thread(tokens, result) > budget:
         skill_calls = [
@@ -167,8 +161,6 @@ async def context(client, sid, state, *, budget=None):
         }
         for message in result:
             if message.get("tool_calls"):
-                # Earlier public narration is already visible in chat. Retain
-                # the native calls and user evidence, not repeated preambles.
                 message["content"] = None
             if (
                 message["role"] == "tool"

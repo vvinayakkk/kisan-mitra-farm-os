@@ -1,5 +1,3 @@
--- Stable public-data read contract shared by the market UI and assistant.
--- Invoker privileges preserve the caller's role; future private sources retain RLS.
 CREATE OR REPLACE FUNCTION sv3.market_price_history(
   _crop text, _aliases text[], _state text, _market text,
   _year integer, _month integer, _week integer,

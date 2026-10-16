@@ -1,4 +1,3 @@
--- Private service records and explicitly shared group checklists; no external dispatch.
 BEGIN;
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS service_requests (
@@ -11,7 +10,7 @@ CREATE TABLE IF NOT EXISTS farm_groups(id uuid PRIMARY KEY DEFAULT gen_random_uu
 CREATE TABLE IF NOT EXISTS group_members(group_id uuid NOT NULL REFERENCES farm_groups(id),farmer_id uuid NOT NULL REFERENCES farmers(id),display_name text NOT NULL,role text NOT NULL CHECK(role IN ('reader','contributor')),created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(group_id,farmer_id));
 CREATE TABLE IF NOT EXISTS group_invites(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),group_id uuid NOT NULL REFERENCES farm_groups(id),token_hash text NOT NULL UNIQUE,role text NOT NULL CHECK(role IN ('reader','contributor')),expires_at timestamptz NOT NULL,used_by uuid REFERENCES farmers(id),revoked_at timestamptz,created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS group_tasks(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),group_id uuid NOT NULL REFERENCES farm_groups(id),creator_id uuid NOT NULL REFERENCES farmers(id),title text NOT NULL,notes text NOT NULL DEFAULT '',due_on date,completed boolean NOT NULL DEFAULT false,row_version bigint NOT NULL DEFAULT 1,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now());
--- Definer queries only these isolated collaboration tables; no permission is granted on private farm records.
+
 CREATE OR REPLACE FUNCTION group_role(identifier uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=sv3,pg_catalog AS $$
  SELECT CASE WHEN g.owner_farmer_id=nullif(current_setting('app.farmer_id',true),'')::uuid THEN 'owner' ELSE m.role END
  FROM farm_groups g LEFT JOIN group_members m ON m.group_id=g.id AND m.farmer_id=nullif(current_setting('app.farmer_id',true),'')::uuid WHERE g.id=identifier

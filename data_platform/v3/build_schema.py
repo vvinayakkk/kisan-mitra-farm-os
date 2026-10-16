@@ -27,7 +27,7 @@ D = "dataset_id uuid NOT NULL REFERENCES datasets(id)"
 F = "farmer_id uuid NOT NULL REFERENCES farmers(id)"
 T = "created_at timestamptz NOT NULL DEFAULT now()"
 
-# Lineage and controlled ingestion.
+
 table(
     "providers",
     "ingestion",
@@ -58,7 +58,7 @@ table(
     "Quarantine incorrect timestamps, units and conflicting duplicate values",
     f"id {U}, raw_object_id uuid REFERENCES raw_objects(id), dataset_id uuid REFERENCES datasets(id), entity_type text NOT NULL, natural_key jsonb NOT NULL, code text NOT NULL, details jsonb NOT NULL, resolved_at timestamptz, {T}",
 )
-# Canonical dimensions.
+
 table(
     "regions",
     "reference",
@@ -101,7 +101,7 @@ table(
     "One market/crop/variety/grade/unit series",
     f"id {U}, market_id uuid NOT NULL REFERENCES markets(id), crop_id uuid NOT NULL REFERENCES crops(id), variety_id uuid NOT NULL, grade text NOT NULL DEFAULT 'unspecified', unit_code text NOT NULL REFERENCES units(code), currency char(3) NOT NULL DEFAULT 'INR', FOREIGN KEY(variety_id,crop_id) REFERENCES crop_varieties(id,crop_id), UNIQUE(market_id,crop_id,variety_id,grade,unit_code,currency)",
 )
-# Farmer-owned data, composite keys bind private parent and child to same owner.
+
 table(
     "farmers",
     "farm",
@@ -185,7 +185,7 @@ table(
     f"id {U}, {F}, task_id uuid NOT NULL, event_type text NOT NULL, before_state jsonb, after_state jsonb NOT NULL, actor text NOT NULL, {T}, FOREIGN KEY(task_id,farmer_id) REFERENCES tasks(id,farmer_id)",
     True,
 )
-# Sensor and external environmental data.
+
 table(
     "stations",
     "telemetry",
@@ -267,7 +267,7 @@ table(
     f"{D}, {F}, plot_id uuid NOT NULL, asset_id uuid REFERENCES satellite_assets(id), day date NOT NULL, index_name text NOT NULL, value numeric(8,5) NOT NULL, valid_pixel_fraction numeric(5,4) NOT NULL CHECK(valid_pixel_fraction BETWEEN 0 AND 1), method_version text NOT NULL, PRIMARY KEY(dataset_id,plot_id,day,index_name), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id)",
     True,
 )
-# Prices: future values physically separate.
+
 table(
     "price_observations",
     "market",
@@ -300,7 +300,7 @@ table(
     "Official policy by crop/grade/marketing season with notification URL",
     f"id {U}, {D}, crop_id uuid NOT NULL REFERENCES crops(id), grade text NOT NULL, marketing_season text NOT NULL, announced_on date NOT NULL, effective_from date NOT NULL, amount_inr_quintal numeric(14,2) NOT NULL CHECK(amount_inr_quintal>0), official_url text NOT NULL, UNIQUE(dataset_id,crop_id,grade,marketing_season)",
 )
-# Evidence-backed agricultural knowledge.
+
 table(
     "documents",
     "knowledge",
@@ -351,7 +351,7 @@ table(
     "Published aggregate crop area, production and yield; no farm-level inference",
     f"{D}, region_id uuid NOT NULL REFERENCES regions(id), crop_id uuid NOT NULL REFERENCES crops(id), year integer NOT NULL, season text NOT NULL, area_ha numeric(16,3), production_t numeric(16,3), yield_t_ha numeric(12,4), estimate_stage text NOT NULL, PRIMARY KEY(dataset_id,region_id,crop_id,year,season,estimate_stage)",
 )
-# Agent state, execution and evidence.
+
 table(
     "conversations",
     "agent",
@@ -439,8 +439,6 @@ for definition in TABLES:
 
 
 header = """-- SkyView v3: fresh databases only. Never apply to the existing farm database.
--- PostgreSQL 16+. Live and demo databases use this same schema; different credentials.
--- No DROP/TRUNCATE or import of legacy identities. Money NUMERIC, instants TIMESTAMPTZ.
 BEGIN;
 DO $$ BEGIN
  IF current_database() NOT IN ('skyview_v3_live','skyview_v3_demo','skyview_v3_test') THEN
@@ -454,7 +452,7 @@ sql = header + "".join(
     f"\n-- {t['group']}: {t['purpose']}\nCREATE TABLE {t['name']} (\n {t['columns']}\n) {t['tail']};\n"
     for t in TABLES
 )
-# Read-heavy composite indexes reflect actual endpoints; avoid indexing every numeric metric.
+
 indexes = [
     (
         "idx_jobs_due",
@@ -489,7 +487,11 @@ indexes = [
     ),
     ("idx_prices_time_brin", "price_observations", "USING brin(observed_on)"),
     ("idx_projection_series", "price_projections", "(series_id,valid_on,run_id)"),
-    ("idx_projection_scenario_latest", "price_projections", "(series_id,valid_on DESC) WHERE kind='scenario'"),
+    (
+        "idx_projection_scenario_latest",
+        "price_projections",
+        "(series_id,valid_on DESC) WHERE kind='scenario'",
+    ),
     ("idx_weather_latest", "weather_daily", "(series_id,day DESC)"),
     (
         "idx_weather_forecast",
@@ -515,13 +517,12 @@ for name, t, expression in indexes:
         "UNIQUE " if name in ("idx_memory_current", "idx_mapping_current") else ""
     )
     sql += f"CREATE {uniqueness}INDEX {name} ON {t} {expression};\n"
-# Ensure all farmer-owned access paths and FK filters have an ownership index.
+
 for t in TABLES:
     if t["private"] and t["name"] != "farmers":
         sql += f"CREATE INDEX idx_{t['name']}_farmer ON {t['name']}(farmer_id);\n"
 
 sql += """
--- Monthly partition manager: identifier/value quoting, fixed allowlist and UTC bounds.
 CREATE FUNCTION ensure_month_partitions(parent_name text, first_month date, last_month date)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE month_start date; next_month date; suffix text;
@@ -536,7 +537,6 @@ BEGIN
  END LOOP;
 END $$;
 
--- Dataset provenance enforcement, including synthetic-to-live leakage prevention.
 CREATE FUNCTION guard_dataset() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
  IF TG_OP='UPDATE' AND (NEW.provider_id,NEW.release_key,NEW.lane,NEW.origin,NEW.as_of_date,NEW.generator_version,NEW.seed,NEW.source_url) IS DISTINCT FROM (OLD.provider_id,OLD.release_key,OLD.lane,OLD.origin,OLD.as_of_date,OLD.generator_version,OLD.seed,OLD.source_url) THEN RAISE EXCEPTION 'Dataset lineage is immutable; create a new release'; END IF;
@@ -583,12 +583,11 @@ CREATE TRIGGER weather_kind_guard BEFORE INSERT OR UPDATE ON weather_daily FOR E
 CREATE TRIGGER weather_forecast_kind_guard BEFORE INSERT OR UPDATE ON weather_forecasts FOR EACH ROW EXECUTE FUNCTION guard_evidence_kind();
 CREATE TRIGGER soil_sample_kind_guard BEFORE INSERT OR UPDATE ON soil_samples FOR EACH ROW EXECUTE FUNCTION guard_evidence_kind();
 CREATE TRIGGER soil_indicator_kind_guard BEFORE INSERT OR UPDATE ON soil_indicators FOR EACH ROW EXECUTE FUNCTION guard_evidence_kind();
--- Uniqueness on nullable sensor depth must also cover surface sensors (PostgreSQL 15+).
 CREATE UNIQUE INDEX idx_sensor_metric_depth ON station_sensors(station_id,metric,depth_cm) NULLS NOT DISTINCT;
 """
 
 sql += SQL
-# RLS: app must set trusted farmer ID inside its transaction, never from request query args.
+
 for t in TABLES:
     if t["private"]:
         column = "id" if t["name"] == "farmers" else "farmer_id"
@@ -621,11 +620,7 @@ DO $$ DECLARE relation record; BEGIN
   EXECUTE format('GRANT SELECT ON sv3.%I TO sv3_app',relation.relname);
  END LOOP;
 END $$;
--- Direct partition reads bypass parent RLS; do not grant child-table access.
--- Raw ingest/quality details are admin-only and may contain untrusted sensitive payloads.
 REVOKE ALL ON FUNCTION sv3.ensure_month_partitions(text,date,date) FROM PUBLIC;
--- API-authenticated application sets SET LOCAL app.farmer_id using a bound validated UUID.
--- Grant mutation privileges only to selected application services, not browser SQL clients.
 """
 (HERE / "sql/roles.sql").write_text(roles)
 print(

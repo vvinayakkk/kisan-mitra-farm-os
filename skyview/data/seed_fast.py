@@ -9,8 +9,6 @@ Usage:
 """
 
 import argparse
-import logging
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -25,15 +23,13 @@ setup_logging()
 logger = get_logger(__name__)
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
 def _read_csv(csv_dir: Path, filename: str) -> Optional[pd.DataFrame]:
     path = csv_dir / filename
     if not path.exists():
         logger.warning("CSV not found, skipping: %s", path)
         return None
     df = pd.read_csv(path)
-    # Replace NaN with None so SQLAlchemy sends NULL
+
     df = df.where(pd.notnull(df), None)
     logger.info("  Loaded %s  (%d rows)", filename, len(df))
     return df
@@ -48,7 +44,13 @@ def _truncate(db, table: str) -> None:
     logger.info("  Truncated: %s", table)
 
 
-def _bulk_insert(engine, df: pd.DataFrame, table: str, if_exists: str = "append", chunksize: int = 5000) -> int:
+def _bulk_insert(
+    engine,
+    df: pd.DataFrame,
+    table: str,
+    if_exists: str = "append",
+    chunksize: int = 5000,
+) -> int:
     """
     Use pandas to_sql with method='multi' for fast bulk inserts.
     For PostgreSQL, this generates multi-row INSERT statements.
@@ -63,7 +65,7 @@ def _bulk_insert(engine, df: pd.DataFrame, table: str, if_exists: str = "append"
         if_exists=if_exists,
         index=False,
         chunksize=chunksize,
-        method="multi",  # multi-row INSERT — orders of magnitude faster
+        method="multi",
     )
     return len(df)
 
@@ -71,13 +73,13 @@ def _bulk_insert(engine, df: pd.DataFrame, table: str, if_exists: str = "append"
 def _get_engine():
     """Get the raw SQLAlchemy engine (needed for pandas to_sql)."""
     from skyview.data.db import _engine, init_db
+
     if _engine is None:
         init_db()
     from skyview.data.db import _engine
+
     return _engine
 
-
-# ── Column normalizers (rename CSV cols → DB cols if needed) ──────────────────
 
 def _prep_installations(df: pd.DataFrame) -> pd.DataFrame:
     datetime_cols = [
@@ -112,12 +114,7 @@ def _prep_installations(df: pd.DataFrame) -> pd.DataFrame:
 
 def _prep_installation_sensors(df: pd.DataFrame) -> pd.DataFrame:
     if "active" in df.columns:
-        df["active"] = (
-            df["active"]
-            .fillna(False)
-            .astype(int)
-            .astype(bool)
-        )
+        df["active"] = df["active"].fillna(False).astype(int).astype(bool)
 
     keep = [
         "installation_id",
@@ -132,23 +129,31 @@ def _prep_installation_sensors(df: pd.DataFrame) -> pd.DataFrame:
 
 def _prep_weather(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "station_id", "timestamp", "temperature", "humidity", "pressure",
-        "wind_speed", "wind_direction", "rainfall",
-        "soil_temperature", "soil_moisture",
-        "pm25", "pm10", "uv_index", "lux",
-        "battery_voltage", "solar_voltage", "created_at", "updated_at",
+        "station_id",
+        "timestamp",
+        "temperature",
+        "humidity",
+        "pressure",
+        "wind_speed",
+        "wind_direction",
+        "rainfall",
+        "soil_temperature",
+        "soil_moisture",
+        "pm25",
+        "pm10",
+        "uv_index",
+        "lux",
+        "battery_voltage",
+        "solar_voltage",
+        "created_at",
+        "updated_at",
     ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_alerts(df: pd.DataFrame) -> pd.DataFrame:
     if "acknowledged" in df.columns:
-        df["acknowledged"] = (
-            df["acknowledged"]
-            .fillna(False)
-            .astype(int)
-            .astype(bool)
-        )
+        df["acknowledged"] = df["acknowledged"].fillna(False).astype(int).astype(bool)
 
     for col in ["created_at", "acknowledged_at"]:
         if col in df.columns:
@@ -176,62 +181,118 @@ def _prep_user_prefs(df: pd.DataFrame) -> pd.DataFrame:
 
 def _prep_trends(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "station_id", "metric", "period", "trend_direction",
-        "trend_rate", "confidence", "start_timestamp", "end_timestamp",
+        "station_id",
+        "metric",
+        "period",
+        "trend_direction",
+        "trend_rate",
+        "confidence",
+        "start_timestamp",
+        "end_timestamp",
     ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_system_health(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "station_id", "timestamp", "sensor_status", "battery_level",
-        "connectivity", "last_data_received", "uptime_hours",
+        "station_id",
+        "timestamp",
+        "sensor_status",
+        "battery_level",
+        "connectivity",
+        "last_data_received",
+        "uptime_hours",
     ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_crop_calendar(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "state", "crop", "season", "sow_start", "sow_end",
-        "harvest_start", "harvest_end", "variety",
-        "water_requirement", "duration_days", "advisory",
+        "state",
+        "crop",
+        "season",
+        "sow_start",
+        "sow_end",
+        "harvest_start",
+        "harvest_end",
+        "variety",
+        "water_requirement",
+        "duration_days",
+        "advisory",
     ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_government_schemes(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "scheme_id", "scheme_name", "scheme_type", "state", "applicable_crops",
-        "benefit_description", "eligibility", "status",
-        "official_url", "helpline", "email", "contact_address",
+        "scheme_id",
+        "scheme_name",
+        "scheme_type",
+        "state",
+        "applicable_crops",
+        "benefit_description",
+        "eligibility",
+        "status",
+        "official_url",
+        "helpline",
+        "email",
+        "contact_address",
     ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_mandi_history(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "state", "district", "market", "commodity", "variety", "arrival_date",
-        "min_price", "max_price", "modal_price", "unit", "year", "month", "week",
+        "state",
+        "district",
+        "market",
+        "commodity",
+        "variety",
+        "arrival_date",
+        "min_price",
+        "max_price",
+        "modal_price",
+        "unit",
+        "year",
+        "month",
+        "week",
     ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_msp_history(df: pd.DataFrame) -> pd.DataFrame:
-    keep = ["crop", "year", "msp_rs_quintal", "unit", "announced_by", "effective_season"]
+    keep = [
+        "crop",
+        "year",
+        "msp_rs_quintal",
+        "unit",
+        "announced_by",
+        "effective_season",
+    ]
     return df[[c for c in keep if c in df.columns]]
 
 
 def _prep_emergency(df: pd.DataFrame) -> pd.DataFrame:
     keep = [
-        "event_type", "event_description", "station_id", "state", "district",
-        "resource_type", "quantity", "unit", "priority", "responsible_agency",
-        "event_start", "dispatch_time", "status",
-        "beneficiary_farmers", "area_covered_ha", "notes",
+        "event_type",
+        "event_description",
+        "station_id",
+        "state",
+        "district",
+        "resource_type",
+        "quantity",
+        "unit",
+        "priority",
+        "responsible_agency",
+        "event_start",
+        "dispatch_time",
+        "status",
+        "beneficiary_farmers",
+        "area_covered_ha",
+        "notes",
     ]
     return df[[c for c in keep if c in df.columns]]
 
-
-# ── Main seeder ───────────────────────────────────────────────────────────────
 
 def seed(csv_dir: Path, skip_weather: bool = False) -> None:
     init_db()
@@ -240,7 +301,6 @@ def seed(csv_dir: Path, skip_weather: bool = False) -> None:
     db = get_session()
 
     try:
-        # ── Step 1: Truncate (same as before, users/weather protected) ────────
         truncate_tables = [
             "emergency_resource_allocation",
             "msp_history",
@@ -257,13 +317,11 @@ def seed(csv_dir: Path, skip_weather: bool = False) -> None:
             _truncate(db, t)
         db.close()
 
-        # ── Step 2: Bulk insert each table ────────────────────────────────────
-
         logger.info("── Seeding installations (upsert via temp table) ──")
         df = _read_csv(csv_dir, "installations.csv")
         if df is not None:
             df = _prep_installations(df)
-            # installations uses ON CONFLICT — do it via raw upsert
+
             _upsert_installations(engine, df)
             logger.info("  → %d rows", len(df))
 
@@ -293,7 +351,9 @@ def seed(csv_dir: Path, skip_weather: bool = False) -> None:
         logger.info("── Seeding user_preferences ──")
         df = _read_csv(csv_dir, "user_preferences.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_user_prefs(df), "user_preferences", chunksize=2000)
+            n = _bulk_insert(
+                engine, _prep_user_prefs(df), "user_preferences", chunksize=2000
+            )
             logger.info("  → %d rows", n)
 
         logger.info("── Seeding trends ──")
@@ -305,37 +365,55 @@ def seed(csv_dir: Path, skip_weather: bool = False) -> None:
         logger.info("── Seeding system_health ──")
         df = _read_csv(csv_dir, "system_health.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_system_health(df), "system_health", chunksize=2000)
+            n = _bulk_insert(
+                engine, _prep_system_health(df), "system_health", chunksize=2000
+            )
             logger.info("  → %d rows", n)
 
         logger.info("── Seeding crop_calendar ──")
         df = _read_csv(csv_dir, "crop_calendar.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_crop_calendar(df), "crop_calendar", chunksize=2000)
+            n = _bulk_insert(
+                engine, _prep_crop_calendar(df), "crop_calendar", chunksize=2000
+            )
             logger.info("  → %d rows", n)
 
         logger.info("── Seeding government_schemes ──")
         df = _read_csv(csv_dir, "government_schemes.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_government_schemes(df), "government_schemes", chunksize=2000)
+            n = _bulk_insert(
+                engine,
+                _prep_government_schemes(df),
+                "government_schemes",
+                chunksize=2000,
+            )
             logger.info("  → %d rows", n)
 
         logger.info("── Seeding mandi_rates_history (118k rows — bulk) ──")
         df = _read_csv(csv_dir, "mandi_rates_history.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_mandi_history(df), "mandi_rates_history", chunksize=10000)
+            n = _bulk_insert(
+                engine, _prep_mandi_history(df), "mandi_rates_history", chunksize=10000
+            )
             logger.info("  → %d rows", n)
 
         logger.info("── Seeding msp_history ──")
         df = _read_csv(csv_dir, "msp_history.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_msp_history(df), "msp_history", chunksize=2000)
+            n = _bulk_insert(
+                engine, _prep_msp_history(df), "msp_history", chunksize=2000
+            )
             logger.info("  → %d rows", n)
 
         logger.info("── Seeding emergency_resource_allocation ──")
         df = _read_csv(csv_dir, "emergency_resource_allocation.csv")
         if df is not None:
-            n = _bulk_insert(engine, _prep_emergency(df), "emergency_resource_allocation", chunksize=2000)
+            n = _bulk_insert(
+                engine,
+                _prep_emergency(df),
+                "emergency_resource_allocation",
+                chunksize=2000,
+            )
             logger.info("  → %d rows", n)
 
         logger.info("✅  Seed complete. Users table was NOT modified.")
@@ -351,7 +429,6 @@ def _upsert_installations(engine, df: pd.DataFrame) -> None:
     Strategy: bulk insert to a temp table, then upsert from there.
     """
     with engine.begin() as conn:
-        # Write to temp table
         df.to_sql(
             "_tmp_installations",
             con=conn,
@@ -360,22 +437,20 @@ def _upsert_installations(engine, df: pd.DataFrame) -> None:
             chunksize=500,
             method="multi",
         )
-        # Upsert from temp → real table
+
         cols = ", ".join(df.columns)
         update_cols = ", ".join(
-            f"{c}=EXCLUDED.{c}"
-            for c in df.columns
-            if c != "station_id"
+            f"{c}=EXCLUDED.{c}" for c in df.columns if c != "station_id"
         )
-        conn.execute(text(f"""
+        conn.execute(
+            text(f"""
             INSERT INTO installations ({cols})
             SELECT {cols} FROM _tmp_installations
             ON CONFLICT (station_id) DO UPDATE SET {update_cols}
-        """))
+        """)
+        )
         conn.execute(text("DROP TABLE IF EXISTS _tmp_installations"))
 
-
-# ── CLI ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fast bulk seed for SkyView DB")

@@ -167,7 +167,14 @@ def msp_history(crop: Optional[str] = None, limit: int = 50):
         sql += " ORDER BY year DESC LIMIT :limit"
 
         rows = db.execute(text(sql), params).fetchall()
-        keys = ["crop", "year", "msp_rs_quintal", "unit", "announced_by", "effective_season"]
+        keys = [
+            "crop",
+            "year",
+            "msp_rs_quintal",
+            "unit",
+            "announced_by",
+            "effective_season",
+        ]
         records: List[Dict[str, Any]] = []
         for row in rows:
             record = {}

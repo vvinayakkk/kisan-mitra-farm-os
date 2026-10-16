@@ -22,7 +22,6 @@ def uid(key):
     return str(uuid.uuid5(NS, key))
 
 
-# Public approximate anchors, not field boundaries, official codes, or survey weights.
 REGIONS = [
     ("AP", "Andhra Pradesh", "te", 16.51, 80.64, "rice,maize,groundnut"),
     ("AR", "Arunachal Pradesh", "en", 27.10, 93.62, "rice,maize,ginger"),
@@ -270,7 +269,7 @@ def generate(out: Path, asof: date, seed: int):
     plots = []
     cycle_ids = {}
     farmers = []
-    # 11 in every region + one extra in first four: balanced test coverage, not population weights.
+
     for n in range(400):
         idx = n % 36
         code, name, lang, lat, lon, mix = REGIONS[idx]
@@ -322,7 +321,7 @@ def generate(out: Path, asof: date, seed: int):
             plat = lat + rng.uniform(-0.02, 0.02)
             plon = lon + rng.uniform(-0.02, 0.02)
             area = round(size * (0.55 if p == 0 else 0.45), 4)
-            # Synthetic square calculated in local metres; no cadastral boundary assertion.
+
             edge = math.sqrt(area * 10000) / 2
             dy = edge / 111320
             dx = edge / (111320 * math.cos(math.radians(plat)))
@@ -662,7 +661,7 @@ def generate(out: Path, asof: date, seed: int):
             device_type="mock-v3",
             calibration={"synthetic": True, "interval_seconds": 3600},
             installed_at=f"{sensor_start}T00:00:00+00:00",
-            last_received_at=f"{asof-timedelta(days=1)}T23:03:00+00:00",
+            last_received_at=f"{asof - timedelta(days=1)}T23:03:00+00:00",
         )
         for metric, unit in metrics:
             add(
@@ -685,7 +684,6 @@ def generate(out: Path, asof: date, seed: int):
             moisture = []
             rain_sum = 0
             for hour in range(24):
-                # Deterministic outage windows: missing packets remain missing.
                 if n % 10 == 0 and offset in (10, 11) and 8 <= hour < 16:
                     continue
                 seq += 1
@@ -753,7 +751,9 @@ def generate(out: Path, asof: date, seed: int):
     extend(add, uid, rng, dataset, asof, created, farmers, plots, cycle_ids, REGIONS)
     for f in files.values():
         f.close()
-    catalog = json.loads((Path(__file__).parent / "catalog/schema-catalog.json").read_text())
+    catalog = json.loads(
+        (Path(__file__).parent / "catalog/schema-catalog.json").read_text()
+    )
     for t in catalog["tables"]:
         counts.setdefault(t["name"], 0)
     sql = out / "seed.sql"
@@ -766,7 +766,7 @@ def generate(out: Path, asof: date, seed: int):
             ("sensor_packets", sensor_start),
         ]:
             f.write(f"SELECT ensure_month_partitions('{parent}','{start}','{asof}');\n")
-        # Actual creation order above is topologically valid; grouped files keep dependencies.
+
         copy_order = list(writers)
         copy_order.remove("measurement_definitions")
         copy_order.insert(copy_order.index("units") + 1, "measurement_definitions")

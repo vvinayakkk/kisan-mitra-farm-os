@@ -97,8 +97,6 @@ def reconcile_files(
     if farmer_id:
         owners = [str(farmer_id)]
     else:
-        # The ingestion role can list farmer identities but cannot read private
-        # assistant records. Enter each owner's RLS scope for the actual audit.
         with database.connection(ingest=True) as db:
             owners = (
                 db.execute(text("SELECT id FROM sv3.farmers ORDER BY id"))
@@ -155,7 +153,6 @@ def reconcile_files(
                     with database.connection(
                         str(record["farmer_id"]), write=True
                     ) as db:
-                        # Serialize repair against record mutations and concurrent reconcilers.
                         current = db.execute(
                             text(
                                 "SELECT data FROM sv3.assistant_records WHERE id=:id AND farmer_id=:f FOR UPDATE"
@@ -184,7 +181,7 @@ def reconcile_files(
                         )
                         if payload is not None:
                             target.parent.mkdir(parents=True, exist_ok=True)
-                            # Exclusive creation prevents clobbering concurrent or existing bytes.
+
                             with target.open("xb") as handle:
                                 created = target
                                 handle.write(payload)
@@ -209,8 +206,6 @@ def reconcile_files(
                     store.ROOT = original_root
             detail["status"] = "repaired" if apply else "ready"
         except (OSError, ValueError, KeyError, TypeError, SQLAlchemyError) as error:
-            # A rolled-back row must not leave a newly copied orphan. Existing files
-            # are never removed, modified or reclassified as original bytes.
             if created is not None:
                 created.unlink(missing_ok=True)
             report["failed"] += 1

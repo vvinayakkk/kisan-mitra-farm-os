@@ -26,8 +26,7 @@ def _apply(conn, path: Path):
 
 
 def _apply_seed(path: Path):
-    # The generator emits psql COPY FROM STDIN blocks. Keep its transaction and
-    # integrity checks intact rather than splitting CSV and SQL in Python.
+
     result = subprocess.run(
         ["psql", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", str(path)],
         capture_output=True,

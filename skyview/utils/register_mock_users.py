@@ -18,7 +18,7 @@ mock_users = [
         "district": "Ludhiana",
         "excess_resources": "Tractor, Seeder, Labor",
         "required_resources": "Harvester, Pesticide Spray",
-        "whatsapp_number": "+919011000001"
+        "whatsapp_number": "+919011000001",
     },
     {
         "phone": "+919011000002",
@@ -32,7 +32,7 @@ mock_users = [
         "district": "Jalandhar",
         "excess_resources": "Harvester, Seed Driller",
         "required_resources": "Tractor, Organic Compost",
-        "whatsapp_number": "+919011000002"
+        "whatsapp_number": "+919011000002",
     },
     {
         "phone": "+919011000003",
@@ -46,7 +46,7 @@ mock_users = [
         "district": "Nashik",
         "excess_resources": "Drip Irrigation Pipes, Organic Compost, Tractor",
         "required_resources": "Labor, Solar Water Pump",
-        "whatsapp_number": "+919011000003"
+        "whatsapp_number": "+919011000003",
     },
     {
         "phone": "+919011000004",
@@ -60,7 +60,7 @@ mock_users = [
         "district": "Anand",
         "excess_resources": "Solar Water Pump, Urea Fertilizer",
         "required_resources": "Tractor, Harvesting Labor",
-        "whatsapp_number": "+919011000004"
+        "whatsapp_number": "+919011000004",
     },
     {
         "phone": "+919011000005",
@@ -74,7 +74,7 @@ mock_users = [
         "district": "Guntur",
         "excess_resources": "Labor, Pesticide Spray, Cotton Picker",
         "required_resources": "Tractor, Seed Driller",
-        "whatsapp_number": "+919011000005"
+        "whatsapp_number": "+919011000005",
     },
     {
         "phone": "+919011000006",
@@ -88,7 +88,7 @@ mock_users = [
         "district": "Salem",
         "excess_resources": "Tractor, Shredder Machine",
         "required_resources": "Water Pump, Organic Compost",
-        "whatsapp_number": "+919011000006"
+        "whatsapp_number": "+919011000006",
     },
     {
         "phone": "+919011000007",
@@ -102,7 +102,7 @@ mock_users = [
         "district": "Meerut",
         "excess_resources": "Sugarcane Cutter, Tractor",
         "required_resources": "Urea Fertilizer, Labor",
-        "whatsapp_number": "+919011000007"
+        "whatsapp_number": "+919011000007",
     },
     {
         "phone": "+919011000008",
@@ -116,7 +116,7 @@ mock_users = [
         "district": "Bardhaman",
         "excess_resources": "Paddy Transplanter, Seed Driller",
         "required_resources": "Tractor, Organic Fertilizer",
-        "whatsapp_number": "+919011000008"
+        "whatsapp_number": "+919011000008",
     },
     {
         "phone": "+919011000009",
@@ -130,7 +130,7 @@ mock_users = [
         "district": "Jaipur",
         "excess_resources": "Thresher, Solar Fencing Kit",
         "required_resources": "Water Pump, Tractor",
-        "whatsapp_number": "+919011000009"
+        "whatsapp_number": "+919011000009",
     },
     {
         "phone": "+919011000010",
@@ -144,7 +144,7 @@ mock_users = [
         "district": "Dharwad",
         "excess_resources": "Tractor, Rotavator, Labor",
         "required_resources": "Harvester, Pesticide Spray",
-        "whatsapp_number": "+919011000010"
+        "whatsapp_number": "+919011000010",
     },
     {
         "phone": "+919011000011",
@@ -158,7 +158,7 @@ mock_users = [
         "district": "Indore",
         "excess_resources": "Seed Driller, Thresher",
         "required_resources": "Tractor, Sprinkler Pipes",
-        "whatsapp_number": "+919011000011"
+        "whatsapp_number": "+919011000011",
     },
     {
         "phone": "+919011000012",
@@ -172,7 +172,7 @@ mock_users = [
         "district": "Palakkad",
         "excess_resources": "Organic Fertilizer, Water Pump",
         "required_resources": "Paddy Transplanter, Labor",
-        "whatsapp_number": "+919011000012"
+        "whatsapp_number": "+919011000012",
     },
     {
         "phone": "+919011000013",
@@ -186,7 +186,7 @@ mock_users = [
         "district": "Guwahati",
         "excess_resources": "Labor, Shredder Machine",
         "required_resources": "Tractor, Soil PH Tester",
-        "whatsapp_number": "+919011000013"
+        "whatsapp_number": "+919011000013",
     },
     {
         "phone": "+919011000014",
@@ -200,10 +200,8 @@ mock_users = [
         "district": "Bhubaneswar",
         "excess_resources": "Water Pump, Rotavator",
         "required_resources": "Tractor, Harvesting Labor",
-        "whatsapp_number": "+919011000014"
+        "whatsapp_number": "+919011000014",
     },
-    
-    # Enrichment of existing users
     {
         "phone": "+919930679651",
         "name": "ABC",
@@ -216,7 +214,7 @@ mock_users = [
         "district": "Mumbai",
         "excess_resources": "Tractor, Sprinkler Pipes",
         "required_resources": "Harvester, Labor",
-        "whatsapp_number": "+919930679651"
+        "whatsapp_number": "+919930679651",
     },
     {
         "phone": "7620072562",
@@ -230,7 +228,7 @@ mock_users = [
         "district": "Mumbai",
         "excess_resources": "Tractor, Organic Compost",
         "required_resources": "Harvester, Labor",
-        "whatsapp_number": "+917620072562"
+        "whatsapp_number": "+917620072562",
     },
     {
         "phone": "8591616138",
@@ -244,7 +242,7 @@ mock_users = [
         "district": "Kalyan",
         "excess_resources": "Harvester, Seed Driller",
         "required_resources": "Labor, Urea Fertilizer",
-        "whatsapp_number": "+918591616138"
+        "whatsapp_number": "+918591616138",
     },
     {
         "phone": "7820859781",
@@ -258,7 +256,7 @@ mock_users = [
         "district": "Mumbai",
         "excess_resources": "Labor, Tractor",
         "required_resources": "Tractor, Organic Compost",
-        "whatsapp_number": "+917820859781"
+        "whatsapp_number": "+917820859781",
     },
     {
         "phone": "+917820859781",
@@ -272,7 +270,7 @@ mock_users = [
         "district": "Mumbai",
         "excess_resources": "Labor, Tractor",
         "required_resources": "Tractor, Organic Compost",
-        "whatsapp_number": "+917820859781"
+        "whatsapp_number": "+917820859781",
     },
     {
         "phone": "9321481275",
@@ -286,7 +284,7 @@ mock_users = [
         "district": "Nashik",
         "excess_resources": "Water Pump, Tractor",
         "required_resources": "Labor, Pesticide Spray",
-        "whatsapp_number": "+919321481275"
+        "whatsapp_number": "+919321481275",
     },
     {
         "phone": "+918087379943",
@@ -300,7 +298,7 @@ mock_users = [
         "district": "Palghar",
         "excess_resources": "Labor, Pesticide Spray",
         "required_resources": "Tractor, Seed Driller",
-        "whatsapp_number": "+918087379943"
+        "whatsapp_number": "+918087379943",
     },
     {
         "phone": "+919000000001",
@@ -314,7 +312,7 @@ mock_users = [
         "district": "Nashik",
         "excess_resources": "Tractor",
         "required_resources": "Harvester",
-        "whatsapp_number": "+919000000001"
+        "whatsapp_number": "+919000000001",
     },
     {
         "phone": "+919000000002",
@@ -328,7 +326,7 @@ mock_users = [
         "district": "Nashik",
         "excess_resources": "Harvester",
         "required_resources": "Labor",
-        "whatsapp_number": "+919000000002"
+        "whatsapp_number": "+919000000002",
     },
     {
         "phone": "+919000000003",
@@ -342,23 +340,21 @@ mock_users = [
         "district": "Nashik",
         "excess_resources": "Labor",
         "required_resources": "Tractor",
-        "whatsapp_number": "+919000000003"
-    }
+        "whatsapp_number": "+919000000003",
+    },
 ]
+
 
 def seed():
     print("Starting database seeding for Indian Farmers...")
-    
-    # Wait for 1s to make sure hot reload is completed
+
     time.sleep(1)
-    
+
     success_count = 0
     for user in mock_users:
         data = json.dumps(user).encode("utf-8")
         req = urllib.request.Request(
-            BACKEND_URL,
-            data=data,
-            headers={"Content-Type": "application/json"}
+            BACKEND_URL, data=data, headers={"Content-Type": "application/json"}
         )
         try:
             with urllib.request.urlopen(req) as response:
@@ -369,11 +365,14 @@ def seed():
                 else:
                     print(f"Failed to register {user['name']}: {result}")
         except urllib.error.URLError as e:
-            print(f"Connection error for {user['name']}: {e}. Retrying locally via db connection...")
-            # If server is not responding or loaded yet, register directly via db fallback
+            print(
+                f"Connection error for {user['name']}: {e}. Retrying locally via db connection..."
+            )
+
             try:
                 from skyview.data.db import get_session
                 from sqlalchemy import text
+
                 db = get_session()
                 db.execute(
                     text("""
@@ -397,19 +396,19 @@ def seed():
                             whatsapp_number    = COALESCE(EXCLUDED.whatsapp_number, users.whatsapp_number)
                     """),
                     {
-                        "phone":              user["phone"],
-                        "name":               user["name"],
-                        "land":               user["land_size_acres"],
-                        "location":           user["location"],
-                        "crops":              user["crops"],
-                        "latitude":           user["latitude"],
-                        "longitude":          user["longitude"],
-                        "state":              user["state"],
-                        "district":           user["district"],
-                        "excess_resources":   user["excess_resources"],
+                        "phone": user["phone"],
+                        "name": user["name"],
+                        "land": user["land_size_acres"],
+                        "location": user["location"],
+                        "crops": user["crops"],
+                        "latitude": user["latitude"],
+                        "longitude": user["longitude"],
+                        "state": user["state"],
+                        "district": user["district"],
+                        "excess_resources": user["excess_resources"],
                         "required_resources": user["required_resources"],
-                        "whatsapp_number":    user["whatsapp_number"],
-                    }
+                        "whatsapp_number": user["whatsapp_number"],
+                    },
                 )
                 db.commit()
                 db.close()
@@ -417,8 +416,11 @@ def seed():
                 success_count += 1
             except Exception as dbe:
                 print(f"DB direct seed failed: {dbe}")
-                
-    print(f"Seeding complete. Successfully registered {success_count}/{len(mock_users)} farmers.")
+
+    print(
+        f"Seeding complete. Successfully registered {success_count}/{len(mock_users)} farmers."
+    )
+
 
 if __name__ == "__main__":
     seed()

@@ -1,4 +1,3 @@
--- Owned farmer workspace records. Repeatable, additive; no automatic hardware execution.
 BEGIN;
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS ledger_entries (
@@ -13,7 +12,7 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
  CHECK(basis<>'receivable' OR kind='income'));
 ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS origin text NOT NULL DEFAULT 'user_reported' CHECK(origin IN ('user_reported','synthetic'));
 UPDATE ledger_entries l SET origin='synthetic' FROM expenses e WHERE e.id=l.id AND e.execution_key LIKE 'demo-expense-%' AND l.origin='user_reported';
--- Preserve original expense IDs and idempotent assistant expense writes.
+
 INSERT INTO ledger_entries(id,farmer_id,cycle_id,description,category,kind,basis,amount_inr,occurred_on,origin)
 SELECT id,farmer_id,cycle_id,description,category,'expense','actual',amount_inr,spent_on,CASE WHEN execution_key LIKE 'demo-expense-%' THEN 'synthetic' ELSE 'user_reported' END FROM expenses ON CONFLICT(id) DO NOTHING;
 CREATE OR REPLACE FUNCTION mirror_expense_ledger() RETURNS trigger LANGUAGE plpgsql SET search_path=sv3,pg_catalog AS $$
@@ -40,7 +39,7 @@ CREATE TABLE IF NOT EXISTS mission_receipts (
 ALTER TABLE disease_cases ADD COLUMN IF NOT EXISTS title text NOT NULL DEFAULT 'Crop photo assessment';
 ALTER TABLE disease_cases ADD COLUMN IF NOT EXISTS row_version bigint NOT NULL DEFAULT 1;
 ALTER TABLE disease_cases ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
--- Existing assessments retain their original chronology on first migration.
+
 UPDATE disease_cases SET updated_at=created_at WHERE row_version=1 AND updated_at>created_at;
 CREATE UNIQUE INDEX IF NOT EXISTS disease_case_owner_key ON disease_cases(id,farmer_id);
 CREATE TABLE IF NOT EXISTS crop_case_notes (
@@ -59,7 +58,7 @@ DO $$ DECLARE tab text; BEGIN
   EXECUTE format('GRANT SELECT,INSERT,UPDATE ON sv3.%I TO sv3_writer',tab);
  END LOOP;
 END $$;
--- Audit/replay receipts are append-only for the application role.
+
 REVOKE UPDATE ON mission_receipts,workflow_tool_executions FROM sv3_writer;
 CREATE INDEX IF NOT EXISTS ledger_owner_date ON ledger_entries(farmer_id,occurred_on DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS mission_owner_state ON farm_missions(farmer_id,status,updated_at DESC);

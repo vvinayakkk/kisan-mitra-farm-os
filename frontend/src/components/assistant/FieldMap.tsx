@@ -10,7 +10,7 @@ interface Plot {
     coordinates: number[][][] | number[][][][];
   } | null;
 }
-/** Local-only field sketch. Never fetches tiles or sends private coordinates. */
+
 export function FieldMap({
   plots,
   onEdit,

@@ -1,25 +1,9 @@
 # Contributing to Kisan Mitra Farm OS
 
-Kisan Mitra is built by init.io for the AI Builder Cup. This private competition repository uses focused changes that reviewers can understand before a later public release.
+Kisan Mitra is built by init.io for the AI Builder Cup and is licensed under the repository's [MIT License](LICENSE). Keep a change focused on a farmer-visible behavior or a specific platform contract. Use a short-lived branch and a Conventional Commit subject such as `fix(markets): preserve variety in history links`.
 
-## Make a focused change
+Read the [architecture](docs/architecture.md), [feature map](docs/features.md), [API inventory](docs/api/endpoints.md) and [data model](docs/data-model.md) before changing a cross-cutting path. If a route, skill, schema or provider contract changes, update its corresponding documentation and tests in the same change. The canonical backend path uses PostgreSQL v3; classic views have compatibility routes. Do not introduce a second owner or source-of-truth path for a convenience UI.
 
-Describe the farmer problem, work on a short-lived branch and use a Conventional Commit subject such as `fix(markets): preserve variety when opening history`. Keep backend contracts, frontend behavior and documentation aligned. Add tests for meaningful behavior and report the local checks you ran.
+Run the checks that cover the change. The full backend wrapper is `.venv/bin/python data_platform/v3/test_backend.py` after preparing the dedicated test database. Frontend checks from `frontend/` are `npx tsc --noEmit -p tsconfig.app.json`, `npx vitest run` and `npm run build`. Use `flutter analyze` and `flutter test` from `mobile/` when changing Flutter code. HLS source requires its separate toolchain. Report any check you could not run rather than implying it passed.
 
-## Local checks
-
-```bash
-.venv/bin/python data_platform/v3/test_backend.py
-cd frontend
-npx tsc --noEmit -p tsconfig.app.json
-npx vitest run
-npm run build
-```
-
-## Source evidence
-
-Do not commit keys, local databases, generated artifacts, private farmer data or recordings. Keep illustrative prices and field cases separate from verified observations. A provider URL alone is not proof of a working integration: include source, license, units, time and failure behavior when adding one.
-
-## Review standard
-
-Preserve explicit review before assistant writes, owner scoping for private records, accessible controls and clear provenance. State what changed for a farmer, what external service it needs, how it was verified and what remains uncertain. The maintainers will choose an open-source license before public release.
+Protect farmer ownership, consent, source timestamps and review boundaries. A new write needs exact reviewed arguments and replay behavior; a new external connector needs licensing/access, units, freshness and outage handling. Do not commit provider keys, local databases, recordings, built APKs, raw media or generated farm files. Describe the farmer-facing effect, migration impact, verification and remaining limitations in the pull request.

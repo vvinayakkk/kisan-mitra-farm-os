@@ -58,7 +58,7 @@ export default function Chat() {
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
-    // Add user message
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -71,7 +71,7 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      // Call the chat API
+
       const API_URL = import.meta.env.VITE_API_URL || '';
       const response = await apiFetch(`${API_URL}/api/chat`, {
         method: "POST",
@@ -81,7 +81,7 @@ export default function Chat() {
 
       const data = await response.json();
 
-      // Add assistant response
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -115,13 +115,13 @@ export default function Chat() {
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
       <FarmBackground />
-      
+
       <div style={{ position: 'relative', zIndex: 50 }}>
         <DashboardHeader lastUpdateSeconds={0} sensorNodeOnline={true} />
       </div>
 
       <main style={{ position: 'relative', zIndex: 10, maxWidth: '900px', margin: '0 auto', padding: '32px 20px 60px' }}>
-        {/* Header */}
+        {            }
         <div style={{ marginBottom: '32px', textAlign: 'center' }}>
           <h1 style={{
             fontSize: '36px', fontWeight: 800, fontFamily: "'Nunito', sans-serif",
@@ -134,7 +134,7 @@ export default function Chat() {
           </p>
         </div>
 
-        {/* Chat Container */}
+        {                    }
         <GlassSection title="">
           <div style={{
             height: '500px', overflow: 'auto',
@@ -159,8 +159,8 @@ export default function Chat() {
                     maxWidth: '70%',
                     padding: '12px 16px',
                     borderRadius: '12px',
-                    background: msg.type === 'user' 
-                      ? '#2ECC71' 
+                    background: msg.type === 'user'
+                      ? '#2ECC71'
                       : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                     color: msg.type === 'user' ? 'white' : isDark ? '#E0E0E0' : '#333',
                     wordWrap: 'break-word',
@@ -173,15 +173,15 @@ export default function Chat() {
               ))
             )}
             {loading && (
-              <div style={{ 
-                display: 'flex', 
+              <div style={{
+                display: 'flex',
                 flexDirection: 'column',
-                gap: '8px', 
-                marginLeft: '16px', 
-                marginTop: '16px', 
-                padding: '16px 20px', 
-                borderRadius: '16px', 
-                background: isDark ? 'rgba(46,204,113,0.15)' : 'rgba(46,204,113,0.08)', 
+                gap: '8px',
+                marginLeft: '16px',
+                marginTop: '16px',
+                padding: '16px 20px',
+                borderRadius: '16px',
+                background: isDark ? 'rgba(46,204,113,0.15)' : 'rgba(46,204,113,0.08)',
                 border: `1px solid ${isDark ? 'rgba(46,204,113,0.3)' : 'rgba(46,204,113,0.2)'}`,
                 maxWidth: 'max-content',
                 animation: 'pulse 2s infinite ease-in-out'
@@ -191,12 +191,12 @@ export default function Chat() {
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
                 </div>
-                <span style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 800, 
-                  color: '#2ECC71', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '1px' 
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  color: '#2ECC71',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
                 }}>
                   {t.thinking}
                 </span>
@@ -205,7 +205,7 @@ export default function Chat() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
+          {                }
           <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px' }}>
             <input
               type="text"

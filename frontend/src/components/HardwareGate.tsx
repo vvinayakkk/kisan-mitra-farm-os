@@ -51,7 +51,7 @@ export function HardwareGate({ children }: HardwareGateProps) {
             boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.35)' : '0 16px 48px rgba(0,0,0,0.1)',
           }}
         >
-          {/* Icon */}
+          {          }
           <div style={{
             width: '80px', height: '80px', borderRadius: '22px',
             background: isDark ? 'rgba(46,204,113,0.08)' : 'rgba(46,204,113,0.06)',

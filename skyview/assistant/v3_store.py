@@ -184,8 +184,7 @@ def _restore_display_results(db, state, conversation_id, recent_events):
             targets.append({"run": rid, "call": call})
     if not targets:
         return
-    # Use run-indexed exact call matches so old display rows remain recoverable even
-    # after more than 200 streamed progress events. No other tenant or conversation.
+
     old_events = (
         db.execute(
             text(
@@ -221,7 +220,7 @@ def save(sid, state):
             else s["conversation_id"]
         )
         state["conversation_id"] = uuid.UUID(str(cid)).hex
-        # A supplied conversation id never transfers ownership: composite FK plus RLS.
+
         db.execute(
             text(
                 "INSERT INTO sv3.conversations(id,farmer_id,title) VALUES(:id,:f,:title) ON CONFLICT(id) DO NOTHING"
@@ -284,8 +283,7 @@ def save(sid, state):
                         ),
                         {"scope": str(fid) + fact["fact_key"]},
                     )
-                    # Evidence is append-only. Replaying it must never expire a
-                    # newer correction, including an explicitly forgotten fact.
+
                     fact_id = uuid.uuid5(mid, fact["fact_key"])
                     if db.execute(
                         text("SELECT EXISTS(SELECT 1 FROM sv3.memories WHERE id=:id)"),
@@ -431,7 +429,6 @@ def canonical_record(db, fid, rid, kind, data, key):
                 p,
             )
         else:
-            # All document bytes are persisted by attachments.extract before metadata insertion.
             path = (
                 store.ROOT
                 / ("photos" if data.get("mime", "").startswith("image/") else "uploads")
@@ -457,7 +454,6 @@ def canonical_record(db, fid, rid, kind, data, key):
 def records(sid, kind, *, include_deleted=False):
     fid = farmer_id(sid)
     with database.connection(fid) as db:
-        # Canonical calendar includes imported tasks, not just new chat records.
         if kind == "task":
             rows = (
                 db.execute(
@@ -490,7 +486,7 @@ def records(sid, kind, *, include_deleted=False):
             rows = (
                 db.execute(
                     text(
-                        "SELECT *,occurred_on AS spent_on FROM sv3.ledger_entries WHERE farmer_id=:f AND kind='expense' AND basis='actual' AND deleted_at IS NULL ORDER BY occurred_on DESC LIMIT 100"
+                        "SELECT *,occurred_on AS spent_on FROM sv3.ledger_entries WHERE farmer_id=:f AND kind='expense' AND basis='actual' AND deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT 100"
                     ),
                     {"f": fid},
                 )

@@ -147,11 +147,24 @@ async def read_audio(upload: UploadFile):
                     or audio.getnframes() / audio.getframerate() > RECORDING_SECONDS
                 ):
                     raise HTTPException(400, "Keep this recording below 30 seconds.")
-                if audio.getnchannels() not in {1, 2} or audio.getsampwidth() not in {1, 2, 3, 4}:
+                if audio.getnchannels() not in {1, 2} or audio.getsampwidth() not in {
+                    1,
+                    2,
+                    3,
+                    4,
+                }:
                     raise HTTPException(400, "Use a mono or stereo voice recording.")
-                expected = audio.getnframes() * audio.getnchannels() * audio.getsampwidth()
-                if expected == 0 or len(audio.readframes(audio.getnframes())) != expected:
-                    raise HTTPException(400, "The recording is empty or incomplete. Please record again.")
+                expected = (
+                    audio.getnframes() * audio.getnchannels() * audio.getsampwidth()
+                )
+                if (
+                    expected == 0
+                    or len(audio.readframes(audio.getnframes())) != expected
+                ):
+                    raise HTTPException(
+                        400,
+                        "The recording is empty or incomplete. Please record again.",
+                    )
         except (wave.Error, EOFError) as exc:
             raise HTTPException(400, "This recording could not be read.") from exc
     return content, mime
@@ -243,7 +256,9 @@ async def speech_capabilities():
     """Report actual configuration, never keys or an invented realtime service."""
     settings = get_settings()
     return {
-        "transcription_available": bool(settings.SARVAM_AI_API_KEY or settings.GROQ_API_KEYS),
+        "transcription_available": bool(
+            settings.SARVAM_AI_API_KEY or settings.GROQ_API_KEYS
+        ),
         "playback_available": bool(settings.SARVAM_AI_API_KEY),
         "transcription_languages": sorted(LANGUAGES),
         "playback_languages": sorted(TTS_LANGUAGES),
@@ -252,7 +267,10 @@ async def speech_capabilities():
         "transcription_mode": "completed_recording",
         "requires_review": True,
         "audio_stored_by_application": False,
-        "conversation_available": bool((settings.SARVAM_AI_API_KEY or settings.GROQ_API_KEYS) and settings.SARVAM_AI_API_KEY),
+        "conversation_available": bool(
+            (settings.SARVAM_AI_API_KEY or settings.GROQ_API_KEYS)
+            and settings.SARVAM_AI_API_KEY
+        ),
         "conversation_mode": "automatic_speech_turns",
         "conversation_agent": "/api/assistant/sessions/{sid}/run",
         "write_review": "Shared chat questions and approval cards; voice never bypasses review",
@@ -501,9 +519,7 @@ class VoiceMessage(BaseModel):
     stream_steps: bool = True
     language: str = "hi-IN"
     station_id: str = Field(default="WS01", max_length=64)
-    phone: str | None = Field(
-        default=None, max_length=30
-    )  # compatibility only, never scope
+    phone: str | None = Field(default=None, max_length=30)
 
     @field_validator("language")
     @classmethod
@@ -574,7 +590,7 @@ async def answer_voice(owner, body):
         context["schemes"] = await asyncio.to_thread(
             repo.schemes, farm.get("state") or "", "", 4
         )
-    # Server capability fixes the owner. A phone in the payload has no authority.
+
     system = (
         "You are Mitra's read-only voice assistant for a farmer. Reply concisely in "
         + body.language

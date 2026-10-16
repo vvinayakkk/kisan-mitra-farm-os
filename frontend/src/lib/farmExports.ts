@@ -1,4 +1,3 @@
-/** Local exports only. Values stay as data when opened in a spreadsheet. */
 export type ExportRow = Record<string, unknown>;
 export type ExportColumn = { key: string; label: string };
 export type ExportOptions = {
@@ -13,7 +12,7 @@ export function csvCell(value: unknown): string {
       : typeof value === "object"
         ? JSON.stringify(value)
         : String(value);
-  // Spreadsheet formula triggers can be preceded by whitespace/control characters.
+
   if (
     /^[\s\u0000-\u001f]*[=+\-@]/.test(text) &&
     !(typeof value === "number" && Number.isFinite(value))
@@ -64,7 +63,7 @@ export function downloadText(
   document.body.append(link);
   link.click();
   link.remove();
-  // Give the browser time to start consuming the blob before revoking it.
+
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export function exportCsv(

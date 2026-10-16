@@ -99,7 +99,7 @@
 .composer-footer > .live-voice-controls { margin-left: auto; order: 90; }
 .mitra-chat:has(.live-conversation) .composer-footer > button:last-child { order: 100; margin-left: 8px; }
 .mitra-chat:has(.live-conversation) .composer-footer { gap: 6px; }
-/* Override the composer's generic square send-button rule for voice controls. */
+
 .composer-footer .live-voice-controls button {
   width: 34px;
   height: 34px;

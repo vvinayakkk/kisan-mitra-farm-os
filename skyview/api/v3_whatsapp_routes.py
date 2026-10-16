@@ -287,7 +287,7 @@ async def delivery_status(request: Request):
         "undelivered",
     }:
         return twiml()
-    # Resolve only an existing delivery to its owner through a narrow function.
+
     with db.connection(ingest=True) as conn:
         owner = conn.execute(
             text("SELECT sv3.whatsapp_delivery_owner(:sid)"), {"sid": sid}

@@ -58,7 +58,7 @@ def extract_facts(content):
         or _UNTRUSTED.search(content)
     ):
         return []
-    # Added attachment names, pasted quotations and code are untrusted context.
+
     content = content.split("\nSelected uploaded attachments", 1)[0]
     facts = {}
     for clause in re.split(

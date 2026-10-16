@@ -12,7 +12,7 @@ import re
 from typing import List, Optional
 
 import requests
-from fastapi import APIRouter, HTTPException, Request, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, File, UploadFile, Form
 from pydantic import BaseModel, validator
 
 from skyview.agents.mandi_agent import get_context_string
@@ -38,7 +38,6 @@ class SynthesisReq(BaseModel):
 
 
 class TranslateReq(BaseModel):
-    # Accept either texts=["a","b"] (list) or text="a" (single string)
     texts: Optional[List[str]] = None
     text: Optional[str] = None
     target_language: str = "hi-IN"
@@ -108,7 +107,10 @@ async def trigger_vapi_call(req: VapiCallReq):
     try:
         resp = requests.post(
             "https://api.vapi.ai/call/phone",
-            headers={"Authorization": f"Bearer {settings.VAPI_AI_API_KEY}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {settings.VAPI_AI_API_KEY}",
+                "Content-Type": "application/json",
+            },
             json=payload,
         )
         resp.raise_for_status()
@@ -122,28 +124,27 @@ async def trigger_vapi_call(req: VapiCallReq):
 async def transcribe_audio(
     file: UploadFile = File(...),
     language_code: str = Form("hi-IN"),
-    model: str = Form("saaras:v3")
+    model: str = Form("saaras:v3"),
 ):
     if not settings.SARVAM_AI_API_KEY:
         raise HTTPException(500, "SARVAM_AI_API_KEY not configured")
 
     try:
         file_bytes = await file.read()
-        headers = {
-            "api-subscription-key": settings.SARVAM_AI_API_KEY
-        }
+        headers = {"api-subscription-key": settings.SARVAM_AI_API_KEY}
         files = {
-            "file": (file.filename or "recording.webm", file_bytes, file.content_type or "audio/webm")
+            "file": (
+                file.filename or "recording.webm",
+                file_bytes,
+                file.content_type or "audio/webm",
+            )
         }
-        data = {
-            "model": model,
-            "language_code": language_code
-        }
+        data = {"model": model, "language_code": language_code}
         resp = requests.post(
             "https://api.sarvam.ai/speech-to-text",
             headers=headers,
             files=files,
-            data=data
+            data=data,
         )
         resp.raise_for_status()
         res_data = resp.json()
@@ -151,7 +152,7 @@ async def transcribe_audio(
         return {
             "status": "success",
             "transcript": transcript,
-            "language": language_code
+            "language": language_code,
         }
     except Exception as exc:
         logger.error("Sarvam STT failed: %s", exc)
@@ -185,10 +186,7 @@ async def synthesize_speech(req: SynthesisReq):
         data = resp.json()
         audios = data.get("audios", [])
         audio_b64 = audios[0] if audios else data.get("audio", "")
-        return {
-            "status": "success",
-            "audio": audio_b64
-        }
+        return {"status": "success", "audio": audio_b64}
     except Exception as exc:
         logger.error("Sarvam TTS failed: %s", exc)
         raise HTTPException(500, f"TTS failed: {exc}")
@@ -201,18 +199,25 @@ async def translate_texts(req: TranslateReq):
         return {"status": "success", "translations": {}}
 
     if not settings.SARVAM_AI_API_KEY:
-        mocked = {t: f"[{req.target_language.split('-')[0].upper()}] {t}" for t in texts}
+        mocked = {
+            t: f"[{req.target_language.split('-')[0].upper()}] {t}" for t in texts
+        }
         return {"status": "success", "translations": mocked, "mocked": True}
     try:
         delimiter = " \n\n "
         resp = requests.post(
             "https://api.sarvam.ai/translate",
-            headers={"api-subscription-key": settings.SARVAM_AI_API_KEY, "Content-Type": "application/json"},
+            headers={
+                "api-subscription-key": settings.SARVAM_AI_API_KEY,
+                "Content-Type": "application/json",
+            },
             json={
                 "input": delimiter.join(texts),
                 "source_language_code": req.source_language,
                 "target_language_code": req.target_language,
-                "speaker_gender": "Male", "mode": "formal", "model": "sarvam-translate:v1",
+                "speaker_gender": "Male",
+                "mode": "formal",
+                "model": "sarvam-translate:v1",
             },
         )
         resp.raise_for_status()
@@ -239,7 +244,11 @@ async def voice_profile_update(req: VoiceProfileReq):
     )
     raw = await invoke_llm([("user", prompt)], temperature=0.1, timeout=15)
     if not raw:
-        return {"status": "error", "message": "LLM unavailable", "identified_fields": {}}
+        return {
+            "status": "error",
+            "message": "LLM unavailable",
+            "identified_fields": {},
+        }
     data = _clean_json(raw)
     return {"status": "success", "identified_fields": data, "raw": raw}
 
@@ -248,7 +257,7 @@ async def voice_profile_update(req: VoiceProfileReq):
 async def voice_process(
     audio: UploadFile = File(...),
     language_code: str = Form("hi-IN"),
-    model: str = Form("saaras:v3")
+    model: str = Form("saaras:v3"),
 ):
     """
     Process voice audio input:
@@ -259,35 +268,38 @@ async def voice_process(
     if settings.SARVAM_AI_API_KEY:
         try:
             file_bytes = await audio.read()
-            headers = {
-                "api-subscription-key": settings.SARVAM_AI_API_KEY
-            }
+            headers = {"api-subscription-key": settings.SARVAM_AI_API_KEY}
             files = {
-                "file": (audio.filename or "recording.webm", file_bytes, audio.content_type or "audio/webm")
+                "file": (
+                    audio.filename or "recording.webm",
+                    file_bytes,
+                    audio.content_type or "audio/webm",
+                )
             }
-            data = {
-                "model": model,
-                "language_code": language_code
-            }
+            data = {"model": model, "language_code": language_code}
             resp = requests.post(
                 "https://api.sarvam.ai/speech-to-text",
                 headers=headers,
                 files=files,
-                data=data
+                data=data,
             )
             resp.raise_for_status()
             res_data = resp.json()
             transcript = res_data.get("transcript") or res_data.get("text") or ""
         except Exception as exc:
             logger.error("Sarvam STT failed in voice_process: %s", exc)
-            # Fallback if API fails
+
             transcript = "My name is Raju, I have 5 acres of land in Pune Maharashtra, I grow wheat and onion"
     else:
         logger.warning("SARVAM_AI_API_KEY not configured. Using fallback transcript.")
         transcript = "My name is Raju, I have 5 acres of land in Pune Maharashtra, I grow wheat and onion"
 
     if not transcript:
-        return {"status": "error", "message": "Could not transcribe audio.", "identified_fields": {}}
+        return {
+            "status": "error",
+            "message": "Could not transcribe audio.",
+            "identified_fields": {},
+        }
 
     prompt = (
         "Extract farmer profile fields from this transcript. "
@@ -299,19 +311,28 @@ async def voice_process(
         f"Transcript: {transcript}"
     )
     raw = await invoke_llm([("user", prompt)], temperature=0.1, timeout=15)
-    
+
     if not raw:
-        # Fallback parsing in case LLM is unavailable (e.g. no Groq key configured)
         if "Raju" in transcript:
             data = {
                 "name": "Raju",
                 "land_size_acres": 5.0,
                 "location": "Pune, Maharashtra",
-                "crops": ["wheat", "onion"]
+                "crops": ["wheat", "onion"],
             }
         else:
             data = {}
-        return {"status": "success", "identified_fields": data, "mocked": True, "transcript": transcript}
+        return {
+            "status": "success",
+            "identified_fields": data,
+            "mocked": True,
+            "transcript": transcript,
+        }
 
     data = _clean_json(raw)
-    return {"status": "success", "identified_fields": data, "raw": raw, "transcript": transcript}
+    return {
+        "status": "success",
+        "identified_fields": data,
+        "raw": raw,
+        "transcript": transcript,
+    }

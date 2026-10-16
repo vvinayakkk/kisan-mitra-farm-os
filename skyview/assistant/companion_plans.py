@@ -277,8 +277,7 @@ async def translate_draft(result, language):
         )
     except asyncio.CancelledError:
         raise
-    except Exception as exc:  # noqa: BLE001 -- optional translation must preserve a valid local draft
-        # Retain the useful saved-data plan; never label English fallback as translated.
+    except Exception as exc:
         log.warning("Companion plan translation unavailable (%s)", type(exc).__name__)
     return localized
 
@@ -309,7 +308,7 @@ async def research_for_plan(query, language):
         return await asyncio.wait_for(research(query, language), timeout=35)
     except asyncio.CancelledError:
         raise
-    except Exception as exc:  # noqa: BLE001 -- isolate optional research from durable local preparation
+    except Exception as exc:
         log.warning("Companion research unavailable (%s)", type(exc).__name__)
         return {
             "available": False,
@@ -331,7 +330,7 @@ def claim():
 def complete(job, result, research_result):
     owner = job["farmer_id"]
     today = datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
-    # Source changes produce new drafts; replaying the same job/day cannot multiply them.
+
     dedupe = proposal_key(job["area"], today, result, research_result)
     research_result = {
         **(research_result or {"available": False, "status": "not_requested"}),
@@ -396,8 +395,6 @@ async def process_next():
         result = await asyncio.to_thread(draft, job["area"], context)
         research_result = None
         if job["research"] and result["research_query"]:
-            # Run independent translation and public research concurrently so the
-            # optional provider latency does not stack up inside a durable lease.
             result, research_result = await asyncio.gather(
                 translate_draft(result, context["preferred_language"]),
                 research_for_plan(
@@ -408,9 +405,8 @@ async def process_next():
             result = await translate_draft(result, context["preferred_language"])
         await asyncio.to_thread(complete, job, result, research_result)
     except asyncio.CancelledError:
-        # Lease expiration recovers interrupted jobs after restart.
         raise
-    except Exception as exc:  # noqa: BLE001 -- one failed durable job must not stop other owners
+    except Exception as exc:
         log.warning("Companion preparation failed (%s)", type(exc).__name__)
         await asyncio.to_thread(fail, job)
     return True

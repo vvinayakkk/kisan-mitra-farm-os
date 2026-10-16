@@ -554,7 +554,7 @@ def test_future_plans_do_not_hide_history_or_today_urgency(workspace):
     )
     with db.connection(store.farmer_id(session["id"])) as connection:
         database_now = connection.execute(text("SELECT now()")).scalar()
-    # Use the authoritative DB clock; local VM/application clocks can differ slightly.
+
     assert all(
         datetime.fromisoformat(row["occurred_at"]) <= database_now
         for row in timeline["items"]
@@ -741,7 +741,7 @@ def test_http_mission_runs_keep_owned_receipts_and_resume_questions(
         ).status_code
         == 422
     )
-    # Pause and cancellation gate new assistant work before any provider request.
+
     for status, version in (("active", 1), ("paused", 2), ("cancelled", 3)):
         changed = client.patch(
             f"/api/farm-workspace/missions/{mission['id']}",

@@ -1,7 +1,7 @@
 import { clearAttachmentDrafts } from './attachmentDrafts';
 import { offlineEnabled, OFFLINE_ENABLED_KEY as ENABLED } from './offlineConsent';
 export { offlineEnabled } from './offlineConsent';
-/** Explicit, session-scoped offline snapshots. Never replay mutations. */
+
 const PREFIX = "skyview-offline-v1:";
 const TTL = 24 * 60 * 60 * 1000;
 const ASSISTANT_SNAPSHOTS = new Set(["assistant-session", "assistant-catalog"]);
@@ -9,7 +9,7 @@ export function setOfflineEnabled(enabled: boolean): void {
   try {
     if (enabled) localStorage.setItem(ENABLED, "true");
     else { localStorage.removeItem(ENABLED); clearOfflineData(); }
-  } catch { /* Private browsing or blocked storage: online functionality still works. */ }
+  } catch {                                                                              }
   window.dispatchEvent(new Event("skyview-offline-change"));
 }
 export function clearOfflineData(): void {
@@ -19,7 +19,7 @@ export function clearOfflineData(): void {
       const key = localStorage.key(i);
       if (key?.startsWith(PREFIX) || key?.startsWith("skyview-draft-v1:")) localStorage.removeItem(key);
     }
-  } catch { /* Storage can be unavailable; no mutation is queued elsewhere. */ }
+  } catch {                                                                    }
 }
 function keyFor(session: string, url: string): string { return PREFIX + session + ":" + url; }
 export function cacheableRead(url: string): boolean {
@@ -39,9 +39,9 @@ function snapshotAllowed(session: string, url: string): boolean {
 export function saveSnapshot(session: string, url: string, body: string): void {
   if (!offlineEnabled() || !snapshotAllowed(session, url) || body.length > 200000) return;
   try { localStorage.setItem(keyFor(session, url), JSON.stringify({ capturedAt: Date.now(), body })); }
-  catch { /* Full storage must never turn a successful request into a failure. */ }
+  catch {                                                                         }
 }
-/** Keep origin/source/observation time; all retained provenance becomes explicitly stale. */
+
 function markStale(value: unknown): void {
   if (!value || typeof value !== "object") return;
   if (Array.isArray(value)) { value.forEach(markStale); return; }

@@ -65,10 +65,8 @@ Existing sample records are retained separately; the default API mode remains
 backward compatible for explicit sample/testing workflows. No database provenance
 is rewritten by a display setting.
 
-Validation on 15 October 2026 found 158 official eNAM directory entries, 1,188
-synthetic markets, and 4,591,980 synthetic price observations in the local database.
-No reported price observations were present. The configured OGD connector exhausted
-its bounded retries; additional single-record requests with and without environment
-proxy routing both ended in read timeouts. No fabricated historical archive or
-forthcoming observation was inserted to conceal that source outage. The background
-worker retains its existing retry/backoff and records source health independently.
+Inspect the currently connected database with `python data_platform/v3/check_local.py`
+and `GET /api/data/status` before interpreting a chart or claiming source coverage.
+Counts and freshness vary by installation and by the last successful import. The
+background worker records source health and retries independently; a timeout is not
+evidence of an observed zero price or an empty national market directory.

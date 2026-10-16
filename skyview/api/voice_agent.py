@@ -101,20 +101,40 @@ def _classify_locally(message: str) -> dict[str, Any]:
     tools: list[str] = []
     payload: dict[str, Any] = {}
 
-    if any(token in lowered for token in ["profile", "my details", "about me", "who am i", "farmer info"]):
+    if any(
+        token in lowered
+        for token in ["profile", "my details", "about me", "who am i", "farmer info"]
+    ):
         tools.append("fetch_profile")
-    if any(token in lowered for token in ["weather", "temperature", "humidity", "rain", "sensor", "soil", "moisture"]):
+    if any(
+        token in lowered
+        for token in [
+            "weather",
+            "temperature",
+            "humidity",
+            "rain",
+            "sensor",
+            "soil",
+            "moisture",
+        ]
+    ):
         tools.append("fetch_weather")
     if any(token in lowered for token in ["mandi", "market", "price", "rate", "msp"]):
         tools.append("fetch_mandi")
-    if any(token in lowered for token in ["scheme", "subsidy", "yojana", "government", "loan", "insurance"]):
+    if any(
+        token in lowered
+        for token in ["scheme", "subsidy", "yojana", "government", "loan", "insurance"]
+    ):
         tools.append("fetch_gov_schemes")
     if any(token in lowered for token in ["crop", "sow", "plant", "harvest", "pest"]):
         tools.append("crop_advice")
     if "soil" in lowered:
         tools.append("soil_analysis")
 
-    commodity = re.search(r"\b(wheat|rice|paddy|maize|cotton|soybean|onion|potato|tomato|chilli)\b", lowered)
+    commodity = re.search(
+        r"\b(wheat|rice|paddy|maize|cotton|soybean|onion|potato|tomato|chilli)\b",
+        lowered,
+    )
     if commodity:
         payload["commodity"] = commodity.group(1)
 
@@ -142,18 +162,31 @@ async def _classify_intent(message: str) -> dict[str, Any]:
     if not parsed:
         return local_intent
 
-    allowed = {"fetch_profile", "fetch_weather", "fetch_mandi", "fetch_gov_schemes", "crop_advice", "soil_analysis"}
+    allowed = {
+        "fetch_profile",
+        "fetch_weather",
+        "fetch_mandi",
+        "fetch_gov_schemes",
+        "crop_advice",
+        "soil_analysis",
+    }
     tools = [tool for tool in parsed.get("tools", []) if tool in allowed]
     if not tools:
         tools = local_intent["tools"]
 
     payload = parsed.get("payload")
-    return {"tools": list(dict.fromkeys(tools)), "payload": payload if isinstance(payload, dict) else local_intent["payload"]}
+    return {
+        "tools": list(dict.fromkeys(tools)),
+        "payload": payload if isinstance(payload, dict) else local_intent["payload"],
+    }
 
 
 def _fetch_profile(phone: str | None) -> dict[str, Any]:
     if not phone:
-        return {"available": False, "reason": "No phone number was sent with the voice request."}
+        return {
+            "available": False,
+            "reason": "No phone number was sent with the voice request.",
+        }
 
     db = get_session()
     try:
@@ -191,15 +224,23 @@ def _fallback_schemes(payload: dict[str, Any]) -> dict[str, Any]:
     schemes = FALLBACK_SCHEMES
     if query:
         schemes = [
-            item for item in schemes
+            item
+            for item in schemes
             if query in item["scheme_name"].lower()
             or query in item["scheme_type"].lower()
             or query in item["benefit_description"].lower()
         ]
-    return {"status": "success", "count": len(schemes), "schemes": schemes[:5], "source": "fallback"}
+    return {
+        "status": "success",
+        "count": len(schemes),
+        "schemes": schemes[:5],
+        "source": "fallback",
+    }
 
 
-async def _run_tool(tool: str, payload: dict[str, Any], phone: str | None, station_id: str) -> dict[str, Any]:
+async def _run_tool(
+    tool: str, payload: dict[str, Any], phone: str | None, station_id: str
+) -> dict[str, Any]:
     if tool == "fetch_profile":
         return _fetch_profile(phone)
     if tool == "fetch_weather":
@@ -215,6 +256,7 @@ async def _run_tool(tool: str, payload: dict[str, Any], phone: str | None, stati
     if tool == "fetch_mandi":
         try:
             from skyview.agents import mandi_agent
+
             commodity = payload.get("commodity")
             rates = mandi_agent.fetch_rates(commodity=commodity, limit=5)
             return {"status": "success", "records": rates, "count": len(rates)}
@@ -223,6 +265,7 @@ async def _run_tool(tool: str, payload: dict[str, Any], phone: str | None, stati
     if tool == "crop_advice":
         try:
             from skyview.api.advisor_routes import _build_prompt
+
             sensor = get_latest_weather(station_id) or {}
             prompt = _build_prompt("crops", sensor)
             raw = await invoke_llm([("user", prompt)], temperature=0.3, timeout=12)
@@ -231,12 +274,18 @@ async def _run_tool(tool: str, payload: dict[str, Any], phone: str | None, stati
                     return json.loads(raw.strip().lstrip("```json").rstrip("```"))
                 except Exception:
                     pass
-            return {"advice": raw or "Conditions are favorable for regenerative seasonal planting."}
-        except Exception as e:
-            return {"advice": "Recommend crop rotation and organic mulch for soil nourishment."}
+            return {
+                "advice": raw
+                or "Conditions are favorable for regenerative seasonal planting."
+            }
+        except Exception:
+            return {
+                "advice": "Recommend crop rotation and organic mulch for soil nourishment."
+            }
     if tool == "soil_analysis":
         try:
             from skyview.api.advisor_routes import _build_prompt
+
             sensor = get_latest_weather(station_id) or {}
             prompt = _build_prompt("soil", sensor)
             raw = await invoke_llm([("user", prompt)], temperature=0.3, timeout=12)
@@ -245,9 +294,20 @@ async def _run_tool(tool: str, payload: dict[str, Any], phone: str | None, stati
                     return json.loads(raw.strip().lstrip("```json").rstrip("```"))
                 except Exception:
                     pass
-            return {"score": 78, "status": "Good", "recommendations": ["Incorporate compost", "Monitor root-zone moisture"]}
-        except Exception as e:
-            return {"score": 75, "status": "Stable", "recommendations": ["Optimal organic carbon levels"]}
+            return {
+                "score": 78,
+                "status": "Good",
+                "recommendations": [
+                    "Incorporate compost",
+                    "Monitor root-zone moisture",
+                ],
+            }
+        except Exception:
+            return {
+                "score": 75,
+                "status": "Stable",
+                "recommendations": ["Optimal organic carbon levels"],
+            }
     return await _call_tool(tool, {"limit": 5, **payload})
 
 
@@ -291,10 +351,16 @@ def _deterministic_answer(tool_results: dict[str, dict[str, Any]]) -> str:
     if "fetch_gov_schemes" in tool_results:
         schemes = tool_results["fetch_gov_schemes"].get("schemes", [])[:3]
         if schemes:
-            names = ", ".join(s.get("scheme_name") or s.get("name", "scheme") for s in schemes)
+            names = ", ".join(
+                s.get("scheme_name") or s.get("name", "scheme") for s in schemes
+            )
             lines.append(f"Relevant schemes include {names}.")
 
-    return " ".join(lines) if lines else "I understood your question, but I do not have enough live data to answer it accurately yet."
+    return (
+        " ".join(lines)
+        if lines
+        else "I understood your question, but I do not have enough live data to answer it accurately yet."
+    )
 
 
 async def _orchestrate(message: str, language: str, phone: str | None, station_id: str):
@@ -315,7 +381,11 @@ async def _orchestrate(message: str, language: str, phone: str | None, station_i
 
     yield ("final_response", None)
     fallback_text = _deterministic_answer(tool_results)
-    language_instruction = "Respond in Hindi." if language.startswith("hi") else "Respond in clear English."
+    language_instruction = (
+        "Respond in Hindi."
+        if language.startswith("hi")
+        else "Respond in clear English."
+    )
     context = json.dumps(tool_results, ensure_ascii=False, default=str)
 
     prompt = [
@@ -341,19 +411,29 @@ async def voice_agent(req: VoiceAgentRequest):
     if req.stream_steps:
 
         async def _event_stream():
-            async for process, value in _orchestrate(message, req.language, req.phone, req.station_id):
+            async for process, value in _orchestrate(
+                message, req.language, req.phone, req.station_id
+            ):
                 if process == "__done__":
-                    yield json.dumps({"type": "done", "response": value}, ensure_ascii=False) + "\n"
+                    yield (
+                        json.dumps(
+                            {"type": "done", "response": value}, ensure_ascii=False
+                        )
+                        + "\n"
+                    )
                 else:
-                    yield json.dumps(
-                        {
-                            "type": "step",
-                            "process": process,
-                            "label": PROCESS_LABELS.get(process, process),
-                            "data": value,
-                        },
-                        ensure_ascii=False,
-                    ) + "\n"
+                    yield (
+                        json.dumps(
+                            {
+                                "type": "step",
+                                "process": process,
+                                "label": PROCESS_LABELS.get(process, process),
+                                "data": value,
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
                 await asyncio.sleep(0)
 
         return StreamingResponse(
@@ -364,15 +444,20 @@ async def voice_agent(req: VoiceAgentRequest):
 
     steps: list[dict[str, Any]] = []
     final_response = ""
-    async for process, value in _orchestrate(message, req.language, req.phone, req.station_id):
+    async for process, value in _orchestrate(
+        message, req.language, req.phone, req.station_id
+    ):
         if process == "__done__":
             final_response = value or ""
         else:
-            steps.append({
-                "process": process,
-                "label": PROCESS_LABELS.get(process, process),
-                "data": value,
-            })
+            steps.append(
+                {
+                    "process": process,
+                    "label": PROCESS_LABELS.get(process, process),
+                    "data": value,
+                }
+            )
 
-    return JSONResponse({"steps": steps, "response": final_response, "transcript": message})
-
+    return JSONResponse(
+        {"steps": steps, "response": final_response, "transcript": message}
+    )

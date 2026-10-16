@@ -1,4 +1,3 @@
-# ruff: noqa: F811
 """Durable suggestions are owner-scoped and approval has exactly one saved effect."""
 
 import json
@@ -9,7 +8,6 @@ from sqlalchemy import text
 
 from skyview.assistant import companion_plans as plans
 from skyview.data.v3 import db
-from tests.data_v3.test_companion import companion  # noqa: F401
 
 
 def insert_draft(owner, area="records"):
@@ -36,7 +34,10 @@ def test_edit_approve_replay_and_other_owner(companion):
     client, headers, owners = companion
     older_identifier = insert_draft(owners[0])
     identifier = insert_draft(owners[0])
-    assert older_identifier not in [row["id"] for row in client.get("/api/companion", headers=headers[0]).json()["prepared"]]
+    assert older_identifier not in [
+        row["id"]
+        for row in client.get("/api/companion", headers=headers[0]).json()["prepared"]
+    ]
     assert identifier in [
         row["id"]
         for row in client.get("/api/companion", headers=headers[0]).json()["prepared"]
@@ -87,13 +88,21 @@ def test_edit_approve_replay_and_other_owner(companion):
         )
     summary = client.get("/api/companion", headers=headers[0]).json()
     saved = next(row for row in summary["prepared"] if row["id"] == identifier)
-    assert saved["status"] == "approved" and saved["steps"][0]["title"] == "Inspect the north field"
+    assert (
+        saved["status"] == "approved"
+        and saved["steps"][0]["title"] == "Inspect the north field"
+    )
     assert saved["summary"] == "Saved field context"
-    receipts = [row for row in summary["activity"] if row.get("proposal_id") == identifier]
+    receipts = [
+        row for row in summary["activity"] if row.get("proposal_id") == identifier
+    ]
     assert len(receipts) == 1
     assert receipts[0]["mission_id"] == first.json()["mission_id"]
     assert "tab=missions" in receipts[0]["href"]
-    assert not any(row.get("proposal_id") == identifier for row in client.get("/api/companion", headers=headers[1]).json()["activity"])
+    assert not any(
+        row.get("proposal_id") == identifier
+        for row in client.get("/api/companion", headers=headers[1]).json()["activity"]
+    )
     visible = client.get(
         "/api/companion/proposals?area=records", headers=headers[1]
     ).json()
@@ -185,7 +194,6 @@ def test_retry_remains_bounded_and_stale_worker_cannot_finish(companion):
     identifier = str(uuid.uuid4())
     token = str(uuid.uuid4())
     with db.connection(owners[0], write=True) as conn:
-        # Different area and no live job left after the test.
         conn.execute(
             text(
                 "UPDATE sv3.companion_jobs SET state='failed' WHERE area='today' AND state IN ('queued','running')"

@@ -2,7 +2,7 @@ import { useTheme } from 'next-themes';
 import { MapPin, Navigation, Globe, Radio } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-// Station location — Mumbai, India (matching MQTT simulator)
+
 const STATION = {
     name: 'AgriSense WS01',
     lat: 19.0760,
@@ -37,7 +37,7 @@ export function StationMapPanel() {
             border: isDark ? '1px solid rgba(46,204,113,0.12)' : '1px solid rgba(255,255,255,0.5)',
             transition: 'all 0.4s ease',
         }}>
-            {/* Header */}
+            {            }
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
                 <div style={{
                     width: '4px', height: '22px', borderRadius: '4px',
@@ -76,7 +76,7 @@ export function StationMapPanel() {
                 </div>
             </div>
 
-            {/* Map */}
+            {         }
             <div style={{
                 borderRadius: '14px', overflow: 'hidden',
                 border: isDark ? '1px solid rgba(46,204,113,0.12)' : '1px solid rgba(200,220,200,0.4)',
@@ -93,7 +93,7 @@ export function StationMapPanel() {
                     title="Station Location"
                     loading="lazy"
                 />
-                {/* Overlay gradient at bottom */}
+                {                                }
                 <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px',
                     background: `linear-gradient(transparent, ${isDark ? 'rgba(15,25,15,0.75)' : 'rgba(255,255,255,0.72)'})`,
@@ -101,7 +101,7 @@ export function StationMapPanel() {
                 }} />
             </div>
 
-            {/* Station Info Grid */}
+            {                       }
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ background: cardBg, borderRadius: '12px', padding: '12px', border: cardBorder }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>

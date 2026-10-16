@@ -1,4 +1,3 @@
--- Station reads execute as the caller, so owner RLS still applies.
 CREATE OR REPLACE FUNCTION sv3.pick_station(_key text, _first_station boolean)
 RETURNS TABLE(id uuid, station_key text)
 LANGUAGE sql STABLE SECURITY INVOKER SET search_path = pg_catalog, sv3 AS $$

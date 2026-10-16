@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Cloud, Sun, CloudRain, Wind } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -8,17 +7,17 @@ const WeatherLoader = () => {
     return (
         <div className="flex flex-col items-center justify-center space-y-6">
             <div className="relative w-24 h-24">
-                {/* Animated Sun */}
+                {                  }
                 <div className="absolute top-0 right-0 animate-bounce duration-[3000ms]">
                     <Sun className="w-10 h-10 text-amber-400 animate-spin-slow" />
                 </div>
 
-                {/* Animated Cloud */}
+                {                    }
                 <div className="absolute bottom-2 left-0 animate-pulse transition-all duration-1000">
                     <Cloud className="w-16 h-16 text-primary fill-primary/20" />
                 </div>
 
-                {/* Rain Drops or Wind */}
+                {                        }
                 <div className="absolute bottom-0 left-8 flex space-x-2">
                     {[1, 2, 3].map((i) => (
                         <div

@@ -192,7 +192,7 @@ export default function CropDoctor() {
 
   const API_URL = import.meta.env.VITE_API_URL || "https://brics-agrin-backend.onrender.com";
 
-  // Sanitize and clamp coordinates to ensure 100% boundary safety
+
   const sanitizeBox = (box: BoundingBox) => {
     const x = Math.max(0, Math.min(94, Number(box.x) || 0));
     const y = Math.max(0, Math.min(94, Number(box.y) || 0));
@@ -297,7 +297,7 @@ export default function CropDoctor() {
       </div>
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-        {/* Title Banner */}
+        {                  }
         <div className="text-center max-w-3xl mx-auto mb-8">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-3 font-serif">
             Crop Doctor: Precision Foliar Pathology & Lesion Segmentation
@@ -307,7 +307,7 @@ export default function CropDoctor() {
           </p>
         </div>
 
-        {/* Quick Sample Selector */}
+        {                           }
         <div className="mb-8 flex flex-wrap items-center justify-center gap-2.5">
           <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1.5">
             <Leaf className="w-3.5 h-3.5 text-emerald-500" />
@@ -326,7 +326,7 @@ export default function CropDoctor() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Image Canvas & Upload */}
+          {                                        }
           <div className="lg:col-span-6 space-y-4">
             <div
               className={`relative border-2 border-dashed rounded-3xl overflow-hidden transition-all duration-300 min-h-[380px] flex flex-col items-center justify-center p-4 sm:p-6 text-center backdrop-blur-xl ${
@@ -337,7 +337,7 @@ export default function CropDoctor() {
             >
               {selectedImage ? (
                 <div className="w-full flex flex-col items-center">
-                  {/* Viewport Toolbar */}
+                  {                      }
                   <div className="w-full flex items-center justify-between pb-3 mb-2 border-b border-border/40 text-xs">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Layers className="w-3.5 h-3.5 text-emerald-500" />
@@ -367,7 +367,7 @@ export default function CropDoctor() {
                     </div>
                   </div>
 
-                  {/* 1:1 Fitted Image & SVG Container */}
+                  {                                      }
                   <div className="relative inline-block max-w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black/40 group">
                     <img
                       ref={imageRef}
@@ -376,7 +376,7 @@ export default function CropDoctor() {
                       className="block w-full max-h-[500px] h-auto object-contain mx-auto select-none"
                     />
 
-                    {/* Surgical Precision SVG Lesion Overlay */}
+                    {                                           }
                     {showOverlays && result && result.bounding_boxes && (
                       <svg
                         className="absolute inset-0 w-full h-full pointer-events-auto select-none"
@@ -408,7 +408,7 @@ export default function CropDoctor() {
                               onMouseLeave={() => setHoveredBox(null)}
                               onClick={() => setActiveSelectedBox(activeSelectedBox === idx ? null : idx)}
                             >
-                              {/* Pulsing Lesion Region Fill */}
+                              {                                }
                               <rect
                                 x={box.x}
                                 y={box.y}
@@ -422,7 +422,7 @@ export default function CropDoctor() {
                                 filter={isHovered ? "url(#boxGlow)" : undefined}
                               />
 
-                              {/* Precision Corner Reticles */}
+                              {                               }
                               <path
                                 d={`M ${box.x} ${box.y + cornerLen} L ${box.x} ${box.y} L ${box.x + cornerLen} ${box.y}`}
                                 fill="none"
@@ -452,7 +452,7 @@ export default function CropDoctor() {
                                 strokeLinecap="round"
                               />
 
-                              {/* Surgical Center Reticle Crosshair */}
+                              {                                       }
                               {showCrosshair && isHovered && (
                                 <>
                                   <line
@@ -486,7 +486,7 @@ export default function CropDoctor() {
                                 </>
                               )}
 
-                              {/* Non-Clipping High-Contrast Label Pill */}
+                              {                                           }
                               <rect
                                 x={tagX}
                                 y={tagY}
@@ -537,7 +537,7 @@ export default function CropDoctor() {
                 </div>
               )}
 
-              {/* Upload CTA Controls */}
+              {                         }
               <input
                 ref={fileInputRef}
                 type="file"
@@ -563,7 +563,7 @@ export default function CropDoctor() {
               </div>
             </div>
 
-            {/* Lesion Navigator Cards */}
+            {                            }
             {result && result.bounding_boxes && result.bounding_boxes.length > 0 && (
               <div
                 className={`p-4 rounded-2xl border text-xs backdrop-blur-md bg-transparent ${
@@ -610,7 +610,7 @@ export default function CropDoctor() {
             )}
           </div>
 
-          {/* Right Column: Diagnostic Intelligence Dossier */}
+          {                                                   }
           <div className="lg:col-span-6 space-y-6">
             {result ? (
               <div
@@ -620,7 +620,7 @@ export default function CropDoctor() {
                     : "bg-white/60 border-zinc-200/80 shadow-xl shadow-zinc-900/5"
                 }`}
               >
-                {/* Header Metrics */}
+                {                    }
                 <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-border/40">
                   <div>
                     <div className="flex items-center gap-2.5 mb-1.5">
@@ -640,7 +640,7 @@ export default function CropDoctor() {
                     </h2>
                   </div>
 
-                  {/* Confidence Gauge */}
+                  {                      }
                   <div className="text-right">
                     <div className="text-xs text-muted-foreground font-medium mb-1">
                       Model Confidence
@@ -661,7 +661,7 @@ export default function CropDoctor() {
                   </div>
                 </div>
 
-                {/* Etiology Description */}
+                {                          }
                 <div className="py-4 border-b border-border/40">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
                     <Activity className="w-3.5 h-3.5 text-emerald-500" />
@@ -677,7 +677,7 @@ export default function CropDoctor() {
                   )}
                 </div>
 
-                {/* Symptomatology */}
+                {                    }
                 <div className="py-4 border-b border-border/40">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
@@ -696,7 +696,7 @@ export default function CropDoctor() {
                   </div>
                 </div>
 
-                {/* Multi-Stage Solutions */}
+                {                           }
                 <div className="py-4 border-b border-border/40">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
@@ -729,7 +729,7 @@ export default function CropDoctor() {
                   </div>
                 </div>
 
-                {/* Preventive Agronomy */}
+                {                         }
                 {result.prevention && result.prevention.length > 0 && (
                   <div className="pt-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
@@ -746,7 +746,7 @@ export default function CropDoctor() {
                   </div>
                 )}
 
-                {/* Consult Advisor CTA */}
+                {                         }
                 <div className="mt-6 pt-5 border-t border-border/40 flex flex-wrap items-center justify-between gap-3">
                   <div className="text-xs text-muted-foreground">
                     Need customized spray scheduling or mandi trade advice?
@@ -762,7 +762,7 @@ export default function CropDoctor() {
                 </div>
               </div>
             ) : (
-              /* Empty Placeholder State */
+
               <div
                 className={`p-10 rounded-3xl border border-dashed text-center flex flex-col items-center justify-center min-h-[420px] backdrop-blur-xl ${
                   isDark

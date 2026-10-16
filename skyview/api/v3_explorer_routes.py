@@ -25,7 +25,7 @@ TABLES = (
 
 
 def _identifier(value):
-    # Names must first pass the table/actual-column allowlist. Quoting is defense in depth.
+
     return '"' + value.replace('"', '""') + '"'
 
 
@@ -96,7 +96,6 @@ def table_records(
             clauses.append(f"CAST({_identifier(filter_column)} AS text)=:filter_value")
             params["filter_value"] = filter_value
         if search:
-            # Contains search is literal: user '%'/'_' cannot turn it into a wildcard scan.
             escaped = (
                 search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             )

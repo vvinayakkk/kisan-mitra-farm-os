@@ -16,7 +16,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
-    document = json.loads((ROOT / "data_platform/v3/catalog/reviewed_sources.json").read_text())
+    document = json.loads(
+        (ROOT / "data_platform/v3/catalog/reviewed_sources.json").read_text()
+    )
     if not args.apply:
         print(
             json.dumps(

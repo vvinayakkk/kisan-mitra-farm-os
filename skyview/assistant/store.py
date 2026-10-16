@@ -260,8 +260,6 @@ def answer_question(sid, pending, answers, cancelled=False):
         v3_store.answer_question(sid, pending, answers, cancelled)
 
 
-# Keep the mature SQLite implementation intact for unconfigured installations.
-# Dispatch is evaluated at call time so tests and deployment mode changes remain isolated.
 def _dispatch(name, legacy):
     def delegated(*args, **kwargs):
         from skyview.data.v3.db import enabled

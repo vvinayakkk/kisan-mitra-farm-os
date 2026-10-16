@@ -37,7 +37,7 @@ function transactionDone(tx: IDBTransaction): Promise<void> {
 }
 function requested<T>(request: IDBRequest<T>): Promise<T> { return new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || new Error('Offline files could not be read.')); }); }
 
-/** Only a user-selected, explicitly opted-in local copy. This module has no network operations. */
+
 export async function storeAttachmentDraft(session: string, file: File): Promise<AttachmentDraft> {
   if (!session || !offlineEnabled()) throw new Error('Enable offline copies before keeping a file on this device. Nothing was uploaded.');
   if (!file.size || file.size > DRAFT_BYTE_LIMIT) throw new Error('Choose a non-empty file smaller than 5 MB. Nothing was uploaded.');
@@ -76,7 +76,7 @@ export async function removeAttachmentDraft(session: string, id: string): Promis
   if (record?.session === session) store.delete(id);
   await done; changed();
 }
-/** Logout/disable immediately invalidates in-flight readers/writers before clearing disk. */
+
 export function clearAttachmentDrafts(): void {
   generation++; changed();
   void database().then(async db => { const tx = db.transaction(STORE, 'readwrite'); const done = transactionDone(tx); tx.objectStore(STORE).clear(); await done; }).catch(() => {});

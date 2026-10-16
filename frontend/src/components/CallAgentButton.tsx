@@ -16,7 +16,7 @@ export function CallAgentButton() {
           onClick={() => setShowModal(true)}
           style={{
             background: isDark ? '#2A2A2A' : '#FFFFFF',
-            borderRadius: '30px', 
+            borderRadius: '30px',
             padding: '12px 20px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
             border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)',
@@ -49,7 +49,7 @@ export function CallAgentButton() {
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             background: isDark ? '#1a2a1a' : '#fff',
           }}>
-            {/* Header */}
+            {            }
             <div style={{
               background: 'linear-gradient(135deg, #E74C3C, #C0392B)',
               padding: '24px', color: 'white',

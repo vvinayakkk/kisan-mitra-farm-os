@@ -110,8 +110,7 @@ def main():
     while True:
         try:
             print(json.dumps(once(args), default=str), flush=True)
-        except Exception as exc:  # noqa: BLE001 -- CLI supervision records a safe outage for any connector failure without credential-bearing tracebacks.
-            # Credential-bearing HTTP exceptions and raw provider content never reach logs.
+        except Exception as exc:
             log.error(
                 "connector failed: %s; inspect source health/run audit",
                 type(exc).__name__,

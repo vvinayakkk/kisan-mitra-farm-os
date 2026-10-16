@@ -88,7 +88,7 @@ def test_public_prices_directory_and_capabilities(client):
     directory = http.get("/api/marketplace/directory", headers=headers).json()[
         "farmers"
     ]
-    # Test database is fail-closed: synthetic directory is exposed only in the named demo DB.
+
     assert directory == []
     assert all(
         not r.get("sharing_contact_available") and not r.get("whatsapp_number")

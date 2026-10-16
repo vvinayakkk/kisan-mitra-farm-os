@@ -25,7 +25,7 @@ TARGETS = {
 
 
 def ids_clause(ids):
-    # IDs are selected UUIDs from the local database, never user-supplied SQL.
+
     return "(" + ",".join("'" + str(uuid.UUID(str(i))) + "'::uuid" for i in ids) + ")"
 
 
@@ -41,8 +41,7 @@ def main():
                 DATABASE,
             )
         )
-    # Keep old cleanup decisions: retired test files must not reappear through
-    # assistant metadata or a later legacy-file reconciliation.
+
     retired_ids = {
         row["id"]
         for table in ("artifacts", "attachments", "tasks")

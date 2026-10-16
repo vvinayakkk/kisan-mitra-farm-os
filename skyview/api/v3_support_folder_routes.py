@@ -21,7 +21,9 @@ class Preparation(BaseModel):
 
 
 def _programme(conn, scheme_id):
-    if not conn.execute(text("SELECT 1 FROM sv3.scheme_versions WHERE id=:id"), {"id": scheme_id}).scalar():
+    if not conn.execute(
+        text("SELECT 1 FROM sv3.scheme_versions WHERE id=:id"), {"id": scheme_id}
+    ).scalar():
         raise HTTPException(404, "This programme is not in the support catalogue.")
 
 
@@ -29,8 +31,23 @@ def _programme(conn, scheme_id):
 def read_preparation(scheme_id: UUID, owner: Owner):
     with db.connection(owner) as conn:
         _programme(conn, scheme_id)
-        result = repository.rows(conn, "SELECT * FROM sv3.support_folder_preparation WHERE farmer_id=:owner AND scheme_version_id=:id", {"owner": owner, "id": scheme_id})
-    return result[0] if result else {"scheme_version_id": str(scheme_id), "row_version": 0, "eligibility_reviewed": False, "documents_reviewed": False, "application_reviewed": False, "updated_at": None}
+        result = repository.rows(
+            conn,
+            "SELECT * FROM sv3.support_folder_preparation WHERE farmer_id=:owner AND scheme_version_id=:id",
+            {"owner": owner, "id": scheme_id},
+        )
+    return (
+        result[0]
+        if result
+        else {
+            "scheme_version_id": str(scheme_id),
+            "row_version": 0,
+            "eligibility_reviewed": False,
+            "documents_reviewed": False,
+            "application_reviewed": False,
+            "updated_at": None,
+        }
+    )
 
 
 @router.put("/{scheme_id}")
@@ -48,5 +65,7 @@ def save_preparation(scheme_id: UUID, body: Preparation, owner: Owner):
                 WHERE farmer_id=:owner AND scheme_version_id=:id AND row_version=:row_version RETURNING *"""
         saved = repository.rows(conn, query, values)
         if not saved:
-            raise HTTPException(409, "This checklist changed elsewhere. Reload it before saving again.")
+            raise HTTPException(
+                409, "This checklist changed elsewhere. Reload it before saving again."
+            )
         return saved[0]

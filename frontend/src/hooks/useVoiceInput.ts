@@ -30,7 +30,7 @@ export function voiceError(error: unknown) {
   return error instanceof Error ? error.message : 'Voice is unavailable. Your typed words are safe.';
 }
 
-/** One recording, one reviewed transcript. Closing or cancelling invalidates all pending work. */
+
 export function useVoiceInput() {
   const [phase, setPhase] = useState<VoicePhase>('idle');
   const [seconds, setSeconds] = useState(0);
@@ -151,7 +151,7 @@ export function useVoiceInput() {
         setSeconds(Math.min(elapsed, VOICE_LIMIT_SECONDS));
         if (elapsed >= VOICE_LIMIT_SECONDS) stop();
       }, 200);
-      // Meter measures the microphone; visual feedback does not pretend to be model progress.
+
       try {
         const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
         if (AudioCtor) {
@@ -180,7 +180,7 @@ export function useVoiceInput() {
           };
           frame.current = requestAnimationFrame(measure);
         }
-      } catch { /* Recording still works when the browser cannot expose a meter. */ }
+      } catch {                                                                     }
       if (liveCaptions) {
         const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (Recognition) {
@@ -191,7 +191,7 @@ export function useVoiceInput() {
             setInterim(Array.from(event.results as ArrayLike<any>).map(result => result[0]?.transcript || '').join(' '));
           };
           browserSpeech.onerror = () => { if (token === generation.current) setInterim('Live captions unavailable; your recording continues.'); };
-          try { browserSpeech.start(); } catch { /* Provider transcript remains the final source. */ }
+          try { browserSpeech.start(); } catch {                                                     }
         }
       }
     } catch (failure) {

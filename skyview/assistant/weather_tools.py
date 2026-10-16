@@ -110,7 +110,7 @@ def select_forecast(records, now):
             continue
         key = (str(row["series_id"]), issued)
         groups.setdefault(key, {})
-        # Query already orders newest source release first for revised values.
+
         groups[key].setdefault(str(row["valid_on"]), row)
     if not groups:
         return []
@@ -203,9 +203,7 @@ def archive(owner, days=30, farm_key="", now=None):
     now = now or datetime.now(UTC)
     from zoneinfo import ZoneInfo
 
-    end = now.astimezone(
-        ZoneInfo("Asia/Kolkata")
-    ).date()  # completed calendar days only
+    end = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
     with db.connection(owner) as conn:
         farm, missing = _farm(conn, owner, farm_key)
         if missing:
@@ -243,7 +241,7 @@ def archive(owner, days=30, farm_key="", now=None):
     )
     records = [groups[key][day] for day in sorted(groups[key])]
     provenance = repository.provenance(records[-1])
-    # Archive age is the latest represented day, not five minutes since a daily import.
+
     latest = datetime.fromisoformat(str(records[-1]["day"])).date()
     provenance["stale"] = (end - latest).days > 7
     provenance["resolution_m"] = records[-1]["resolution_m"]

@@ -27,8 +27,8 @@ export function PreparedBySaathi({area, active = true}: {area: PreparationArea; 
   useEffect(() => { setData(null); setEditing(false); setEditingProposal(null); setError(""); setBusy(false); ownMutations.current.clear(); }, [session, area]);
   useEffect(() => onWorkspaceCacheInvalidated(reason => {
     if(reason === "session") {setData(null);setEditing(false);setEditingProposal(null);setBusy(false);ownMutations.current.clear();}
-    // A successful POST invalidates shared reads before its promise resolves. Let this
-    // component finish its own operation; its next poll/review refresh reconciles data.
+
+
     else if (!ownMutations.current.size) setRevision(value => value+1);
   }), []);
   useEffect(() => {

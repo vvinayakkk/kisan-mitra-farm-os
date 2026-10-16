@@ -8,7 +8,7 @@ import time
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, List, Optional, Union
 
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool

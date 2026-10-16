@@ -120,7 +120,7 @@ Please provide a simple weather insight and recommendation.`;
     try {
       parsedContent = JSON.parse(content);
     } catch {
-      // If JSON parsing fails, try to extract from the response
+
       parsedContent = {
         insight: content.slice(0, 300),
         recommendation: "Please monitor weather conditions throughout the day.",
@@ -137,7 +137,7 @@ Please provide a simple weather insight and recommendation.`;
   } catch (error) {
     console.error("Weather insight error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: errorMessage,
       insight: null,
       recommendation: null,

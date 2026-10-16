@@ -1,4 +1,3 @@
--- App-specific migration, additive and repeatable; do not touch legacy schema.
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS device_credentials (
  station_id uuid PRIMARY KEY REFERENCES stations(id), farmer_id uuid NOT NULL REFERENCES farmers(id),
@@ -15,8 +14,8 @@ CREATE OR REPLACE FUNCTION verify_device(station_key text) RETURNS TABLE(station
 REVOKE ALL ON FUNCTION verify_device(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION verify_device(text) TO sv3_app;
 GRANT SELECT,INSERT,UPDATE ON device_credentials TO sv3_writer;
--- Opt-in contacts never appear in this sanitized directory. Synthetic fixture neighbors
--- are public demo examples; live entries require explicit current sharing consent.
+
+
 CREATE OR REPLACE FUNCTION public_farmer_directory() RETURNS TABLE(
  id uuid,name text,land_size_acres numeric,location text,state text,district text,
  latitude numeric,longitude numeric,crops jsonb,excess_resources jsonb,required_resources jsonb,origin text)

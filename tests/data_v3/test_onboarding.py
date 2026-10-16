@@ -129,7 +129,7 @@ def test_owned_live_account_completes_without_fake_contact_and_crud(live):
         ).status_code
         == 200
     )
-    # A live DB need not contain demo crops; deliberately choose only an available real reference.
+
     crops = options["crops"]
     if crops:
         crop = crops[0]["id"]
@@ -539,9 +539,7 @@ def test_coarse_weather_link_requires_explicit_owner_consent_and_revokes(
             .mappings()
             .one()
         )
-        assert (
-            float(exact["longitude"]) == 73.13
-        )  # The stored private coordinate stays exact.
+        assert float(exact["longitude"]) == 73.13
     revoked = client.delete(endpoint, headers=headers)
     assert (
         revoked.status_code == 200
@@ -563,8 +561,6 @@ def test_coarse_weather_link_requires_explicit_owner_consent_and_revokes(
             == 0
         )
     with db.connection(write=True, ingest=True) as conn:
-        # Other consenting owners can legitimately keep a shared grid eligible;
-        # this farmer has no linked farm or surviving consent after revocation.
         assert (
             conn.execute(
                 text(

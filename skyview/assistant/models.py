@@ -50,7 +50,11 @@ class WeatherArchiveArgs(Arguments):
 
 
 class CityWeatherArgs(Arguments):
-    city: str = Field(min_length=2, max_length=100, description="City name; add state or country after a comma if ambiguous")
+    city: str = Field(
+        min_length=2,
+        max_length=100,
+        description="City name; add state or country after a comma if ambiguous",
+    )
     days: int = Field(default=7, ge=1, le=10)
 
 
@@ -205,7 +209,14 @@ class RunRequest(Arguments):
         pattern=r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
     )
     workspace_view: Literal[
-        "assistant", "station", "calendar", "crops", "markets", "schemes", "records", "weather"
+        "assistant",
+        "station",
+        "calendar",
+        "crops",
+        "markets",
+        "schemes",
+        "records",
+        "weather",
     ] = "assistant"
     selected_date: date | None = None
     weather_city: str | None = Field(default=None, max_length=160)

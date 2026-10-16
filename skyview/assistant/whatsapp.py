@@ -47,7 +47,7 @@ LIMIT = 5 * 1024 * 1024
 
 
 def split_response(value, limit=1400):
-    # WhatsApp has compact formatting, not Markdown tables/headings/code fences.
+
     value = (
         re.sub(r"^#{1,6}\s*", "", value, flags=re.MULTILINE)
         .replace("**", "*")
@@ -137,7 +137,7 @@ def request_for(body, state, language, attachment_ids):
 async def download_media(client, url, mime, message_sid):
     settings = get_settings()
     parsed = urlsplit(url)
-    # Signed webhooks are necessary, but media fetches remain bounded and allowlisted.
+
     if (
         parsed.scheme != "https"
         or parsed.hostname != "api.twilio.com"
@@ -173,7 +173,7 @@ async def download_media(client, url, mime, message_sid):
                     host.endswith((".twiliocdn.com", ".twilio.com", ".amazonaws.com"))
                 ):
                     raise ValueError("Attachment redirect is not a trusted media host.")
-                auth = None  # Never send account credentials to a CDN.
+                auth = None
                 continue
             if response.status_code != 200:
                 raise ValueError(
@@ -296,7 +296,7 @@ def normalize_voice(content):
     )
     if result.returncode != 0 or len(result.stdout) < 44:
         raise ValueError("This voice note could not be read. Please record it again.")
-    # PCM16 mono 16kHz has exactly 32000 bytes/second after its short WAV header.
+
     if len(result.stdout) > 60 * 32000 + 256:
         raise ValueError("Please send a voice note shorter than one minute.")
     return result.stdout
@@ -346,7 +346,7 @@ async def send_part(client, job, part, body="", media=None):
             {"owner": owner, "id": job["message_sid"], "part": part},
         ).scalar()
         if inserted is None:
-            return  # Never replay an ambiguous provider send.
+            return
     data = {
         "To": job["sender_number"],
         "From": "whatsapp:" + settings.TWILIO_WHATSAPP_NUMBER.removeprefix("whatsapp:"),
@@ -583,7 +583,7 @@ async def process_next():
                         await send_part(client, job, part, body="Spoken summary")
                         part += 1
                         await send_part(client, job, part, media=url)
-                except Exception as exc:  # noqa: BLE001 -- optional speech failure must not discard delivered text
+                except Exception as exc:
                     logging.getLogger(__name__).warning(
                         "WhatsApp speech unavailable (%s)", type(exc).__name__
                     )
@@ -594,8 +594,7 @@ async def process_next():
                 ),
                 {"id": job["message_sid"]},
             )
-    except Exception as exc:  # noqa: BLE001 -- isolate a single durable inbound job
-        # Do not log phone numbers, signed media URLs, transcripts, tokens or provider errors.
+    except Exception as exc:
         try:
             with db.connection(owner) as conn:
                 sent = conn.execute(
@@ -612,7 +611,7 @@ async def process_next():
                 )
                 async with httpx.AsyncClient(timeout=12) as client:
                     await send_part(client, job, 0, body=friendly[:1400])
-        except Exception as feedback_error:  # noqa: BLE001 -- a provider outage also prevents the fallback reply
+        except Exception as feedback_error:
             logging.getLogger(__name__).warning(
                 "WhatsApp reply unavailable (%s)", type(feedback_error).__name__
             )

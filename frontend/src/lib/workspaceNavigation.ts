@@ -1,4 +1,3 @@
-/** Explicit classic routes keep entry and return navigation local and predictable. */
 export const classicWorkspaceViews: Record<string, string> = {
   dashboard: "chat", "crop-doctor": "crops", trends: "markets",
   reports: "records", advisor: "chat", overview: "station",

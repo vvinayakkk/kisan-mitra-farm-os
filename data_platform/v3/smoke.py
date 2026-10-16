@@ -97,7 +97,9 @@ with httpx.Client(base_url="http://127.0.0.1:8001", timeout=15) as client:
             client.get("/api/marketplace/directory", headers=headers).json()["farmers"]
         ),
         "forecast_days": len(
-            client.get("/api/weather/forecast?days=16", headers=headers).json()["records"]
+            client.get("/api/weather/forecast?days=16", headers=headers).json()[
+                "records"
+            ]
         ),
     }
     out = ROOT.parents[1] / "outputs/skyview-v3-integration"

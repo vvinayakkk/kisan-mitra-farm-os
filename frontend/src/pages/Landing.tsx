@@ -39,7 +39,7 @@ export default function Landing() {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
-    /* ── LENIS ── */
+
     useEffect(() => {
         const lenis = new Lenis({ duration: 1.2, lerp: 0.08 });
         function raf(time: number) {
@@ -51,7 +51,7 @@ export default function Landing() {
         return () => lenis.destroy();
     }, []);
 
-    /* ── LOAD FRAMES ── */
+
     useEffect(() => {
         let loadedCount = 0;
         for (let i = 1; i <= frameCount; i++) {
@@ -65,7 +65,7 @@ export default function Landing() {
         }
     }, []);
 
-    /* ── CANVAS ── */
+
     useEffect(() => {
         if (!loaded) return;
         const canvas = canvasRef.current!;
@@ -114,11 +114,11 @@ export default function Landing() {
         };
     }, [loaded]);
 
-    /* ── TIMELINE ── */
+
     useEffect(() => {
         if (!loaded) return;
 
-        // Hide everything initially via GSAP (not CSS) so the timeline owns all state
+
         gsap.set("#features", { opacity: 0, visibility: "hidden" });
         gsap.set("#guide",    { opacity: 0, visibility: "hidden" });
         gsap.set("#cta",      { opacity: 0, visibility: "hidden" });
@@ -133,11 +133,11 @@ export default function Landing() {
             },
         });
 
-        /* ── INTRO (visible at start, fades out) ── */
+
         tl.to("#intro", { opacity: 1, duration: 0.8 });
         tl.to("#intro", { opacity: 0, duration: 0.5 });
 
-        /* ── FEATURES (one scroll) ── */
+
         tl.to("#features", { opacity: 1, visibility: "visible", duration: 0.4 });
         tl.to(".featureCard", {
             opacity: 1,
@@ -145,17 +145,17 @@ export default function Landing() {
             stagger: 0.08,
             duration: 0.6,
         });
-        // hold
+
         tl.to({}, { duration: 0.5 });
         tl.to("#features", { opacity: 0, duration: 0.4 });
 
-        /* ── GUIDE (one scroll) ── */
+
         tl.to("#guide", { opacity: 1, visibility: "visible", duration: 0.4 });
-        // hold
+
         tl.to({}, { duration: 0.5 });
         tl.to("#guide", { opacity: 0, duration: 0.4 });
 
-        /* ── CTA (stays) ── */
+
         tl.to("#cta", { opacity: 1, visibility: "visible", duration: 0.5 });
 
     }, [loaded]);
@@ -163,22 +163,22 @@ export default function Landing() {
     return (
         <div ref={containerRef} className="relative bg-black" style={{ height: "400vh" }}>
 
-            {/* ── CANVAS ── */}
+            {                  }
             <div className="sticky top-0 w-full h-screen">
                 <canvas ref={canvasRef} className="w-full h-full" />
             </div>
 
-            {/* ── OVERLAY ── */}
+            {                   }
             <div className="sticky top-0 h-screen text-white z-10 pointer-events-none">
 
-                {/* INTRO */}
+                {           }
                 <div id="intro" className="absolute inset-0 z-20 flex items-center justify-center">
                     <h1 className="text-7xl font-bold tracking-wide drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
                         SkyView AI
                     </h1>
                 </div>
 
-                {/* ── FEATURES ── */}
+                {                    }
                 <div id="features" className="absolute inset-0 flex items-center justify-center px-6 md:px-16">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full">
                         {features.map((item, i) => (
@@ -191,7 +191,7 @@ export default function Landing() {
                                     hover:border-white/20 hover:from-white/[0.1] hover:to-white/[0.04]
                                     transition-all duration-500 cursor-default"
                             >
-                                {/* Accent glow */}
+                                {                 }
                                 <div
                                     className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-700"
                                     style={{ backgroundColor: item.accent }}
@@ -213,7 +213,7 @@ export default function Landing() {
                     </div>
                 </div>
 
-                {/* ── FARMER'S GUIDE ── */}
+                {                          }
                 <div id="guide" className="absolute inset-0 flex items-center justify-center px-10">
                     <div className="
                         backdrop-blur-2xl rounded-[2rem] px-16 py-14 max-w-4xl w-full text-center
@@ -245,14 +245,14 @@ export default function Landing() {
                     </div>
                 </div>
 
-                {/* ── CTA ── */}
+                {               }
                 <div id="cta" className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                     <h2 className="text-5xl font-bold tracking-tight drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
                         {isAuthenticated ? "Welcome Back 👋" : "Ready to Get Started?"}
                     </h2>
                     <p className="text-lg text-white/60 max-w-md text-center leading-relaxed">
-                        {isAuthenticated 
-                            ? "Your fields are waiting. Jump back into your dashboard." 
+                        {isAuthenticated
+                            ? "Your fields are waiting. Jump back into your dashboard."
                             : "Sign in to access real-time sensor data, AI insights, and smart farming tools."}
                     </p>
                     <button
@@ -268,12 +268,12 @@ export default function Landing() {
 
             </div>
 
-            {/* ── GUIDE PANEL ── */}
+            {                       }
             {showGuide && (
                 <FarmersGuidePanel onClose={() => setShowGuide(false)} />
             )}
 
-            {/* ── LOADING ── */}
+            {                   }
             {!loaded && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black text-white text-xl z-50">
                     Loading experience...

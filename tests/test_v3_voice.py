@@ -292,7 +292,11 @@ def test_capabilities_report_actual_configuration_without_keys(client):
 
 
 def test_capabilities_disabled_without_provider(client, monkeypatch):
-    monkeypatch.setattr(voice, "get_settings", lambda: SimpleNamespace(SARVAM_AI_API_KEY=None, GROQ_API_KEYS=[]))
+    monkeypatch.setattr(
+        voice,
+        "get_settings",
+        lambda: SimpleNamespace(SARVAM_AI_API_KEY=None, GROQ_API_KEYS=[]),
+    )
     body = client.get("/api/speech/capabilities").json()
     assert body["transcription_available"] is False
     assert body["playback_available"] is False
@@ -304,7 +308,10 @@ def test_truncated_wav_rejected_before_provider(client, monkeypatch):
         raise AssertionError("Incomplete audio must not reach provider")
 
     monkeypatch.setattr(voice, "provider_json", forbidden)
-    response = client.post("/api/speech/transcribe", files={"file": ("partial.wav", wav()[:-100], "audio/wav")})
+    response = client.post(
+        "/api/speech/transcribe",
+        files={"file": ("partial.wav", wav()[:-100], "audio/wav")},
+    )
     assert response.status_code == 400
     assert "incomplete" in response.text
 
@@ -314,7 +321,11 @@ def test_transcription_is_reviewable_and_never_saved(client, monkeypatch):
         return {"transcript": "Spend 500 rupees on seeds", "language_code": "en-IN"}
 
     monkeypatch.setattr(voice, "provider_json", provider)
-    response = client.post("/api/speech/transcribe", files={"file": ("short.wav", wav(), "audio/wav")}, data={"language_code": "en-IN"})
+    response = client.post(
+        "/api/speech/transcribe",
+        files={"file": ("short.wav", wav(), "audio/wav")},
+        data={"language_code": "en-IN"},
+    )
     assert response.json()["requires_review"] is True
     assert response.json()["saved"] is False
     assert response.json()["transcription_mode"] == "completed_recording"

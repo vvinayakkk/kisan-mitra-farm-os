@@ -1,7 +1,3 @@
-/**
- * Cryptographically secure random generator complying with SonarQube / SonarCloud S2245.
- * Uses window.crypto.getRandomValues instead of pseudo-random Math.random().
- */
 export function getSecureRandom(): number {
   if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
     const buffer = new Uint32Array(1);

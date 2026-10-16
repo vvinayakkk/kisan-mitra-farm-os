@@ -1,5 +1,3 @@
-// Farmer Advisory System - Crop recommendations, tips, and alerts
-
 export interface CropAdvice {
   crop: string;
   idealTemp: { min: number; max: number };
@@ -91,7 +89,7 @@ export function generateFarmingAlerts(
 ): FarmingAlert[] {
   const alerts: FarmingAlert[] = [];
 
-  // Temperature alerts
+
   if (temp > 40) {
     alerts.push({
       type: "danger",
@@ -115,7 +113,7 @@ export function generateFarmingAlerts(
     });
   }
 
-  // Humidity alerts
+
   if (humidity > 85) {
     alerts.push({
       type: "warning",
@@ -132,7 +130,7 @@ export function generateFarmingAlerts(
     });
   }
 
-  // Wind alerts
+
   if (windSpeed > 40) {
     alerts.push({
       type: "danger",
@@ -149,7 +147,7 @@ export function generateFarmingAlerts(
     });
   }
 
-  // Rainfall alerts
+
   if (rainfall > 50) {
     alerts.push({
       type: "warning",
@@ -208,7 +206,7 @@ export function calculateWaterNeeds(
     growthStage = "Maturity";
   }
 
-  // Adjust for temperature
+
   const tempFactor = temp > 30 ? 1.3 : temp < 15 ? 0.8 : 1;
   const estimatedWater = Math.round(baseWater * tempFactor);
 

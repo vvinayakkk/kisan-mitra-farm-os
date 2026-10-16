@@ -2,7 +2,7 @@ import { assistantAuthHeaders, getAssistantSessionId } from "./assistantClient";
 import { cacheableRead, readSnapshot, saveSnapshot } from "./offlineStore";
 import { invalidateWorkspaceCaches, onWorkspaceCacheInvalidated } from "./workspaceCacheLifecycle";
 
-// Only short-lived JSON reads are retained. Media, streams and admin queries bypass this cache.
+
 const responses = new Map<string, { body: string; headers: [string, string][]; status: number; expires: number }>();
 const pending = new Map<string, Promise<Response>>();
 const requests = new Set<AbortController>();
@@ -22,20 +22,20 @@ function requestPath(url: string): string {
 }
 
 
-/** Cancel one waiting view without cancelling a shared read or its other consumers. */
+
 function waitForConsumer<T>(result: Promise<T>, signal?: AbortSignal | null): Promise<T> {
   if (!signal) return result;
   return new Promise<T>((resolve, reject) => {
     const cancelled = () => { signal.removeEventListener("abort", cancelled); reject(new DOMException("Request cancelled", "AbortError")); };
-    // Attach both handlers even for an already-aborted consumer: a later shared
-    // network failure must still have a rejection handler.
+
+
     result.then(value => { signal.removeEventListener("abort", cancelled); resolve(value); }, error => { signal.removeEventListener("abort", cancelled); reject(error); });
     if (signal.aborted) cancelled();
     else signal.addEventListener("abort", cancelled, {once: true});
   });
 }
 
-/** Farmer calls share a capability; offline fallback is opt-in and read-only. */
+
 export async function apiFetch(input: RequestInfo | URL, options: RequestInit = {}): Promise<Response> {
   const auth = await assistantAuthHeaders();
   const callerSignal = options.signal ?? (input instanceof Request ? input.signal : undefined);
@@ -95,7 +95,7 @@ export async function apiFetch(input: RequestInfo | URL, options: RequestInit = 
   const result = execute();
   if (!canCache) return result;
   pending.set(cacheKey, result);
-  // Cleanup follows the shared request, never whichever consumer finishes first.
+
   const settled = () => { if (pending.get(cacheKey) === result) pending.delete(cacheKey); };
   void result.then(settled, settled);
   return (await waitForConsumer(result, callerSignal)).clone();

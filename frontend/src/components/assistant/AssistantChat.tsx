@@ -574,7 +574,7 @@ export function AssistantChat({
             setLocalFiles(files);
         })
         .catch(() => {
-          /* Explicit save reports storage errors; background reading must not hide chat. */
+
         });
     };
     refresh();
@@ -654,7 +654,7 @@ export function AssistantChat({
       else if (atBottom.current)
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-    // Chart layout finishes after streaming text; keep the newest response visible.
+
     const frame = requestAnimationFrame(() => {
       if (scrollRef.current && atBottom.current && state.messages.length)
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

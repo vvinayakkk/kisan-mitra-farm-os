@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* PITCH BLACK DARK THEME (NO DARK GREEN) */
+
     :root {
       --bg-base: #000000;
       --bg-glass: rgba(10, 10, 10, 0.90);
@@ -66,7 +66,7 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Ambient Subtle Glow Overlay (NO background image) */
+
     .bg-gradient {
       position: fixed;
       inset: 0;
@@ -76,7 +76,7 @@
       pointer-events: none;
     }
 
-    /* STRICT ENFORCEMENT: ZERO BACKGROUND ON SMALL TAGS / PILLS / BUTTONS - BORDER ONLY */
+
     .tag-crop,
     .otp-code-pill,
     .admin-role-pill,
@@ -99,7 +99,7 @@
       background-color: transparent !important;
     }
 
-    /* Dynamic Island Push Notification / Alert Banner */
+
     .dynamic-island {
       position: fixed;
       top: 14px;
@@ -191,7 +191,7 @@
       flex-shrink: 0;
     }
 
-    /* Glass Top Header */
+
     header {
       position: sticky;
       top: 0;
@@ -284,7 +284,7 @@
       margin-left: 4px;
     }
 
-    /* Controls Group */
+
     .controls-group {
       display: flex;
       align-items: center;
@@ -312,7 +312,7 @@
       border-color: var(--border-main);
     }
 
-    /* Primary and Secondary Buttons */
+
     .btn-primary {
       border: 1.5px solid var(--emerald);
       border-radius: 12px;
@@ -352,7 +352,7 @@
       color: var(--text-main);
     }
 
-    /* Main Dashboard Container */
+
     main {
       position: relative;
       z-index: 10;
@@ -366,7 +366,7 @@
       gap: 20px;
     }
 
-    /* KPI Grid */
+
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -426,7 +426,7 @@
       gap: 5px;
     }
 
-    /* Toolbar Card */
+
     .toolbar-card {
       background: var(--bg-card);
       backdrop-filter: blur(28px);
@@ -481,7 +481,7 @@
       display: none;
     }
 
-    /* Filter Tabs Bar */
+
     .filter-tabs-row {
       display: flex;
       align-items: center;
@@ -512,7 +512,7 @@
       box-shadow: 0 0 10px var(--emerald-glow);
     }
 
-    /* Desktop Table View */
+
     .table-card {
       background: var(--bg-card);
       backdrop-filter: blur(28px);
@@ -555,7 +555,7 @@
       background: rgba(16, 185, 129, 0.035);
     }
 
-    /* Small Tags - STRICTLY ZERO BACKGROUND / OUTLINE BORDER ONLY */
+
     .tag-crop {
       display: inline-flex;
       align-items: center;
@@ -624,7 +624,7 @@
       transform: scale(0.96);
     }
 
-    /* Action Buttons in Table / Cards */
+
     .action-btn {
       border: 1.5px solid var(--border-main);
       border-radius: 10px;
@@ -651,7 +651,7 @@
       box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
     }
 
-    /* Mobile Responsive Card Feed (< 820px) */
+
     .mobile-cards-feed {
       display: none;
       flex-direction: column;
@@ -711,7 +711,7 @@
       .brand-title h1 { font-size: 15px; }
     }
 
-    /* Modals */
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -785,7 +785,7 @@
       cursor: not-allowed;
     }
 
-    /* Delete Confirmation Modal */
+
     .delete-confirm-card {
       background: var(--bg-glass);
       border: 1.5px solid rgba(239, 68, 68, 0.55);
@@ -813,7 +813,7 @@
       margin: 0 auto;
     }
 
-    /* Login Gate Screen */
+
     .login-container {
       flex: 1;
       display: flex;
@@ -879,7 +879,7 @@
       font-size: 11px;
     }
 
-    /* Footer */
+
     footer {
       position: relative;
       z-index: 10;
@@ -895,10 +895,10 @@
 </head>
 <body>
 
-  <!-- Ambient Glow Overlay (NO background image) -->
+
   <div class="bg-gradient"></div>
 
-  <!-- Dynamic Island Push Notification / Alert -->
+
   <div class="dynamic-island" id="dynamic-island">
     <div class="island-top">
       <div class="island-app-badge">
@@ -916,7 +916,7 @@
     </div>
   </div>
 
-  <!-- Glass Top Header -->
+
   <header>
     <div class="brand-wrap">
       <div class="logo-emblem-wrap">
@@ -936,7 +936,7 @@
     </div>
 
     <div class="controls-group">
-      <!-- Mute/Sound Toggle -->
+
       <button class="btn-ctrl" id="sound-btn" title="Toggle Sound Feedback">
         <svg id="sound-icon-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -949,7 +949,7 @@
         </svg>
       </button>
 
-      <!-- Sync / Refresh Button -->
+
       <button class="btn-ctrl" id="refresh-btn" title="Refresh Live Database Sync">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10"></polyline>
@@ -958,7 +958,7 @@
         </svg>
       </button>
 
-      <!-- Theme Switcher (Light / Dark) -->
+
       <button class="btn-ctrl" id="theme-btn" title="Toggle Theme">
         <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -976,7 +976,7 @@
         </svg>
       </button>
 
-      <!-- Logout Button -->
+
       <button class="btn-ctrl" id="logout-btn" title="Logout" style="display:none; color:#ef4444; border-color: rgba(239, 68, 68, 0.4);">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -987,7 +987,7 @@
     </div>
   </header>
 
-  <!-- Login Gate Screen -->
+
   <div class="login-container" id="login-view">
     <div class="login-card">
       <div style="display:inline-flex; justify-content:center;">
@@ -1029,9 +1029,9 @@
     </div>
   </div>
 
-  <!-- Dashboard Screen -->
+
   <main id="dashboard-view" style="display:none;">
-    <!-- Live Telemetry KPI Cards -->
+
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-top-row">
@@ -1070,7 +1070,7 @@
       </div>
     </div>
 
-    <!-- Toolbar: Search, Filters & Add -->
+
     <div class="toolbar-card">
       <div class="toolbar-row-top">
         <div class="search-box">
@@ -1092,7 +1092,7 @@
       </div>
     </div>
 
-    <!-- Desktop Data Table View -->
+
     <div class="table-card">
       <div class="table-responsive">
         <table>
@@ -1118,19 +1118,19 @@
       </div>
     </div>
 
-    <!-- Mobile Responsive Cards Feed (< 820px) -->
+
     <div class="mobile-cards-feed" id="mobile-cards-feed">
-      <!-- Injected via JavaScript -->
+
     </div>
   </main>
 
-  <!-- Add / Edit Farmer Modal -->
+
   <div class="modal-overlay" id="farmer-modal">
     <div class="modal-card">
       <h2 id="modal-title">Register Farmer Profile</h2>
       <form id="farmer-form" style="display:flex; flex-direction:column; gap:12px;">
         <input type="hidden" id="modal-is-edit" value="false">
-        
+
         <div class="form-group">
           <label>Phone Number *</label>
           <input type="text" id="form-phone" required placeholder="+919137784991">
@@ -1164,7 +1164,7 @@
     </div>
   </div>
 
-  <!-- Sleek Custom Delete Confirmation Modal -->
+
   <div class="modal-overlay" id="delete-modal">
     <div class="delete-confirm-card">
       <div class="delete-warn-icon">⚠️</div>
@@ -1191,7 +1191,7 @@
     let activeFilter = 'all';
     let userToDelete = null;
 
-    // Web Audio Synthesizer Chime
+
     let audioCtx = null;
     let isSoundMuted = localStorage.getItem('skyview_admin_sound_muted') === 'true';
 
@@ -1233,7 +1233,7 @@
       } catch (e) {}
     }
 
-    // Sound Toggle Setup
+
     const soundBtn = document.getElementById('sound-btn');
     const soundIconOn = document.getElementById('sound-icon-on');
     const soundIconOff = document.getElementById('sound-icon-off');
@@ -1258,7 +1258,7 @@
       if (!isSoundMuted) playChime(660, 880, 0.18);
     });
 
-    // Theme Setup (Light / Dark)
+
     const rootHtml = document.documentElement;
     const themeBtn = document.getElementById('theme-btn');
     const moonIcon = document.getElementById('theme-icon-moon');
@@ -1284,7 +1284,7 @@
       playChime(520, 680, 0.12);
     });
 
-    // Dynamic Island Push Banner Alert
+
     let islandTimer = null;
     function triggerAlert(title, desc, otp = null) {
       const island = document.getElementById('dynamic-island');
@@ -1320,7 +1320,7 @@
       playChime(500, 750, 0.12);
     };
 
-    // Copy OTP to Clipboard
+
     window.copyOtp = function(otp) {
       if (!otp) return;
       navigator.clipboard.writeText(otp);
@@ -1328,7 +1328,7 @@
       if (navigator.vibrate) navigator.vibrate(40);
     };
 
-    // Auth State Check
+
     const adminToken = localStorage.getItem('skyview_admin_token');
     if (adminToken) {
       showDashboard();
@@ -1377,13 +1377,13 @@
       fetchUsers();
     }
 
-    // Refresh Live Sync
+
     document.getElementById('refresh-btn').addEventListener('click', () => {
       fetchUsers(true);
       playChime(500, 700, 0.15);
     });
 
-    // CRUD Handlers
+
     async function fetchUsers(manual = false) {
       try {
         const res = await fetch(`${API_BASE}/admin/users?_t=${Date.now()}`);
@@ -1404,7 +1404,7 @@
     function calculateKpis(users) {
       document.getElementById('kpi-total-users').textContent = users.length;
       document.getElementById('count-all').textContent = users.length;
-      
+
       const withCropsCount = users.filter(u => u.crops && u.crops.trim().length > 0 && u.crops !== 'Unspecified').length;
       document.getElementById('count-crops').textContent = withCropsCount;
 
@@ -1415,7 +1415,7 @@
       document.getElementById('kpi-total-acres').textContent = `${Math.round(totalAcres * 10) / 10} ac`;
     }
 
-    // Filter Tabs
+
     document.querySelectorAll('.filter-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -1438,7 +1438,7 @@
 
       const q = document.getElementById('search-input').value.toLowerCase().trim();
       if (q) {
-        filtered = filtered.filter(u => 
+        filtered = filtered.filter(u =>
           (u.name && u.name.toLowerCase().includes(q)) ||
           (u.phone && u.phone.includes(q)) ||
           (u.location && u.location.toLowerCase().includes(q)) ||
@@ -1450,7 +1450,7 @@
       renderUsers(filtered);
     }
 
-    // Search Box Listener
+
     const searchInput = document.getElementById('search-input');
     const searchClear = document.getElementById('search-clear');
 
@@ -1479,7 +1479,7 @@
         return;
       }
 
-      // 1. Desktop Table Rows
+
       tbody.innerHTML = list.map(u => {
         const cropsHtml = (u.crops && u.crops !== 'Unspecified') ? u.crops.split(',').map(c => `<span class="tag-crop">${c.replace(/[{}]/g, '').trim()}</span>`).join('') : '<span style="color:var(--text-dim);">-</span>';
         const acresHtml = u.land_size_acres ? `<span class="tag-acres">🌾 ${u.land_size_acres} ac</span>` : '<span style="color:var(--text-dim);">-</span>';
@@ -1518,7 +1518,7 @@
         `;
       }).join('');
 
-      // 2. Mobile Responsive Cards Feed (< 820px)
+
       mobileFeed.innerHTML = list.map(u => {
         const cropsHtml = (u.crops && u.crops !== 'Unspecified') ? u.crops.split(',').map(c => `<span class="tag-crop">${c.replace(/[{}]/g, '').trim()}</span>`).join('') : '<span style="color:var(--text-dim);">-</span>';
         const acresHtml = u.land_size_acres ? `<span class="tag-acres">🌾 ${u.land_size_acres} ac</span>` : '<span style="color:var(--text-dim);">-</span>';
@@ -1561,7 +1561,7 @@
       }).join('');
     }
 
-    // Add / Edit Modal Controls
+
     const modal = document.getElementById('farmer-modal');
     document.getElementById('open-add-modal-btn').addEventListener('click', () => {
       document.getElementById('modal-title').textContent = 'Register New Farmer';
@@ -1597,7 +1597,7 @@
       playChime(520, 720, 0.12);
     };
 
-    // Form Submit Handler (Both Insert and Real Update on PostgreSQL)
+
     document.getElementById('farmer-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = document.getElementById('modal-submit-btn');
@@ -1644,7 +1644,7 @@
       }
     });
 
-    // Custom Sleek Delete Confirmation Modal (Real Delete from PostgreSQL)
+
     const deleteModal = document.getElementById('delete-modal');
 
     window.promptDeleteUser = function(phone) {
@@ -1688,7 +1688,7 @@
       }
     });
 
-    // Auto-polling for real-time postgres sync every 8 seconds
+
     setInterval(() => {
       if (localStorage.getItem('skyview_admin_token')) {
         fetchUsers();

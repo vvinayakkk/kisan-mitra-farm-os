@@ -1,4 +1,3 @@
--- Opt-in in-app farm follow-ups. No model loop or external messaging permission.
 BEGIN;
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS companion_preferences(
@@ -15,7 +14,7 @@ GRANT SELECT ON companion_preferences TO sv3_app;
 GRANT SELECT,INSERT,UPDATE ON companion_preferences TO sv3_writer;
 CREATE TABLE IF NOT EXISTS companion_worker_state(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),last_sweep_at timestamptz);
 GRANT SELECT ON companion_worker_state TO sv3_app;
--- A narrow worker API avoids granting ingestion access to private tasks/chats.
+
 CREATE OR REPLACE FUNCTION companion_sweep(batch_limit integer DEFAULT 100) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=sv3,pg_catalog,pg_temp AS $$
 DECLARE prefs companion_preferences; item record; hour_local integer; created integer:=0; changed integer; stamp timestamptz:=clock_timestamp(); day_local date;

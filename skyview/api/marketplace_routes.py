@@ -5,7 +5,7 @@ POST /api/marketplace/match    — run the haversine-based agentic resource matc
 """
 
 import math
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Union
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -19,10 +19,10 @@ from skyview.agents.mandi_agent import fetch_rates
 router = APIRouter(prefix="/api/marketplace", tags=["Marketplace"])
 logger = get_logger(__name__)
 
-# Global caches to optimize LLM calls and reduce DB load
+
 _llm_cache = {}
 _farmers_cache = {"data": None, "timestamp": 0}
-_FARMERS_CACHE_TTL = 30  # 30 seconds cache for rapid map pans / filters
+_FARMERS_CACHE_TTL = 30
 
 
 class MarketplaceMatchReq(BaseModel):
@@ -31,8 +31,7 @@ class MarketplaceMatchReq(BaseModel):
     required_resources: Optional[Union[str, List[str]]] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    
-    # Legacy fields
+
     crop: Optional[str] = None
     quantity_kg: Optional[float] = None
     location: Optional[str] = None
@@ -42,16 +41,20 @@ class MarketplaceMatchReq(BaseModel):
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate the great-circle distance between two points in kilometers."""
-    # Radius of the Earth in km
+
     R = 6371.0
-    
+
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
-    
-    a = (math.sin(dlat / 2) ** 2 +
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
+
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
+
     return R * c
 
 
@@ -66,7 +69,10 @@ def parse_resources(resources_str: Optional[str]) -> List[str]:
 def get_all_farmers():
     """Retrieve all farmers for interactive map visualizations (with 30s in-memory cache)."""
     now = time.time()
-    if _farmers_cache["data"] is not None and (now - _farmers_cache["timestamp"]) < _FARMERS_CACHE_TTL:
+    if (
+        _farmers_cache["data"] is not None
+        and (now - _farmers_cache["timestamp"]) < _FARMERS_CACHE_TTL
+    ):
         return _farmers_cache["data"]
 
     db = get_session()
@@ -85,20 +91,30 @@ def get_all_farmers():
 
     farmers = []
     for r in rows:
-        farmers.append({
-            "phone": r[0],
-            "name": r[1],
-            "land_size_acres": r[2],
-            "location": r[3],
-            "crops": [c.strip() for c in r[4].split(",") if c.strip()] if r[4] else [],
-            "latitude": r[5],
-            "longitude": r[6],
-            "state": r[7],
-            "district": r[8],
-            "excess_resources": [x.strip() for x in r[9].split(",") if x.strip()] if r[9] else [],
-            "required_resources": [req.strip() for req in r[10].split(",") if req.strip()] if r[10] else [],
-            "whatsapp_number": r[11],
-        })
+        farmers.append(
+            {
+                "phone": r[0],
+                "name": r[1],
+                "land_size_acres": r[2],
+                "location": r[3],
+                "crops": [c.strip() for c in r[4].split(",") if c.strip()]
+                if r[4]
+                else [],
+                "latitude": r[5],
+                "longitude": r[6],
+                "state": r[7],
+                "district": r[8],
+                "excess_resources": [x.strip() for x in r[9].split(",") if x.strip()]
+                if r[9]
+                else [],
+                "required_resources": [
+                    req.strip() for req in r[10].split(",") if req.strip()
+                ]
+                if r[10]
+                else [],
+                "whatsapp_number": r[11],
+            }
+        )
     result = {"status": "success", "farmers": farmers}
     _farmers_cache["data"] = result
     _farmers_cache["timestamp"] = now
@@ -112,8 +128,7 @@ async def marketplace_match(req: MarketplaceMatchReq):
     Includes distance estimation and mutual swap matching.
     """
     db = get_session()
-    
-    # 1. Resolve searching farmer details
+
     my_phone = req.phone
     my_name = "Guest Farmer"
     my_excess: List[str] = []
@@ -129,7 +144,7 @@ async def marketplace_match(req: MarketplaceMatchReq):
                     SELECT name, excess_resources, required_resources, latitude, longitude, location
                     FROM users WHERE phone = :p
                 """),
-                {"p": my_phone}
+                {"p": my_phone},
             ).fetchone()
             if row:
                 my_name = row[0] or my_name
@@ -143,25 +158,22 @@ async def marketplace_match(req: MarketplaceMatchReq):
         except Exception as e:
             logger.error("Error fetching match context farmer: %s", e)
 
-    # If parameters override DB
     if req.excess_resources:
         if isinstance(req.excess_resources, list):
             my_excess = [e.lower().strip() for e in req.excess_resources]
         else:
             my_excess = parse_resources(req.excess_resources)
-            
+
     if req.required_resources:
         if isinstance(req.required_resources, list):
             my_required = [r.lower().strip() for r in req.required_resources]
         else:
             my_required = parse_resources(req.required_resources)
 
-    # Default active prototype farm profile so any guest or new user sees active barter network immediately
     if not my_excess and not my_required:
         my_excess = ["Tractor", "Water pump"]
         my_required = ["Harvester", "Labour", "Cold storage"]
 
-    # 2. Fetch all other farmers
     try:
         query = """
             SELECT phone, name, land_size_acres, location, crops,
@@ -171,8 +183,10 @@ async def marketplace_match(req: MarketplaceMatchReq):
         """
         if my_phone:
             query += " WHERE phone != :my_phone"
-        
-        rows = db.execute(text(query), {"my_phone": my_phone} if my_phone else {}).fetchall()
+
+        rows = db.execute(
+            text(query), {"my_phone": my_phone} if my_phone else {}
+        ).fetchall()
     except Exception as e:
         db.close()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -181,32 +195,39 @@ async def marketplace_match(req: MarketplaceMatchReq):
 
     def normalize_resource(r: str) -> str:
         import re
-        s = str(r or '').strip().lower()
-        s = re.sub(r'[\-_/]', ' ', s)
-        if 'labour' in s or 'labor' in s or 'worker' in s or 'manpower' in s:
-            return 'labor'
-        if 'tractor' in s or 'tillage' in s:
-            return 'tractor'
-        if 'harvest' in s:  # matches harvester, harvestor
-            return 'harvester'
-        if 'pump' in s or 'tubewell' in s:
-            return 'water pump'
-        if 'drip' in s or 'sprinkler' in s or 'irrigation' in s:
-            return 'irrigation'
-        if 'storage' in s or 'cold' in s or 'godown' in s or 'warehouse' in s:
-            return 'storage'
-        if 'fertiliz' in s or 'compost' in s or 'urea' in s or 'manure' in s or 'dap' in s:
-            return 'fertilizer'
-        if 'pesticid' in s or 'spray' in s or 'insecticid' in s:
-            return 'pesticides'
-        if 'seed drill' in s or 'seeder' in s or 'planter' in s:
-            return 'seed driller'
-        if 'rotavat' in s or 'cultivat' in s:
-            return 'rotavator'
-        if 'thresh' in s:
-            return 'thresher'
-        if 'seed' in s:
-            return 'seeds'
+
+        s = str(r or "").strip().lower()
+        s = re.sub(r"[\-_/]", " ", s)
+        if "labour" in s or "labor" in s or "worker" in s or "manpower" in s:
+            return "labor"
+        if "tractor" in s or "tillage" in s:
+            return "tractor"
+        if "harvest" in s:
+            return "harvester"
+        if "pump" in s or "tubewell" in s:
+            return "water pump"
+        if "drip" in s or "sprinkler" in s or "irrigation" in s:
+            return "irrigation"
+        if "storage" in s or "cold" in s or "godown" in s or "warehouse" in s:
+            return "storage"
+        if (
+            "fertiliz" in s
+            or "compost" in s
+            or "urea" in s
+            or "manure" in s
+            or "dap" in s
+        ):
+            return "fertilizer"
+        if "pesticid" in s or "spray" in s or "insecticid" in s:
+            return "pesticides"
+        if "seed drill" in s or "seeder" in s or "planter" in s:
+            return "seed driller"
+        if "rotavat" in s or "cultivat" in s:
+            return "rotavator"
+        if "thresh" in s:
+            return "thresher"
+        if "seed" in s:
+            return "seeds"
         return s
 
     def find_semantic_overlap(list_a: List[str], list_b: List[str]) -> List[str]:
@@ -226,7 +247,11 @@ async def marketplace_match(req: MarketplaceMatchReq):
         "seed driller": {"rent": "₹550/hr", "buy": "₹65,000", "unit": "per hour"},
         "rotavator": {"rent": "₹650/hr", "buy": "₹85,000", "unit": "per hour"},
         "irrigation": {"rent": "₹350/day", "buy": "₹28,000", "unit": "per day"},
-        "pesticides": {"rent": "₹300/day (Sprayer)", "buy": "₹4,500", "unit": "per day"},
+        "pesticides": {
+            "rent": "₹300/day (Sprayer)",
+            "buy": "₹4,500",
+            "unit": "per day",
+        },
         "fertilizer": {"rent": "Barter Only", "buy": "₹450/bag", "unit": "per bag"},
         "labor": {"rent": "₹450/day", "buy": "Contract", "unit": "per day"},
         "storage": {"rent": "₹15/quintal/mo", "buy": "Lease", "unit": "per month"},
@@ -234,7 +259,7 @@ async def marketplace_match(req: MarketplaceMatchReq):
     }
 
     matches = []
-    
+
     for r in rows:
         phone = r[0]
         name = r[1]
@@ -245,11 +270,16 @@ async def marketplace_match(req: MarketplaceMatchReq):
         lon = r[6]
         state = r[7]
         district = r[8]
-        other_excess_list = [x.strip() for x in r[9].split(",") if x.strip()] if r[9] else []
-        other_required_list = [req_item.strip() for req_item in r[10].split(",") if req_item.strip()] if r[10] else []
+        other_excess_list = (
+            [x.strip() for x in r[9].split(",") if x.strip()] if r[9] else []
+        )
+        other_required_list = (
+            [req_item.strip() for req_item in r[10].split(",") if req_item.strip()]
+            if r[10]
+            else []
+        )
         whatsapp = r[11] or phone
 
-        # Calculate semantic intersections
         i_provide_they_need = find_semantic_overlap(my_excess, other_required_list)
         they_provide_i_need = find_semantic_overlap(other_excess_list, my_required)
 
@@ -257,16 +287,18 @@ async def marketplace_match(req: MarketplaceMatchReq):
         is_provider = len(other_excess_list) > 0
         is_consumer = len(other_required_list) > 0
 
-        # Include all connected farmers, tool providers, and seeking consumers
         if not is_mutual and not is_provider and not is_consumer:
             continue
 
-        # Distance calculation
         dist_km = 0.0
-        if my_lat is not None and my_lon is not None and lat is not None and lon is not None:
+        if (
+            my_lat is not None
+            and my_lon is not None
+            and lat is not None
+            and lon is not None
+        ):
             dist_km = haversine(my_lat, my_lon, lat, lon)
 
-        # Match Type & Scoring
         if is_mutual:
             score = 92.0 + len(i_provide_they_need) * 4.0
             match_type = "mutual"
@@ -277,62 +309,68 @@ async def marketplace_match(req: MarketplaceMatchReq):
             score = 60.0 + len(i_provide_they_need) * 5.0
             match_type = "consumer"
 
-        # Distance penalty: subtract 0.1 points per km, max penalty of -20
         dist_penalty = min(dist_km * 0.1, 20.0)
         score -= dist_penalty
-        
-        # Keep score in positive range [40, 99] for representation
+
         match_percentage = min(max(int(score), 40), 99)
 
-        # Build tool pricing details for buy/rent options
         pricing_info = []
         for item in other_excess_list:
             norm_item = normalize_resource(item)
-            rate_info = ESTIMATED_RATES.get(norm_item, {"rent": "₹450/hr", "buy": "Inquire", "unit": "per unit"})
-            pricing_info.append({
-                "resource": item,
-                "rent_rate": rate_info["rent"],
-                "buy_price": rate_info["buy"],
-                "unit": rate_info["unit"]
-            })
+            rate_info = ESTIMATED_RATES.get(
+                norm_item, {"rent": "₹450/hr", "buy": "Inquire", "unit": "per unit"}
+            )
+            pricing_info.append(
+                {
+                    "resource": item,
+                    "rent_rate": rate_info["rent"],
+                    "buy_price": rate_info["buy"],
+                    "unit": rate_info["unit"],
+                }
+            )
 
-        matches.append({
-            "phone": phone,
-            "name": name,
-            "land_size_acres": land_size,
-            "location": loc,
-            "district": district,
-            "state": state,
-            "latitude": lat,
-            "longitude": lon,
-            "crops": crops,
-            "whatsapp_number": whatsapp,
-            "distance_km": round(dist_km, 1),
-            "match_type": match_type,
-            "is_mutual": is_mutual,
-            "is_provider": is_provider,
-            "is_consumer": is_consumer,
-            "match_percentage": match_percentage,
-            "what_they_have": other_excess_list,
-            "what_they_need": other_required_list,
-            "i_provide_they_need": i_provide_they_need if i_provide_they_need else my_excess[:2],
-            "they_provide_i_need": they_provide_i_need if they_provide_i_need else other_excess_list[:2],
-            "pricing_info": pricing_info,
-        })
+        matches.append(
+            {
+                "phone": phone,
+                "name": name,
+                "land_size_acres": land_size,
+                "location": loc,
+                "district": district,
+                "state": state,
+                "latitude": lat,
+                "longitude": lon,
+                "crops": crops,
+                "whatsapp_number": whatsapp,
+                "distance_km": round(dist_km, 1),
+                "match_type": match_type,
+                "is_mutual": is_mutual,
+                "is_provider": is_provider,
+                "is_consumer": is_consumer,
+                "match_percentage": match_percentage,
+                "what_they_have": other_excess_list,
+                "what_they_need": other_required_list,
+                "i_provide_they_need": i_provide_they_need
+                if i_provide_they_need
+                else my_excess[:2],
+                "they_provide_i_need": they_provide_i_need
+                if they_provide_i_need
+                else other_excess_list[:2],
+                "pricing_info": pricing_info,
+            }
+        )
 
-
-    # Sort matches by percentage descending, then by distance ascending
     matches.sort(key=lambda x: (-x["match_percentage"], x["distance_km"]))
 
-    # 3. Request AI overview commentary
     context_matches = []
     for m in matches[:3]:
         context_matches.append(
             f"Farmer {m['name']} in {m['location']} ({m['distance_km']} km away) is a {m['match_type'].upper()} MATCH. "
             f"Mutual trade items: {m['they_provide_i_need']} <-> {m['i_provide_they_need']}."
         )
-    
-    advisory_insights = "No matches available yet. Complete your profile to get suggestions."
+
+    advisory_insights = (
+        "No matches available yet. Complete your profile to get suggestions."
+    )
     if matches:
         prompt = (
             f"You are the SkyView Agentic Matchmaker. A farmer named {my_name} is listing:\n"
@@ -345,8 +383,10 @@ async def marketplace_match(req: MarketplaceMatchReq):
             "Write as a friendly agricultural cooperative advisor. Do not use markdown headings."
         )
         try:
-            advisory_insights = await invoke_llm([("user", prompt)], temperature=0.3, timeout=12)
-        except Exception as e:
+            advisory_insights = await invoke_llm(
+                [("user", prompt)], temperature=0.3, timeout=12
+            )
+        except Exception:
             advisory_insights = "Match analysis completed. Reach out to local mutual partners on WhatsApp."
 
     return {
@@ -357,7 +397,7 @@ async def marketplace_match(req: MarketplaceMatchReq):
             "required": my_required,
             "latitude": my_lat,
             "longitude": my_lon,
-            "location": my_location
+            "location": my_location,
         },
         "matches": matches,
         "ai_advisory": advisory_insights,
@@ -390,103 +430,170 @@ async def circular_barter(req: CircularBarterReq):
 
     farmers = []
     for r in rows:
-        farmers.append({
-            "phone": r[0],
-            "name": r[1],
-            "land_size_acres": r[2],
-            "location": r[3],
-            "crops": [c.strip() for c in r[4].split(",") if c.strip()] if r[4] else [],
-            "latitude": r[5],
-            "longitude": r[6],
-            "state": r[7],
-            "district": r[8],
-            "excess": parse_resources(r[9]),
-            "required": parse_resources(r[10]),
-            "excess_raw": [x.strip() for x in r[9].split(",") if x.strip()] if r[9] else [],
-            "required_raw": [req_item.strip() for req_item in r[10].split(",") if req_item.strip()] if r[10] else [],
-            "whatsapp_number": r[11] or r[0]
-        })
+        farmers.append(
+            {
+                "phone": r[0],
+                "name": r[1],
+                "land_size_acres": r[2],
+                "location": r[3],
+                "crops": [c.strip() for c in r[4].split(",") if c.strip()]
+                if r[4]
+                else [],
+                "latitude": r[5],
+                "longitude": r[6],
+                "state": r[7],
+                "district": r[8],
+                "excess": parse_resources(r[9]),
+                "required": parse_resources(r[10]),
+                "excess_raw": [x.strip() for x in r[9].split(",") if x.strip()]
+                if r[9]
+                else [],
+                "required_raw": [
+                    req_item.strip()
+                    for req_item in r[10].split(",")
+                    if req_item.strip()
+                ]
+                if r[10]
+                else [],
+                "whatsapp_number": r[11] or r[0],
+            }
+        )
 
     loops = []
     n = len(farmers)
-    # Search for triplets (A, B, C)
+
     for i in range(n):
         for j in range(n):
-            if i == j: continue
+            if i == j:
+                continue
             for k in range(n):
-                if k == i or k == j: continue
-                
+                if k == i or k == j:
+                    continue
+
                 A = farmers[i]
                 B = farmers[j]
                 C = farmers[k]
 
-                # Check if A provides to B: A.excess has something B.required wants
                 A_to_B = list(set(A["excess"]).intersection(B["required"]))
-                # Check if B provides to C: B.excess has something C.required wants
+
                 B_to_C = list(set(B["excess"]).intersection(C["required"]))
-                # Check if C provides to A: C.excess has something A.required wants
+
                 C_to_A = list(set(C["excess"]).intersection(A["required"]))
 
                 if A_to_B and B_to_C and C_to_A:
-                    # Calculate distances
-                    dist_ab = haversine(A["latitude"], A["longitude"], B["latitude"], B["longitude"]) if (A["latitude"] is not None and B["latitude"] is not None) else 0.0
-                    dist_bc = haversine(B["latitude"], B["longitude"], C["latitude"], C["longitude"]) if (B["latitude"] is not None and C["latitude"] is not None) else 0.0
-                    dist_ca = haversine(C["latitude"], C["longitude"], A["latitude"], A["longitude"]) if (C["latitude"] is not None and A["latitude"] is not None) else 0.0
+                    dist_ab = (
+                        haversine(
+                            A["latitude"], A["longitude"], B["latitude"], B["longitude"]
+                        )
+                        if (A["latitude"] is not None and B["latitude"] is not None)
+                        else 0.0
+                    )
+                    dist_bc = (
+                        haversine(
+                            B["latitude"], B["longitude"], C["latitude"], C["longitude"]
+                        )
+                        if (B["latitude"] is not None and C["latitude"] is not None)
+                        else 0.0
+                    )
+                    dist_ca = (
+                        haversine(
+                            C["latitude"], C["longitude"], A["latitude"], A["longitude"]
+                        )
+                        if (C["latitude"] is not None and A["latitude"] is not None)
+                        else 0.0
+                    )
                     total_dist = dist_ab + dist_bc + dist_ca
 
                     if total_dist <= req.max_distance_km or req.max_distance_km == 0:
-                        # Find raw names for items
                         item_ab = [x for x in A["excess_raw"] if x.lower() in A_to_B][0]
                         item_bc = [x for x in B["excess_raw"] if x.lower() in B_to_C][0]
                         item_ca = [x for x in C["excess_raw"] if x.lower() in C_to_A][0]
 
-                        # De-duplicate loops by keeping lowest sorted phone ID order
                         phones = [A["phone"], B["phone"], C["phone"]]
                         min_phone_idx = phones.index(min(phones))
                         if min_phone_idx == 0:
-                            normalized_loop = (A["phone"], B["phone"], C["phone"], item_ab, item_bc, item_ca, dist_ab, dist_bc, dist_ca, total_dist)
+                            normalized_loop = (
+                                A["phone"],
+                                B["phone"],
+                                C["phone"],
+                                item_ab,
+                                item_bc,
+                                item_ca,
+                                dist_ab,
+                                dist_bc,
+                                dist_ca,
+                                total_dist,
+                            )
                         elif min_phone_idx == 1:
-                            normalized_loop = (B["phone"], C["phone"], A["phone"], item_bc, item_ca, item_ab, dist_bc, dist_ca, dist_ab, total_dist)
+                            normalized_loop = (
+                                B["phone"],
+                                C["phone"],
+                                A["phone"],
+                                item_bc,
+                                item_ca,
+                                item_ab,
+                                dist_bc,
+                                dist_ca,
+                                dist_ab,
+                                total_dist,
+                            )
                         else:
-                            normalized_loop = (C["phone"], A["phone"], B["phone"], item_ca, item_ab, item_bc, dist_ca, dist_ab, dist_bc, total_dist)
+                            normalized_loop = (
+                                C["phone"],
+                                A["phone"],
+                                B["phone"],
+                                item_ca,
+                                item_ab,
+                                item_bc,
+                                dist_ca,
+                                dist_ab,
+                                dist_bc,
+                                total_dist,
+                            )
 
-                        # Match with dict lookup for easier processing
                         if normalized_loop not in loops:
                             loops.append(normalized_loop)
 
-    # 1. Sort the raw loops: prioritize loops containing the searching farmer first, then sort by total distance
     if req.phone:
         loops.sort(key=lambda x: (0 if req.phone in (x[0], x[1], x[2]) else 1, x[9]))
     else:
         loops.sort(key=lambda x: x[9])
 
-    # 2. Limit the loops to top 8 to prevent infinite loops / excessive API calls
     loops = loops[:8]
 
-    # Convert normalized loops back to objects
     result_loops = []
     farmer_by_phone = {f["phone"]: f for f in farmers}
-    
+
     for idx, loop in enumerate(loops):
-        phone_a, phone_b, phone_c, item_ab, item_bc, item_ca, d_ab, d_bc, d_ca, tot_d = loop
+        (
+            phone_a,
+            phone_b,
+            phone_c,
+            item_ab,
+            item_bc,
+            item_ca,
+            d_ab,
+            d_bc,
+            d_ca,
+            tot_d,
+        ) = loop
         A = farmer_by_phone[phone_a]
         B = farmer_by_phone[phone_b]
         C = farmer_by_phone[phone_c]
-        
-        # Default rotating template schedule if not invoking LLM
+
         schedule = (
             f"**Rotating Schedule:** **{A['name']}** lends **{item_ab}** to **{B['name']}** (Mon-Tue); "
             f"**{B['name']}** lends **{item_bc}** to **{C['name']}** (Wed-Thu); "
             f"**{C['name']}** lends **{item_ca}** to **{A['name']}** (Fri-Sat)."
         )
 
-        # Only invoke the LLM for the top 3 loops to save rate-limits & minimize latency
         if idx < 3:
-            cache_key = f"loop-{phone_a}-{phone_b}-{phone_c}-{item_ab}-{item_bc}-{item_ca}"
+            cache_key = (
+                f"loop-{phone_a}-{phone_b}-{phone_c}-{item_ab}-{item_bc}-{item_ca}"
+            )
             if cache_key in _llm_cache:
                 schedule = _llm_cache[cache_key]
             else:
-                # Generate sharing schedule prompt
                 prompt = (
                     f"You are the SkyView Agri-Logistics Deal Broker. Generate a highly structured, practical, and clean weekly sharing schedule (Mon to Sun) for these 3 farmers in a circular barter loop:\n"
                     f"- Farmer A: {A['name']} (Location: {A['location']}) gives {item_ab} to {B['name']}\n"
@@ -496,63 +603,78 @@ async def circular_barter(req: CircularBarterReq):
                     f"Do NOT use markdown tables or pipe (|) delimiters. Use clean bullet points with **bold** names and tools."
                 )
                 try:
-                    res_schedule = await invoke_llm([("user", prompt)], temperature=0.3, timeout=8)
+                    res_schedule = await invoke_llm(
+                        [("user", prompt)], temperature=0.3, timeout=8
+                    )
                     if res_schedule:
                         schedule = res_schedule.strip()
                         _llm_cache[cache_key] = schedule
                 except Exception:
                     pass
 
-        result_loops.append({
-            "farmers": [
-                {
-                    "phone": A["phone"],
-                    "name": A["name"],
-                    "location": A["location"],
-                    "latitude": A["latitude"],
-                    "longitude": A["longitude"],
-                    "whatsapp": A["whatsapp_number"],
-                    "crops": A["crops"],
-                    "excess": A["excess_raw"],
-                    "required": A["required_raw"]
-                },
-                {
-                    "phone": B["phone"],
-                    "name": B["name"],
-                    "location": B["location"],
-                    "latitude": B["latitude"],
-                    "longitude": B["longitude"],
-                    "whatsapp": B["whatsapp_number"],
-                    "crops": B["crops"],
-                    "excess": B["excess_raw"],
-                    "required": B["required_raw"]
-                },
-                {
-                    "phone": C["phone"],
-                    "name": C["name"],
-                    "location": C["location"],
-                    "latitude": C["latitude"],
-                    "longitude": C["longitude"],
-                    "whatsapp": C["whatsapp_number"],
-                    "crops": C["crops"],
-                    "excess": C["excess_raw"],
-                    "required": C["required_raw"]
-                }
-            ],
-            "transfer_flow": [
-                {"from": A["name"], "to": B["name"], "item": item_ab, "distance_km": round(d_ab, 1)},
-                {"from": B["name"], "to": C["name"], "item": item_bc, "distance_km": round(d_bc, 1)},
-                {"from": C["name"], "to": A["name"], "item": item_ca, "distance_km": round(d_ca, 1)}
-            ],
-            "total_distance_km": round(tot_d, 1),
-            "ai_schedule": schedule
-        })
+        result_loops.append(
+            {
+                "farmers": [
+                    {
+                        "phone": A["phone"],
+                        "name": A["name"],
+                        "location": A["location"],
+                        "latitude": A["latitude"],
+                        "longitude": A["longitude"],
+                        "whatsapp": A["whatsapp_number"],
+                        "crops": A["crops"],
+                        "excess": A["excess_raw"],
+                        "required": A["required_raw"],
+                    },
+                    {
+                        "phone": B["phone"],
+                        "name": B["name"],
+                        "location": B["location"],
+                        "latitude": B["latitude"],
+                        "longitude": B["longitude"],
+                        "whatsapp": B["whatsapp_number"],
+                        "crops": B["crops"],
+                        "excess": B["excess_raw"],
+                        "required": B["required_raw"],
+                    },
+                    {
+                        "phone": C["phone"],
+                        "name": C["name"],
+                        "location": C["location"],
+                        "latitude": C["latitude"],
+                        "longitude": C["longitude"],
+                        "whatsapp": C["whatsapp_number"],
+                        "crops": C["crops"],
+                        "excess": C["excess_raw"],
+                        "required": C["required_raw"],
+                    },
+                ],
+                "transfer_flow": [
+                    {
+                        "from": A["name"],
+                        "to": B["name"],
+                        "item": item_ab,
+                        "distance_km": round(d_ab, 1),
+                    },
+                    {
+                        "from": B["name"],
+                        "to": C["name"],
+                        "item": item_bc,
+                        "distance_km": round(d_bc, 1),
+                    },
+                    {
+                        "from": C["name"],
+                        "to": A["name"],
+                        "item": item_ca,
+                        "distance_km": round(d_ca, 1),
+                    },
+                ],
+                "total_distance_km": round(tot_d, 1),
+                "ai_schedule": schedule,
+            }
+        )
 
-    return {
-        "status": "success",
-        "count": len(result_loops),
-        "loops": result_loops
-    }
+    return {"status": "success", "count": len(result_loops), "loops": result_loops}
 
 
 class NegotiateReq(BaseModel):
@@ -576,7 +698,7 @@ async def negotiate_deal(req: NegotiateReq):
                 SELECT phone, name, location, crops, latitude, longitude, state, district
                 FROM users WHERE phone = :p
             """),
-            {"p": req.farmer_a_phone}
+            {"p": req.farmer_a_phone},
         ).fetchone()
 
         farmer_b = db.execute(
@@ -584,7 +706,7 @@ async def negotiate_deal(req: NegotiateReq):
                 SELECT phone, name, location, crops, latitude, longitude, state, district
                 FROM users WHERE phone = :p
             """),
-            {"p": req.farmer_b_phone}
+            {"p": req.farmer_b_phone},
         ).fetchone()
     finally:
         db.close()
@@ -592,19 +714,24 @@ async def negotiate_deal(req: NegotiateReq):
     if not farmer_a or not farmer_b:
         raise HTTPException(status_code=404, detail="One or both farmers not found")
 
-    # Calculate distance
     lat1, lon1 = farmer_a[4], farmer_a[5]
     lat2, lon2 = farmer_b[4], farmer_b[5]
     dist_km = 0.0
     if lat1 is not None and lon1 is not None and lat2 is not None and lon2 is not None:
         dist_km = haversine(lat1, lon1, lat2, lon2)
 
-    # Resolve crop
     crop = req.crop
     if not crop:
-        # Pick first crop from farmer_a or farmer_b
-        crops_a = [c.strip() for c in farmer_a[3].split(",") if c.strip()] if farmer_a[3] else []
-        crops_b = [c.strip() for c in farmer_b[3].split(",") if c.strip()] if farmer_b[3] else []
+        crops_a = (
+            [c.strip() for c in farmer_a[3].split(",") if c.strip()]
+            if farmer_a[3]
+            else []
+        )
+        crops_b = (
+            [c.strip() for c in farmer_b[3].split(",") if c.strip()]
+            if farmer_b[3]
+            else []
+        )
         if crops_a:
             crop = crops_a[0]
         elif crops_b:
@@ -612,8 +739,7 @@ async def negotiate_deal(req: NegotiateReq):
         else:
             crop = "Wheat"
 
-    # Fetch live mandi rates
-    mandi_price = 2100.0  # default wheat price per quintal
+    mandi_price = 2100.0
     mandi_unit = "Quintal"
     state = farmer_a[6] or "Maharashtra"
     try:
@@ -624,16 +750,11 @@ async def negotiate_deal(req: NegotiateReq):
     except Exception as e:
         logger.warning("Error fetching mandi rates for negotiation: %s", e)
 
-    # Estimate transport cost: ₹15/km for machinery transport
     transport_cost = round(dist_km * 15.0, 2)
 
-    # Cache check to avoid redundant LLM queries
     cache_key = f"neg-{req.farmer_a_phone}-{req.farmer_b_phone}-{req.item_a}-{req.item_b}-{crop}"
     if cache_key in _llm_cache:
-        return {
-            "status": "success",
-            "negotiation": _llm_cache[cache_key]
-        }
+        return {"status": "success", "negotiation": _llm_cache[cache_key]}
 
     prompt = (
         f"You are the SkyView AI Deal Broker negotiating a sharing/barter agreement.\n"
@@ -648,19 +769,19 @@ async def negotiate_deal(req: NegotiateReq):
         f"Provide the output as a JSON object ONLY, with NO extra text, inside a markdown code block. Format:\n"
         f"```json\n"
         f"{{\n"
-        f"  \"logs\": [\n"
-        f"    {{\"speaker\": \"Deal Broker\", \"text\": \"...\"}},\n"
-        f"    {{\"speaker\": \"{farmer_a[1]}\", \"text\": \"...\"}},\n"
-        f"    {{\"speaker\": \"{farmer_b[1]}\", \"text\": \"...\"}},\n"
-        f"    {{\"speaker\": \"Deal Broker\", \"text\": \"...\"}}\n"
+        f'  "logs": [\n'
+        f'    {{"speaker": "Deal Broker", "text": "..."}},\n'
+        f'    {{"speaker": "{farmer_a[1]}", "text": "..."}},\n'
+        f'    {{"speaker": "{farmer_b[1]}", "text": "..."}},\n'
+        f'    {{"speaker": "Deal Broker", "text": "..."}}\n'
         f"  ],\n"
-        f"  \"details\": {{\n"
-        f"    \"distance_km\": {dist_km:.1f},\n"
-        f"    \"transport_cost_rs\": {transport_cost},\n"
-        f"    \"mandi_rate_reference\": \"{crop}: ₹{mandi_price}/{mandi_unit}\",\n"
-        f"    \"suggested_offset_rs\": 500,\n"
-        f"    \"offset_payer\": \"{farmer_b[1]}\",\n"
-        f"    \"agreement_terms\": \"...\"\n"
+        f'  "details": {{\n'
+        f'    "distance_km": {dist_km:.1f},\n'
+        f'    "transport_cost_rs": {transport_cost},\n'
+        f'    "mandi_rate_reference": "{crop}: ₹{mandi_price}/{mandi_unit}",\n'
+        f'    "suggested_offset_rs": 500,\n'
+        f'    "offset_payer": "{farmer_b[1]}",\n'
+        f'    "agreement_terms": "..."\n'
         f"  }}\n"
         f"}}\n"
         f"```"
@@ -670,17 +791,30 @@ async def negotiate_deal(req: NegotiateReq):
         raw_resp = await invoke_llm([("user", prompt)], temperature=0.3, timeout=12)
         cleaned = raw_resp.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
         import json
+
         res_data = json.loads(cleaned)
         _llm_cache[cache_key] = res_data
     except Exception as exc:
         logger.error("Error generating negotiation via LLM: %s", exc)
-        # Fallback negotiation output if LLM fails
+
         res_data = {
             "logs": [
-                {"speaker": "Deal Broker", "text": f"Greetings! I have calculated the distance of {dist_km:.1f} km between your farms and factored in the live mandi rate of ₹{mandi_price}/{mandi_unit} for {crop}."},
-                {"speaker": farmer_a[1], "text": f"I can offer my {req.item_a or 'Tractor'}, but I need to make sure the travel cost of ₹{transport_cost} is covered."},
-                {"speaker": farmer_b[1], "text": f"I agree, and in return, I'll share my {req.item_b or 'Harvester'} for 3 days. I think that covers it!"},
-                {"speaker": "Deal Broker", "text": "Perfect! We suggest Farmer B pays an offset of ₹500 to Farmer A to balance the transit and equipment value difference."}
+                {
+                    "speaker": "Deal Broker",
+                    "text": f"Greetings! I have calculated the distance of {dist_km:.1f} km between your farms and factored in the live mandi rate of ₹{mandi_price}/{mandi_unit} for {crop}.",
+                },
+                {
+                    "speaker": farmer_a[1],
+                    "text": f"I can offer my {req.item_a or 'Tractor'}, but I need to make sure the travel cost of ₹{transport_cost} is covered.",
+                },
+                {
+                    "speaker": farmer_b[1],
+                    "text": f"I agree, and in return, I'll share my {req.item_b or 'Harvester'} for 3 days. I think that covers it!",
+                },
+                {
+                    "speaker": "Deal Broker",
+                    "text": "Perfect! We suggest Farmer B pays an offset of ₹500 to Farmer A to balance the transit and equipment value difference.",
+                },
             ],
             "details": {
                 "distance_km": round(dist_km, 1),
@@ -688,14 +822,11 @@ async def negotiate_deal(req: NegotiateReq):
                 "mandi_rate_reference": f"{crop}: ₹{mandi_price}/{mandi_unit}",
                 "suggested_offset_rs": 500,
                 "offset_payer": farmer_b[1],
-                "agreement_terms": f"Barter {req.item_a or 'Tractor'} <-> {req.item_b or 'Harvester'} with a ₹500 travel offset payment to cover the {dist_km:.1f} km transit."
-            }
+                "agreement_terms": f"Barter {req.item_a or 'Tractor'} <-> {req.item_b or 'Harvester'} with a ₹500 travel offset payment to cover the {dist_km:.1f} km transit.",
+            },
         }
 
-    return {
-        "status": "success",
-        "negotiation": res_data
-    }
+    return {"status": "success", "negotiation": res_data}
 
 
 @router.get("/pooling")
@@ -718,23 +849,32 @@ async def geographical_pooling():
 
     farmers = []
     for r in rows:
-        farmers.append({
-            "phone": r[0],
-            "name": r[1],
-            "location": r[2],
-            "crops": [c.strip() for c in r[3].split(",") if c.strip()] if r[3] else [],
-            "latitude": r[4],
-            "longitude": r[5],
-            "state": r[6] or "Other",
-            "district": r[7] or "Other",
-            "excess": parse_resources(r[8]),
-            "required": parse_resources(r[9]),
-            "excess_raw": [x.strip() for x in r[8].split(",") if x.strip()] if r[8] else [],
-            "required_raw": [req_item.strip() for req_item in r[9].split(",") if req_item.strip()] if r[9] else [],
-            "land_size": r[10] or 0.0
-        })
+        farmers.append(
+            {
+                "phone": r[0],
+                "name": r[1],
+                "location": r[2],
+                "crops": [c.strip() for c in r[3].split(",") if c.strip()]
+                if r[3]
+                else [],
+                "latitude": r[4],
+                "longitude": r[5],
+                "state": r[6] or "Other",
+                "district": r[7] or "Other",
+                "excess": parse_resources(r[8]),
+                "required": parse_resources(r[9]),
+                "excess_raw": [x.strip() for x in r[8].split(",") if x.strip()]
+                if r[8]
+                else [],
+                "required_raw": [
+                    req_item.strip() for req_item in r[9].split(",") if req_item.strip()
+                ]
+                if r[9]
+                else [],
+                "land_size": r[10] or 0.0,
+            }
+        )
 
-    # Group by state + district
     clusters = {}
     for f in farmers:
         key = f"{f['state']} - {f['district']}"
@@ -745,7 +885,7 @@ async def geographical_pooling():
                 "farmers": [],
                 "total_land_acres": 0.0,
                 "excess_pool": [],
-                "required_pool": []
+                "required_pool": [],
             }
         clusters[key]["farmers"].append(f)
         clusters[key]["total_land_acres"] += f["land_size"]
@@ -754,16 +894,13 @@ async def geographical_pooling():
 
     result_clusters = []
     for key, c in clusters.items():
-        # Clean pools (unique and clean list)
         excess_set = list(set([x.title() for x in c["excess_pool"]]))
         required_set = list(set([x.title() for x in c["required_pool"]]))
 
-        # Check cache
         cache_key = f"pool-{key}-{len(c['farmers'])}-{c['total_land_acres']:.1f}-{'-'.join(excess_set)}-{'-'.join(required_set)}"
         if cache_key in _llm_cache:
             plan = _llm_cache[cache_key]
         else:
-            # Generate optimization plan prompt
             prompt = (
                 f"You are the SkyView Regional Resource Optimization Advisor. We have a cluster of farmers in {key}.\n"
                 f"- Total land area: {c['total_land_acres']:.1f} acres\n"
@@ -781,48 +918,46 @@ async def geographical_pooling():
                 f"3. Pool local labor resources to meet the harvesting requirements of larger farms."
             )
             try:
-                res_plan = await invoke_llm([("user", prompt)], temperature=0.3, timeout=12)
+                res_plan = await invoke_llm(
+                    [("user", prompt)], temperature=0.3, timeout=12
+                )
                 if res_plan:
                     plan = res_plan.strip()
                     _llm_cache[cache_key] = plan
             except Exception:
                 pass
 
-        # Convert plan into an array of steps
         steps = [step.strip() for step in plan.split("\n") if step.strip()]
-        # Filter out numbers if any
+
         clean_steps = []
         for s in steps:
-            # strip leading numbers/dots
             cleaned_step = s.lstrip("0123456789. ")
             if cleaned_step:
                 clean_steps.append(cleaned_step)
 
-        result_clusters.append({
-            "region": key,
-            "state": c["state"],
-            "district": c["district"],
-            "farmer_count": len(c["farmers"]),
-            "total_land_acres": round(c["total_land_acres"], 1),
-            "excess_pool": excess_set,
-            "required_pool": required_set,
-            "optimization_plan": clean_steps or [plan],
-            "farmers": [
-                {
-                    "name": f["name"],
-                    "location": f["location"],
-                    "crops": f["crops"],
-                    "excess": f["excess_raw"],
-                    "required": f["required_raw"]
-                }
-                for f in c["farmers"]
-            ]
-        })
+        result_clusters.append(
+            {
+                "region": key,
+                "state": c["state"],
+                "district": c["district"],
+                "farmer_count": len(c["farmers"]),
+                "total_land_acres": round(c["total_land_acres"], 1),
+                "excess_pool": excess_set,
+                "required_pool": required_set,
+                "optimization_plan": clean_steps or [plan],
+                "farmers": [
+                    {
+                        "name": f["name"],
+                        "location": f["location"],
+                        "crops": f["crops"],
+                        "excess": f["excess_raw"],
+                        "required": f["required_raw"],
+                    }
+                    for f in c["farmers"]
+                ],
+            }
+        )
 
-    # Sort clusters by size descending
     result_clusters.sort(key=lambda x: -x["farmer_count"])
 
-    return {
-        "status": "success",
-        "clusters": result_clusters
-    }
+    return {"status": "success", "clusters": result_clusters}

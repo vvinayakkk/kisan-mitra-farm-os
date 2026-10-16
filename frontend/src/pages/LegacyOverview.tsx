@@ -59,12 +59,12 @@ export default function SystemOverview() {
         <div style={{ height: '100vh', width: '100vw', position: 'fixed', top: 0, left: 0, overflow: 'hidden' }}>
             <FarmBackground />
 
-            {/* Full Screen 3D Viewport */}
+            {                             }
             <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                 <WeatherStation onSelectSensor={setSelectedSensor} />
             </div>
 
-            {/* UI Overlay */}
+            {                }
             <div style={{ position: 'relative', zIndex: 50, height: '100%', pointerEvents: 'none' }}>
                 <div style={{ pointerEvents: 'auto' }}>
                     <DashboardHeader
@@ -73,7 +73,7 @@ export default function SystemOverview() {
                     />
                 </div>
 
-                {/* Bottom Interaction Guide */}
+                {                              }
                 {!selectedSensor && (
                     <div style={{
                         position: 'absolute',
@@ -98,7 +98,7 @@ export default function SystemOverview() {
                     </div>
                 )}
 
-                {/* Info Panel Overlay */}
+                {                        }
                 <AnimatePresence>
                     {sensorInfo && (
                         <motion.div

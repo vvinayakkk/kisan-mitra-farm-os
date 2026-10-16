@@ -1,11 +1,11 @@
 import { apiFetch } from "@/lib/apiClient";
-// Weather data integration with FastAPI backend
-// Connects to the configured backend API at /api/sensors/
+
+
 
 const HOST_URL = import.meta.env.VITE_API_URL || '';
-// Ensure API_BASE always includes the path correctly
-const API_BASE = HOST_URL.endsWith('/') 
-  ? `${HOST_URL}api/sensors` 
+
+const API_BASE = HOST_URL.endsWith('/')
+  ? `${HOST_URL}api/sensors`
   : `${HOST_URL}/api/sensors`;
 const STATION_ID = import.meta.env.VITE_STATION_ID || 'WS01';
 
@@ -77,7 +77,7 @@ export function getParameterStatus(param: string, value: number): ParameterStatu
   }
 }
 
-// Fetch current data from FastAPI backend
+
 export async function getCurrentWeatherData(): Promise<WeatherData> {
   try {
     const response = await apiFetch(`${API_BASE}/latest/${STATION_ID}`);
@@ -85,7 +85,7 @@ export async function getCurrentWeatherData(): Promise<WeatherData> {
     const data = await response.json();
     if (data.available === false || !data.timestamp) throw new Error("Station has no valid readings.");
 
-    // Accept both camelCase and snake_case keys (backend returns camelCase)
+
     const result = {
       timestamp: new Date(data.timestamp),
       temperature: data.temperature ?? NaN,
@@ -108,26 +108,26 @@ export async function getCurrentWeatherData(): Promise<WeatherData> {
   }
 }
 
-// Fetch system health from backend
+
 export async function getSystemHealth(): Promise<SystemHealth> {
   try {
     const response = await apiFetch(`${API_BASE}/latest/${STATION_ID}`);
     if (!response.ok) throw new Error('Failed to fetch system health');
-    
+
     const data = await response.json();
     const battery = data.batteryVoltage ?? data.battery_voltage ?? NaN;
     const solar = data.solarVoltage ?? data.solar_voltage ?? 0;
-    
-    // Calculate battery status based on voltage
+
+
     let batteryStatus: SystemHealth['batteryStatus'] = Number.isFinite(battery) ? 'healthy' : 'unknown';
     if (battery < 3.0) batteryStatus = 'critical';
     else if (battery < 3.5) batteryStatus = 'low';
-    
-    // Calculate last update time
+
+
     const lastUpdate = new Date(data.timestamp);
     const now = new Date();
     const lastUpdateSeconds = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
-    
+
     return {
       batteryVoltage: battery,
       batteryStatus,
@@ -135,7 +135,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       loraLinkActive: data.loraLinkActive === true || data.lora_link_active === true,
       edgeSystemRunning: data.edgeSystemRunning === true || data.edge_system_running === true,
       sensorNodeOnline: lastUpdateSeconds <= 300,
-      lastUpdateSeconds: Math.max(0, lastUpdateSeconds), // Keep the display update time low/reasonable
+      lastUpdateSeconds: Math.max(0, lastUpdateSeconds),
     };
   } catch (error) {
     console.error('Error fetching system health:', error);
@@ -143,7 +143,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
   }
 }
 
-// Fetch recent alerts (mock for now, can integrate with backend)
+
 export async function getRecentAlerts(): Promise<Alert[]> {
   try {
     const response = await apiFetch(`${HOST_URL}/api/recent-alerts`);
@@ -159,45 +159,45 @@ export async function getRecentAlerts(): Promise<Alert[]> {
   }
 }
 
-// Fetch historical data from backend
+
 export async function getHistoricalData(hours: number = 24): Promise<{ time: string; temperature: number; humidity: number; rainfall: number }[]> {
   try {
-    const limit = Math.ceil(hours * 30); // ~720 records for 24 hours (every 2 minutes)
+    const limit = Math.ceil(hours * 30);
     const url = `${API_BASE}/history/${STATION_ID}?limit=${limit}&hours=${hours}`;
-    
+
     const response = await apiFetch(url);
-    
+
     if (!response.ok) {
       const text = await response.text();
       console.error(' Response not OK:', text);
       throw new Error(`HTTP ${response.status}: ${text}`);
     }
-    
+
     const result = await response.json();
-    
+
     const data = result.data || [];
-    
+
     if (!data || data.length === 0) {
       console.warn('️ No data returned from API');
       return [];
     }
-    
-    // Transform backend data to chart format
+
+
     const transformed = data.map((record: any) => {
       try {
-        // Handle timestamp like "2026-02-28 15:03:36" (with space instead of T)
+
         let formattedTimestamp = record.timestamp;
         if (formattedTimestamp && formattedTimestamp.includes(' ')) {
-          // Replace space with T for ISO format: "2026-02-28 15:03:36" -> "2026-02-28T15:03:36"
+
           formattedTimestamp = formattedTimestamp.replace(' ', 'T');
         }
-        
+
         const time = new Date(formattedTimestamp);
         if (isNaN(time.getTime())) {
           console.warn('Invalid timestamp:', record.timestamp);
           return null;
         }
-        
+
         return {
           time: `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`,
           temperature: Math.round((record.temperature || 0) * 10) / 10,
@@ -208,15 +208,15 @@ export async function getHistoricalData(hours: number = 24): Promise<{ time: str
         console.error('Error transforming record:', record, e);
         return null;
       }
-    }).filter(Boolean).reverse(); // Remove null entries and show chronological order
-    
+    }).filter(Boolean).reverse();
+
     if (transformed.length > 0) {
     }
-    
+
     return transformed;
   } catch (error) {
     console.error(' Error fetching historical data:', error);
-    
+
     return [];
   }
 }

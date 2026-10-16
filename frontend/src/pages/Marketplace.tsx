@@ -58,7 +58,7 @@ function exchangeLink(match: any): string {
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-// TypewriterText component to simulate live streaming and properly format **bold** markdown
+
 function TypewriterText({
   text,
   speed = 8,
@@ -127,12 +127,12 @@ export default function Marketplace() {
   const isDark = theme === "dark";
   const { toast } = useToast();
 
-  // Navigation tabs
+
   const [mainTab, setMainTab] = useState<"matching" | "circular" | "pooling">(
     "matching",
   );
 
-  // State for Resource Matching (2-Party)
+
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
   const [aiAdvisory, setAiAdvisory] = useState<string>("");
@@ -142,29 +142,29 @@ export default function Marketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const { language } = useLanguage();
   const [userProfile, setUserProfile] = useState<any>(null);
-  const phone = userProfile?.id || ""; // The server resolves the owned farmer; directory contacts remain private.
+  const phone = userProfile?.id || "";
   const myName = userProfile?.name || "Your farm";
 
-  // State for Circular Barter (3-Party)
+
   const [circularLoops, setCircularLoops] = useState<any[]>([]);
   const [circularLoading, setCircularLoading] = useState(false);
 
-  // State for Geographical Pooling
+
   const [pools, setPools] = useState<any[]>([]);
   const [poolingLoading, setPoolingLoading] = useState(false);
 
-  // State for AI Deal Broker Negotiation
+
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [negotiating, setNegotiating] = useState(false);
   const [negotiationResult, setNegotiationResult] = useState<any>(null);
   const [negotiationCrop, setNegotiationCrop] = useState("");
 
-  // State for Direct Buy / Rent Tool Modal
+
   const [buyModalMatch, setBuyModalMatch] = useState<any>(null);
   const [selectedToolItem, setSelectedToolItem] = useState<string>("");
   const [dealType, setDealType] = useState<"rent" | "buy" | "barter">("rent");
 
-  // Helper to format logs or static text with bold formatting
+
   const formatText = (rawText: string) => {
     if (!rawText) return "";
     const parts = rawText.split(/(\*\*[^*]+\*\*)/g);
@@ -180,7 +180,7 @@ export default function Marketplace() {
     });
   };
 
-  // Load user profile to display current listings
+
   useEffect(() => {
     const abort = new AbortController();
     apiFetch(`${API_URL}/api/profile`, { signal: abort.signal })
@@ -268,7 +268,7 @@ export default function Marketplace() {
     loadCircularLoops();
     loadPoolingData();
 
-    // Listen to quick action filter event from AIOverview
+
     const handleFilterEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail === "mutual") {
@@ -281,7 +281,7 @@ export default function Marketplace() {
       window.removeEventListener("filter-marketplace", handleFilterEvent);
   }, []);
 
-  // Run negotiation
+
   const runNegotiation = async (match: any, forceCrop?: string) => {
     setNegotiating(true);
     setNegotiationResult(null);
@@ -321,7 +321,7 @@ export default function Marketplace() {
     }
   };
 
-  // Filter 2-party matches
+
   const filteredMatches = matches.filter((m) => {
     if (activeTab === "mutual" && !m.is_mutual && m.match_type !== "mutual")
       return false;
@@ -419,7 +419,7 @@ export default function Marketplace() {
           zIndex: 40,
         }}
       >
-        {/* Title and Refresh Button */}
+        {                              }
         <div
           style={{
             display: "flex",
@@ -468,10 +468,10 @@ export default function Marketplace() {
           </div>
         </div>
 
-        {/* AI Overview Panel */}
+        {                       }
         <AIOverview page="marketplace" />
 
-        {/* Current user's resources card */}
+        {                                   }
         {userProfile && (
           <GlassSection
             style={{
@@ -531,7 +531,7 @@ export default function Marketplace() {
           </GlassSection>
         )}
 
-        {/* Main Agentic Mode Navigation Tabs */}
+        {                                       }
         <div className="flex gap-2 p-1 bg-emerald-950/5 dark:bg-emerald-950/20 rounded-xl mb-6 max-w-fit border border-emerald-950/10">
           <Button
             variant={mainTab === "matching" ? "default" : "ghost"}
@@ -556,10 +556,10 @@ export default function Marketplace() {
           </Button>
         </div>
 
-        {/* ==================== TAB 1: RESOURCE MATCHING (2-PARTY) ==================== */}
+        {                                                                                  }
         {mainTab === "matching" && (
           <>
-            {/* Visual Node Architecture Card */}
+            {                                   }
             <div className="p-4 rounded-xl bg-transparent border border-emerald-500/25 mb-6 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="max-w-md">
                 <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
@@ -611,7 +611,7 @@ export default function Marketplace() {
               </div>
             </div>
 
-            {/* Search & Filter section */}
+            {                             }
             <GlassSection style={{ padding: "1.5rem", marginBottom: "2rem" }}>
               <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="flex w-full md:w-auto overflow-x-auto gap-2 border-b md:border-b-0 pb-2 md:pb-0 scrollbar-none">
@@ -691,7 +691,7 @@ export default function Marketplace() {
               </div>
             </GlassSection>
 
-            {/* AI Advisory Box formatted into clean bulletins with visible border and no icon */}
+            {                                                                                    }
             {aiAdvisory && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -730,7 +730,7 @@ export default function Marketplace() {
               </motion.div>
             )}
 
-            {/* Matching results grid */}
+            {                           }
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <RotateCw size={32} className="animate-spin text-emerald-600" />
@@ -932,7 +932,7 @@ export default function Marketplace() {
                                   </div>
                                 )}
 
-                              {/* Tool Pricing / Buy & Rent Tags */}
+                              {                                    }
                               {match.pricing_info &&
                                 match.pricing_info.length > 0 && (
                                   <div className="mt-2.5 pt-2 border-t border-dashed border-gray-300 dark:border-gray-700/60">
@@ -964,7 +964,7 @@ export default function Marketplace() {
                                     " No published resource to discuss yet."}
                                 </p>
                               )}
-                            {/* Action buttons */}
+                            {                    }
                             <div className="flex flex-col gap-2">
                               <div className="grid grid-cols-1 gap-2">
                                 <Button
@@ -1040,10 +1040,10 @@ export default function Marketplace() {
           </>
         )}
 
-        {/* ==================== TAB 2: CIRCULAR BARTER (3-PARTY LOOPS) ==================== */}
+        {                                                                                      }
         {mainTab === "circular" && (
           <>
-            {/* Visual Node Architecture Card */}
+            {                                   }
             <div className="p-4 rounded-xl bg-transparent border border-blue-500/25 mb-6 flex flex-col md:flex-row items-center justify-between gap-6 font-sans">
               <div className="max-w-md">
                 <h4 className="text-sm font-bold text-blue-800 dark:text-blue-400 flex items-center gap-2">
@@ -1133,10 +1133,10 @@ export default function Marketplace() {
           </>
         )}
 
-        {/* ==================== TAB 3: REGIONAL POOLING OPTIMIZATION ==================== */}
+        {                                                                                    }
         {mainTab === "pooling" && (
           <>
-            {/* Visual Node Architecture Card */}
+            {                                   }
             <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 mb-6 flex flex-col md:flex-row items-center justify-between gap-6 font-sans">
               <div className="max-w-md">
                 <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
@@ -1237,7 +1237,7 @@ export default function Marketplace() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-4 space-y-4">
-                        {/* Equipment Pool Stats */}
+                        {                          }
                         <div className="grid grid-cols-2 gap-4">
                           <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
                             <span className="text-[10px] font-bold text-emerald-600 uppercase block tracking-wider">
@@ -1288,7 +1288,7 @@ export default function Marketplace() {
                           </div>
                         </div>
 
-                        {/* Regional Optimization Plan with Typewriter Live Streaming */}
+                        {                                                               }
                         <div className="p-4 rounded-xl bg-transparent border border-emerald-600/25">
                           <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
                             <Sparkles
@@ -1316,7 +1316,7 @@ export default function Marketplace() {
                           </div>
                         </div>
 
-                        {/* Local Farmers Directory */}
+                        {                             }
                         <div>
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide block">
                             Active Cluster Members
@@ -1347,7 +1347,7 @@ export default function Marketplace() {
         )}
       </div>
 
-      {/* ==================== MODAL: INTERACTIVE AI DEAL BROKER NEGOTIATOR ==================== */}
+      {                                                                                            }
       <AnimatePresence>
         {selectedMatch && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -1357,7 +1357,7 @@ export default function Marketplace() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white dark:bg-zinc-900 border border-emerald-600/30 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
             >
-              {/* Modal Header */}
+              {                  }
               <div className="bg-emerald-900 dark:bg-emerald-950 p-4 text-white flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Sparkles
@@ -1381,9 +1381,9 @@ export default function Marketplace() {
                 </button>
               </div>
 
-              {/* Modal Body */}
+              {                }
               <div className="p-5 overflow-y-auto space-y-4 flex-1">
-                {/* Crop selector & rerun */}
+                {                           }
                 <div className="flex justify-between items-center bg-gray-500/5 p-3 rounded-xl border border-white/5 flex-wrap gap-2">
                   <div className="text-xs font-semibold text-gray-600 dark:text-gray-400">
                     Negotiation Crop Reference:
@@ -1437,7 +1437,7 @@ export default function Marketplace() {
                   </div>
                 ) : negotiationResult ? (
                   <div className="space-y-4">
-                    {/* Calculation Details Banner */}
+                    {                                }
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 text-center">
                       <div>
                         <span className="text-[10px] text-gray-400 uppercase block font-bold">
@@ -1473,7 +1473,7 @@ export default function Marketplace() {
                       </div>
                     </div>
 
-                    {/* Dialogue Transcript with formatted typewriter text */}
+                    {                                                        }
                     <div className="space-y-3 p-4 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-150 dark:border-white/5 max-h-60 overflow-y-auto">
                       {negotiationResult.logs.map((log: any, idx: number) => {
                         const isBroker = log.speaker === "Deal Broker";
@@ -1502,7 +1502,7 @@ export default function Marketplace() {
                       })}
                     </div>
 
-                    {/* Final Agreement Terms with Typewriter Live Streaming */}
+                    {                                                          }
                     <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
                         <Sparkles size={14} className="text-emerald-500" />{" "}
@@ -1523,7 +1523,7 @@ export default function Marketplace() {
                 )}
               </div>
 
-              {/* Modal Footer */}
+              {                  }
               <div className="p-4 bg-gray-50 dark:bg-zinc-950 border-t dark:border-white/5 flex justify-end gap-2">
                 <Button
                   onClick={() => setSelectedMatch(null)}
@@ -1564,7 +1564,7 @@ export default function Marketplace() {
             </motion.div>
           </div>
         )}
-        {/* ==================== DIRECT BUY / RENT TOOL MODAL ==================== */}
+        {                                                                            }
         {buyModalMatch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div
@@ -1599,7 +1599,7 @@ export default function Marketplace() {
               </div>
 
               <div className="p-5 space-y-4">
-                {/* Select Tool Item */}
+                {                      }
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-gray-500 block mb-1.5">
                     Select Equipment / Resource
@@ -1625,7 +1625,7 @@ export default function Marketplace() {
                   </div>
                 </div>
 
-                {/* Deal Type Selection */}
+                {                         }
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-gray-500 block mb-1.5">
                     Transaction Model
@@ -1667,7 +1667,7 @@ export default function Marketplace() {
                   </div>
                 </div>
 
-                {/* Pricing / Terms estimation */}
+                {                                }
                 <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/60">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-gray-500 font-semibold">
@@ -1690,7 +1690,7 @@ export default function Marketplace() {
                   </p>
                 </div>
 
-                {/* Confirm actions */}
+                {                     }
                 <div className="pt-2 flex flex-col gap-2">
                   <Button
                     asChild

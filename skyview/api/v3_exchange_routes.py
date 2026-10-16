@@ -376,7 +376,7 @@ def connect(body: Connect, owner: Owner):
             "SELECT display_name FROM sv3.farmers WHERE id=:owner AND status IN ('active','demo')",
             {"owner": owner},
         )["display_name"]
-        # Unique notice/requester pair gives reconnect an existing conversation, not duplicates.
+
         thread = one(
             conn,
             "INSERT INTO sv3.exchange_conversations(listing_id,listing_title,owner_id,requester_id,owner_name,requester_name) VALUES(:listing,:title,:person,:owner,:name,:mine) ON CONFLICT(listing_id,requester_id) DO UPDATE SET listing_title=exchange_conversations.listing_title RETURNING *",

@@ -31,7 +31,7 @@ def context(owner, station="WS01"):
     crops = profile.get("crops", []) if profile else []
     prices = repo.market_rates(crops[0] if crops else "", state, 6)
     schemes = repo.schemes(state, limit=4)
-    # Minimal non-identifying field context; no contacts/session keys are sent to models.
+
     return {
         "region": state,
         "crops": crops,
@@ -145,7 +145,7 @@ class AcceleratorInputs(BaseModel):
 
 
 def simulated(body):
-    # Deterministic UI/firmware-algorithm fixture. Not a health score or meteorological model.
+
     stress = round(
         min(
             100,

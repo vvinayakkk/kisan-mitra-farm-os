@@ -124,7 +124,6 @@ def main():
     ).stdout.strip()
     context = f"BEGIN; SET LOCAL ROLE sv3_app; SET LOCAL app.farmer_id='{farmer}'; "
 
-    # psql command tags are omitted by -q for assertion rows through SELECT extraction.
     def rls_count(table, where, expected):
         output = (
             query(context + f"SELECT count(*) FROM sv3.{table} {where}; ROLLBACK;")
@@ -262,8 +261,7 @@ def main():
         400,
     )
     extend(query, assertq, rejects, rls_count, farmer, other)
-    # Future/live known policy not prohibited: prevention specifically applies to observed histories.
-    # Reproducibility and a restore rehearsal run only against these isolated fixture namespaces.
+
     with tempfile.TemporaryDirectory(prefix="skyview-v3-repro-") as replay_dir:
         subprocess.run(
             [

@@ -4,7 +4,7 @@ import path from "path";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
-// https://vitejs.dev/config/
+
 export default defineConfig(() => ({
   server: {
     host: "0.0.0.0",
@@ -13,8 +13,8 @@ export default defineConfig(() => ({
     hmr: {
       overlay: false,
     },
-    // In dev: proxy /api and /admin calls to the FastAPI backend.
-    // This way VITE_API_URL can be left empty ('') in .env.local.
+
+
     proxy: {
       "/api": {
         target: "http://localhost:8000",

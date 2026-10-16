@@ -29,7 +29,9 @@ def _geocoding(path: str, params: dict) -> dict:
         if cached and cached[0] > time.monotonic():
             return cached[1]
     with httpx.Client(timeout=6, follow_redirects=False) as client:
-        response = client.get(f"https://geocoding-api.open-meteo.com/v1/{path}", params=params)
+        response = client.get(
+            f"https://geocoding-api.open-meteo.com/v1/{path}", params=params
+        )
         response.raise_for_status()
         payload = response.json()
     if not isinstance(payload, dict) or payload.get("error"):
@@ -43,13 +45,19 @@ def _geocoding(path: str, params: dict) -> dict:
 
 def _city(item: dict) -> dict:
     latitude, longitude = float(item["latitude"]), float(item["longitude"])
-    if not math.isfinite(latitude) or not math.isfinite(longitude) or not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+    if (
+        not math.isfinite(latitude)
+        or not math.isfinite(longitude)
+        or not (-90 <= latitude <= 90 and -180 <= longitude <= 180)
+    ):
         raise ValueError("Invalid city coordinates")
     return {
-        "id": int(item["id"]), "name": str(item["name"]),
+        "id": int(item["id"]),
+        "name": str(item["name"]),
         "admin1": str(item.get("admin1") or ""),
         "country": str(item.get("country") or ""),
-        "latitude": latitude, "longitude": longitude,
+        "latitude": latitude,
+        "longitude": longitude,
     }
 
 
@@ -57,8 +65,12 @@ def search_cities(query: str, count: int = 6) -> list[dict]:
     query = query.strip()
     if len(query) < 2 or len(query) > 100:
         return []
-    payload = _geocoding("search", {"name": query, "count": min(count, 10), "language": "en"})
-    return [_city(item) for item in payload.get("results", []) if isinstance(item, dict)]
+    payload = _geocoding(
+        "search", {"name": query, "count": min(count, 10), "language": "en"}
+    )
+    return [
+        _city(item) for item in payload.get("results", []) if isinstance(item, dict)
+    ]
 
 
 def city_dashboard(city_id: int) -> dict:
@@ -68,13 +80,19 @@ def city_dashboard(city_id: int) -> dict:
     live = _public_weather(city["latitude"], city["longitude"])
     daily = live["daily"]
     return {
-        "available": True, "city": {key: city[key] for key in ("id", "name", "admin1", "country")},
+        "available": True,
+        "city": {key: city[key] for key in ("id", "name", "admin1", "country")},
         "live": live,
         "forecast": {
-            "farm": city["name"], "farm_key": "",
+            "farm": city["name"],
+            "farm_key": "",
             "records": [
-                {"valid_on": date, "temperature_max_c": daily["temperature_2m_max"][index],
-                 "temperature_min_c": daily["temperature_2m_min"][index], "rainfall_mm": daily["precipitation_sum"][index]}
+                {
+                    "valid_on": date,
+                    "temperature_max_c": daily["temperature_2m_max"][index],
+                    "temperature_min_c": daily["temperature_2m_min"][index],
+                    "rainfall_mm": daily["precipitation_sum"][index],
+                }
                 for index, date in enumerate(daily["time"])
             ],
             "provenance": {"source": live["source"], "issued_at": live["captured_at"]},
@@ -86,26 +104,55 @@ def city_dashboard(city_id: int) -> dict:
 def city_weather(query: str, days: int = 7) -> dict:
     matches = search_cities(query, count=6)
     if not matches:
-        return {"available": False, "message": "No matching city found. Ask for city and state or country."}
-    exact = [item for item in matches if item["name"].casefold() == query.strip().casefold()]
+        return {
+            "available": False,
+            "message": "No matching city found. Ask for city and state or country.",
+        }
+    exact = [
+        item for item in matches if item["name"].casefold() == query.strip().casefold()
+    ]
     if len(exact) > 1:
-        return {"available": False, "requires_city_selection": True,
-                "city_choices": [{key: item[key] for key in ("name", "admin1", "country")} for item in exact]}
+        return {
+            "available": False,
+            "requires_city_selection": True,
+            "city_choices": [
+                {key: item[key] for key in ("name", "admin1", "country")}
+                for item in exact
+            ],
+        }
     result = city_dashboard((exact or matches)[0]["id"])
     live = result["live"]
     current = live["current"]
     daily = live["daily"]
     return {
-        "available": True, "city": result["city"], "source": live["source"],
-        "captured_at": live["captured_at"], "timezone": live["timezone"],
-        "current": {key: current.get(key) for key in (
-            "time", "temperature_2m", "apparent_temperature", "relative_humidity_2m",
-            "precipitation", "weather_code", "wind_speed_10m", "is_day")},
+        "available": True,
+        "city": result["city"],
+        "source": live["source"],
+        "captured_at": live["captured_at"],
+        "timezone": live["timezone"],
+        "current": {
+            key: current.get(key)
+            for key in (
+                "time",
+                "temperature_2m",
+                "apparent_temperature",
+                "relative_humidity_2m",
+                "precipitation",
+                "weather_code",
+                "wind_speed_10m",
+                "is_day",
+            )
+        },
         "forecast": [
-            {"date": date, "high_c": daily["temperature_2m_max"][index],
-             "low_c": daily["temperature_2m_min"][index],
-             "rain_mm": daily["precipitation_sum"][index],
-             "rain_chance_percent": daily.get("precipitation_probability_max", [None] * len(daily["time"]))[index]}
+            {
+                "date": date,
+                "high_c": daily["temperature_2m_max"][index],
+                "low_c": daily["temperature_2m_min"][index],
+                "rain_mm": daily["precipitation_sum"][index],
+                "rain_chance_percent": daily.get(
+                    "precipitation_probability_max", [None] * len(daily["time"])
+                )[index],
+            }
             for index, date in enumerate(daily["time"][:days])
         ],
         "note": "Regional model estimate; confirm field conditions before irrigation or spraying.",
@@ -135,18 +182,26 @@ def _public_weather(latitude: float, longitude: float) -> dict:
         weather.raise_for_status()
         payload = weather.json()
         daily = payload.get("daily", {})
-        required = ("time", "temperature_2m_max", "temperature_2m_min", "precipitation_sum")
-        if payload.get("error") or not daily.get("time") or any(
-            not isinstance(daily.get(key), list) or len(daily[key]) != len(daily["time"])
-            for key in required
+        required = (
+            "time",
+            "temperature_2m_max",
+            "temperature_2m_min",
+            "precipitation_sum",
+        )
+        if (
+            payload.get("error")
+            or not daily.get("time")
+            or any(
+                not isinstance(daily.get(key), list)
+                or len(daily[key]) != len(daily["time"])
+                for key in required
+            )
         ):
             raise ValueError("Weather provider returned no forecast")
 
         air = None
         air_grid = []
         try:
-            # A small 3×3 regional view; CAMS global cells are coarse, so this
-            # must never be presented as street-level air-quality mapping.
             neighbors = [
                 (round(latitude + delta_lat, 2), round(longitude + delta_lon, 2))
                 for delta_lat in (0.35, 0, -0.35)
@@ -165,11 +220,13 @@ def _public_weather(latitude: float, longitude: float) -> dict:
             air_payload = response.json()
             if isinstance(air_payload, list) and len(air_payload) == 9:
                 air = air_payload[4].get("current")
-                air_grid = [item.get("current", {}).get("us_aqi") for item in air_payload]
+                air_grid = [
+                    item.get("current", {}).get("us_aqi") for item in air_payload
+                ]
             elif isinstance(air_payload, dict):
                 air = air_payload.get("current")
         except (httpx.HTTPError, ValueError):
-            pass  # Weather is useful even when the separate air feed is down.
+            pass
 
     result = {
         "current": payload.get("current", {}),
@@ -203,13 +260,15 @@ def dashboard(owner: str, farm_key: str = "") -> dict:
                ORDER BY f.farm_key LIMIT 1""",
             {"owner": owner, "farm_key": farm_key or stored.get("farm_key", "")},
         )
-    result = {"available": bool(stored.get("available")), "forecast": stored if stored.get("available") else None, "live": None}
+    result = {
+        "available": bool(stored.get("available")),
+        "forecast": stored if stored.get("available") else None,
+        "live": None,
+    }
     if not rows or rows[0]["latitude"] is None or rows[0]["longitude"] is None:
         return result if result["available"] else stored
     try:
-        live = _public_weather(
-            float(rows[0]["latitude"]), float(rows[0]["longitude"])
-        )
+        live = _public_weather(float(rows[0]["latitude"]), float(rows[0]["longitude"]))
         result["live"] = live
         if not result["available"]:
             daily = live["daily"]
@@ -225,10 +284,15 @@ def dashboard(owner: str, farm_key: str = "") -> dict:
                     }
                     for index, date in enumerate(daily["time"])
                 ],
-                "provenance": {"source": live["source"], "issued_at": live["captured_at"]},
+                "provenance": {
+                    "source": live["source"],
+                    "issued_at": live["captured_at"],
+                },
                 "note": "Captured regional weather model forecast, not an on-farm measurement.",
             }
             result["available"] = True
     except (httpx.HTTPError, ValueError, TypeError) as exc:
-        result["live_error"] = f"Live weather details are unavailable ({type(exc).__name__}). The dated forecast below is still available."
+        result["live_error"] = (
+            f"Live weather details are unavailable ({type(exc).__name__}). The dated forecast below is still available."
+        )
     return result if result["available"] else stored

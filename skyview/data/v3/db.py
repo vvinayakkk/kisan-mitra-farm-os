@@ -45,7 +45,7 @@ def engine():
     url = os.getenv("V3_DATABASE_URL")
     if not url:
         raise RuntimeError("V3_DATABASE_URL is required in v3 mode")
-    # Check the lane even on cache hits; a previous pool must never bypass it.
+
     parsed = make_url(url)
     expected = {"v3_demo": "skyview_v3_demo", "v3_live": "skyview_v3_live"}
     if parsed.database not in (expected.get(mode()), "skyview_v3_test"):
@@ -63,7 +63,7 @@ def connection(farmer_id=None, write=False, ingest=False):
     owner = str(uuid.UUID(str(farmer_id))) if farmer_id is not None else ""
     role = "sv3_ingest" if ingest else "sv3_writer" if write else "sv3_app"
     with engine().begin() as db:
-        db.execute(text(f"SET LOCAL ROLE {role}"))  # constant allowlist above
+        db.execute(text(f"SET LOCAL ROLE {role}"))
         db.execute(text("SELECT set_config('search_path','sv3,pg_catalog',true)"))
         db.execute(
             text("SELECT set_config('app.farmer_id',:owner,true)"), {"owner": owner}

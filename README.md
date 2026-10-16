@@ -307,7 +307,7 @@ Set the API’s `SKYVIEW_DATA_MODE=v3_live`, pass an encoded `V3_DATABASE_URL` s
 | [`data_platform/v3/`](data_platform/v3/) | Ordered SQL, catalogs, bootstrap, local provisioning and operations. |
 | [`infra/`](infra/) | Backend/frontend images, Nginx and dependency lock points. |
 | [`tests/`](tests/) | Backend and database contracts. Frontend component tests live beside components. |
-| [`hardware/`](hardware/) and [`skyview_flutter_app/`](skyview_flutter_app/) | Device experiments and companion mobile source; neither is required to run the web stack. |
+| [`hardware/`](hardware/) and [`mobile/`](mobile/) | Device experiments and companion mobile source; neither is required to run the web stack. |
 | [`docs/`](docs/) | Architecture and feature notes. |
 
 The project is private until submission. Contributions should keep farmer ownership, source provenance, replay safety and accessible language flows intact. See [CONTRIBUTING.md](CONTRIBUTING.md) and [LICENSE](LICENSE).

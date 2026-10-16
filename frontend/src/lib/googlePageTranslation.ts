@@ -3,23 +3,23 @@ import { preferredLanguage, type Language } from './languagePreference';
 const marker = 'mitra-language-transition';
 
 export function beginLanguageTransition(language: Language) {
-  try { sessionStorage.setItem(marker, language); } catch { /* The cover still works for this page. */ }
+  try { sessionStorage.setItem(marker, language); } catch {                                            }
   document.documentElement.classList.add('language-transitioning');
 }
 
 export function reloadForLanguage() { window.location.reload(); }
 
-/** The widget must start after React has rendered actual page text. */
+
 export function bootGooglePageTranslation() {
   const root = document.getElementById('root');
   if (!root) return;
   const language = preferredLanguage();
   let pending = false;
-  try { pending = sessionStorage.getItem(marker) === language; } catch { /* No stored transition. */ }
+  try { pending = sessionStorage.getItem(marker) === language; } catch {                             }
   if (!pending) document.documentElement.classList.remove('language-transitioning');
 
   const finish = () => {
-    try { sessionStorage.removeItem(marker); } catch { /* Ignore storage restrictions. */ }
+    try { sessionStorage.removeItem(marker); } catch {                                    }
     document.documentElement.classList.remove('language-transitioning');
   };
   let ready = false;

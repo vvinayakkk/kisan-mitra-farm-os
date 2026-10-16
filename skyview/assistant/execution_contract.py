@@ -27,7 +27,6 @@ def infer(text):
         if tool and tool not in reads:
             reads.append(tool)
 
-    # Capability questions mention many features without requesting each one.
     capabilities = bool(
         re.search(r"what can you|what do you do|kya (?:kar|karta)|capabilit", text)
     )
@@ -49,7 +48,7 @@ def infer(text):
             ]
             operation = before[-1] if before else None
             creates = bool(operation and re.fullmatch(creation, operation.group()))
-            # Hindi commonly places the verb after the object: "PDF bana do".
+
             creates = creates or bool(
                 re.match(r"\s+(?:bana\w*|banao)\b", text[mention.end() :])
             )
@@ -109,8 +108,7 @@ def infer(text):
             text,
         ):
             add("crop-scouting")
-    # Match the action's object, not a task word elsewhere in a file request.
-    # "Create Excel ... do not save any task" must never imply a calendar write.
+
     create_task = re.search(
         r"\b(?:create|save|add|schedule)\s+(?:(?:one|a|an|the|new|two|any|\d+)\s+)?(?:calendar\s+)?(?:task|tasks|reminder)\b",
         text,
@@ -193,9 +191,7 @@ def language_instruction(messages, start=0, ui_language="en"):
     ]
     for content in reversed(user_messages):
         text = content.lower()
-        if re.search(
-            r"(?:reply|answer|respond|speak) in english|in english\s*:", text
-        ):
+        if re.search(r"(?:reply|answer|respond|speak) in english|in english\s*:", text):
             return "Reply in English, including questions and document prose, as explicitly requested."
         if re.search(
             r"hinglish|roman (?:hindi|letters|script)|hindi.*english letters", text
@@ -218,13 +214,69 @@ def language_instruction(messages, start=0, ui_language="en"):
                 return f"Reply in {name} using the same script as the farmer's message, including questions, choices, headings and final answer."
         if re.search(r"[\u0900-\u097f]", content):
             locale = preferred_language(ui_language)
-            name = LANGUAGE_NAMES[locale] if locale in {"hi", "mr", "ne", "sa", "kok", "mai", "doi"} else "Hindi"
+            name = (
+                LANGUAGE_NAMES[locale]
+                if locale in {"hi", "mr", "ne", "sa", "kok", "mai", "doi"}
+                else "Hindi"
+            )
             return f"Reply in {name} using Devanagari, including questions, choices, headings and final answer."
         words = re.findall(r"[a-z]+", content.lower())
-        roman_hindi = {"mujhe", "mere", "meri", "mera", "batao", "bata", "kya", "kaise", "karo", "karna", "chahiye", "nahi", "hain", "hai", "fasal", "khet", "bhav", "daam", "kitna", "kitne", "lagao", "banao", "dikhao", "dekh", "wala"}
+        roman_hindi = {
+            "mujhe",
+            "mere",
+            "meri",
+            "mera",
+            "batao",
+            "bata",
+            "kya",
+            "kaise",
+            "karo",
+            "karna",
+            "chahiye",
+            "nahi",
+            "hain",
+            "hai",
+            "fasal",
+            "khet",
+            "bhav",
+            "daam",
+            "kitna",
+            "kitne",
+            "lagao",
+            "banao",
+            "dikhao",
+            "dekh",
+            "wala",
+        }
         if len(set(words) & roman_hindi) >= 2:
             return "Reply in natural Hinglish using Latin/Roman letters, matching the farmer's wording. Write questions, choices, headings and the final answer in Hinglish, including after tool calls."
-        english_words = {"what", "which", "when", "where", "how", "can", "could", "should", "please", "tell", "show", "explain", "compare", "make", "create", "give", "help", "about", "with", "for", "the", "my", "me", "prices", "weather"}
+        english_words = {
+            "what",
+            "which",
+            "when",
+            "where",
+            "how",
+            "can",
+            "could",
+            "should",
+            "please",
+            "tell",
+            "show",
+            "explain",
+            "compare",
+            "make",
+            "create",
+            "give",
+            "help",
+            "about",
+            "with",
+            "for",
+            "the",
+            "my",
+            "me",
+            "prices",
+            "weather",
+        }
         if len(words) >= 3 and len(set(words) & english_words) >= 2:
             return "Reply in English, matching the farmer's current English question. Write questions, choices, headings and the final answer in English even if the interface is set to another language."
     if any(re.search(r"\w", content, re.UNICODE) for content in user_messages):
@@ -324,8 +376,7 @@ def artifact_receipts(contract, messages):
 def unverified_file_claims(text, receipts, known_names=()):
     names = {str(receipt.get("filename", "")).casefold() for receipt in receipts}
     names.update(str(name).casefold() for name in known_names)
-    # Markdown-emphasized filenames and file-link labels are common completion
-    # claims. Inspect exact names, leaving ordinary source citations untouched.
+
     claims = re.findall(
         r"(?<!\w)[*`\[]+([^*`\]\n]+\.(?:xlsx|docx|pdf|csv|pptx))(?=[*`\]])",
         text,

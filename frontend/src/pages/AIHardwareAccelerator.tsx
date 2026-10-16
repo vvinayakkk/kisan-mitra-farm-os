@@ -10,8 +10,8 @@ import { AIOverview } from "@/components/AIOverview";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-// ─── Colour palette per column ──────────────────────────────────
-// sensor = blue, core = amber/gold, model = violet, llm = emerald
+
+
 const COL_COLORS = {
   sensor: { accent: "#3B82F6", glow: "rgba(59,130,246,0.35)", border: "rgba(59,130,246,0.55)", bg: "rgba(59,130,246,0.07)", label: "#60A5FA" },
   core:   { accent: "#F59E0B", glow: "rgba(245,158,11,0.45)",  border: "rgba(245,158,11,0.65)", bg: "rgba(245,158,11,0.08)", label: "#FCD34D" },
@@ -19,8 +19,8 @@ const COL_COLORS = {
   llm:    { accent: "#2ECC71", glow: "rgba(46,204,113,0.40)",  border: "rgba(46,204,113,0.60)", bg: "rgba(46,204,113,0.07)", label: "#4ADE80" },
 } as const;
 
-// Edge segment colours: from-col determines first half, to-col second half
-// We'll use the destination colour for simplicity
+
+
 const EDGE_PULSE_COLOR: Record<string, string> = {
   "sensor→core":  COL_COLORS.core.accent,
   "core→model":   COL_COLORS.model.accent,
@@ -82,7 +82,7 @@ function edgePath(a: NodeDef, b: NodeDef): string {
 const VB_W = 960;
 const VB_H = 462;
 
-// ─── Edge segment type helper ────────────────────────────────────
+
 function edgeSegment(fromCol: string, toCol: string): string {
   if (fromCol === "sensor" && toCol === "core")  return "sensor→core";
   if (fromCol === "core"   && toCol === "model") return "core→model";
@@ -90,7 +90,7 @@ function edgeSegment(fromCol: string, toCol: string): string {
   return "sensor→core";
 }
 
-// ─── Canvas graph ────────────────────────────────────────────────
+
 function NodeGraph({
   isDark,
   activePipeline,
@@ -126,7 +126,7 @@ function NodeGraph({
     const pw = (v: number) => v * (canvas.clientWidth  / VB_W);
     const ph = (v: number) => v * (canvas.clientHeight / VB_H);
 
-    // Pre-build SVG paths for getPointAtLength
+
     const edgeSvgPaths: SVGPathElement[] = EDGES.map(e => {
       const a = nodeById(e.from);
       const b = nodeById(e.to);
@@ -145,7 +145,7 @@ function NodeGraph({
       const t = tickRef.current;
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-      // ── Edges ─────────────────────────────────────────────
+
       EDGES.forEach((e, i) => {
         const a    = nodeById(e.from);
         const b    = nodeById(e.to);
@@ -160,7 +160,7 @@ function NodeGraph({
         const y2 = py(b.y + NODE_H / 2);
         const mx = (x1 + x2) / 2;
 
-        // Static line
+
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.bezierCurveTo(mx, y1, mx, y2, x2, y2);
@@ -170,7 +170,7 @@ function NodeGraph({
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Animated pulse dot
+
         const phase  = (t + e.phaseShift) % 1;
         const svgLen = edgeSvgPaths[i].getTotalLength();
         const pt     = edgeSvgPaths[i].getPointAtLength(phase * svgLen);
@@ -178,7 +178,7 @@ function NodeGraph({
         const dotY   = py(pt.y);
         const alpha  = phase < 0.1 ? phase / 0.1 : phase > 0.9 ? (1 - phase) / 0.1 : 1;
 
-        // Trailing glow
+
         if (hot) {
           ctx.beginPath();
           ctx.arc(dotX, dotY, pw(9), 0, Math.PI * 2);
@@ -194,7 +194,7 @@ function NodeGraph({
         ctx.fill();
       });
 
-      // ── Nodes ─────────────────────────────────────────────
+
       NODES.forEach(n => {
         const x    = px(n.x);
         const y    = py(n.y);
@@ -204,11 +204,11 @@ function NodeGraph({
         const cc   = COL_COLORS[n.col];
         const isHot = activePipeline.length === 0 || activePipeline.includes(n.id);
 
-        // Glow halo
+
         ctx.shadowBlur  = isHot ? pw(n.col === "core" ? 16 : 10) : 0;
         ctx.shadowColor = isHot ? cc.glow : "transparent";
 
-        // Card
+
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, r);
         ctx.fillStyle = isHot
@@ -218,26 +218,26 @@ function NodeGraph({
         ctx.shadowBlur  = 0;
         ctx.shadowColor = "transparent";
 
-        // Border
+
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, r);
         ctx.strokeStyle = isHot ? cc.border : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.09)");
         ctx.lineWidth   = isHot ? 1.5 : 1;
         ctx.stroke();
 
-        // Left accent bar
+
         ctx.beginPath();
         ctx.roundRect(x, y + ph(10), pw(3), ph(NODE_H - 20), pw(1.5));
         ctx.fillStyle = isHot ? cc.accent : (isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.10)");
         ctx.fill();
 
-        // Label
+
         ctx.font      = `600 ${pw(12)}px "Inter", system-ui, sans-serif`;
         ctx.fillStyle = isHot ? TEXT_PRI : (isDark ? "rgba(240,240,240,0.38)" : "rgba(17,17,17,0.35)");
         ctx.textAlign = "left";
         ctx.fillText(n.label, x + pw(14), y + ph(20));
 
-        // Sub-label
+
         ctx.font      = `400 ${pw(10)}px "Inter", system-ui, sans-serif`;
         ctx.fillStyle = isHot
           ? cc.label
@@ -255,7 +255,7 @@ function NodeGraph({
     };
   }, [isDark, activePipeline]);
 
-  // ── Mouse hover – report vb coords back to parent ─────────────
+
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -274,7 +274,7 @@ function NodeGraph({
         my <= (n.y + NODE_H) * scaleY
       ) { found = n; break; }
     }
-    // Pass canvas-relative coords for tooltip positioning
+
     onHover(found, mx, my);
   };
 
@@ -290,7 +290,7 @@ function NodeGraph({
   );
 }
 
-// ─── Tooltip (positioned relative to graph container) ────────────
+
 function Tooltip({
   node,
   x,
@@ -299,13 +299,13 @@ function Tooltip({
   containerRef,
 }: {
   node: NodeDef;
-  x: number;        // canvas-relative px
-  y: number;        // canvas-relative px
+  x: number;
+  y: number;
   isDark: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
 }) {
   const cc = COL_COLORS[node.col];
-  // Offset tip 16px right and a bit above cursor
+
   const tipX = x + 16;
   const tipY = y - 10;
 
@@ -323,7 +323,7 @@ function Tooltip({
         border: `1px solid ${cc.border}`,
         boxShadow: `0 4px 24px rgba(0,0,0,0.28), 0 0 0 1px ${cc.accent}22`,
         pointerEvents: "none",
-        // Clamp so it doesn't overflow right edge
+
         transform: "translateY(-50%)",
       }}
     >
@@ -340,7 +340,7 @@ function Tooltip({
   );
 }
 
-// ─── Column legend bar ───────────────────────────────────────────
+
 function ColLegend({ isDark }: { isDark: boolean }) {
   const cols: { label: string; col: keyof typeof COL_COLORS }[] = [
     { label: "Sensors",   col: "sensor" },
@@ -362,7 +362,7 @@ function ColLegend({ isDark }: { isDark: boolean }) {
   );
 }
 
-// ─── Metric tile ─────────────────────────────────────────────────
+
 function Tile({ value, unit, label, sub, isDark }: { value: string | number; unit?: string; label: string; sub: string; isDark: boolean }) {
   return (
     <div style={{ flex: 1, minWidth: 130, padding: "0.9rem 1.1rem", borderRadius: 10, background: "transparent", border: `1.5px solid ${isDark ? "rgba(46,204,113,0.25)" : "rgba(30,100,50,0.22)"}`, borderLeft: "3px solid #2ECC71" }}>
@@ -375,7 +375,7 @@ function Tile({ value, unit, label, sub, isDark }: { value: string | number; uni
   );
 }
 
-// ─── Progress bar ────────────────────────────────────────────────
+
 function Bar({ value, isDark }: { value: number; isDark: boolean }) {
   const color = value >= 80 ? "#ef4444" : value >= 60 ? "#f97316" : value >= 40 ? "#eab308" : value >= 20 ? "#3b82f6" : "#22c55e";
   return (
@@ -396,7 +396,7 @@ function Bar({ value, isDark }: { value: number; isDark: boolean }) {
   );
 }
 
-// ─── How-it-works block ──────────────────────────────────────────
+
 function HowBlock({ steps, isDark }: { steps: string[]; isDark: boolean }) {
   const [open, setOpen] = useState(false);
   return (
@@ -418,7 +418,7 @@ function HowBlock({ steps, isDark }: { steps: string[]; isDark: boolean }) {
   );
 }
 
-// ─── LLM insight block ───────────────────────────────────────────
+
 function LLMBlock({ text, isDark }: { text: string; isDark: boolean }) {
   const [open, setOpen] = useState(false);
   return (
@@ -435,7 +435,7 @@ function LLMBlock({ text, isDark }: { text: string; isDark: boolean }) {
   );
 }
 
-// ─── Result card ─────────────────────────────────────────────────
+
 function ResultCard({ title, modeLabel, children, isDark }: { title: string; modeLabel: string; children: React.ReactNode; isDark: boolean }) {
   return (
     <div style={{
@@ -459,7 +459,7 @@ function ResultCard({ title, modeLabel, children, isDark }: { title: string; mod
   );
 }
 
-// ─── Action button ───────────────────────────────────────────────
+
 function ActionBtn({ label, loadingLabel, loading, onClick, isDark }: { label: string; loadingLabel: string; loading: boolean; onClick: () => void; isDark: boolean }) {
   return (
     <button onClick={onClick} disabled={loading} style={{ width: "100%", padding: "0.6rem 1rem", borderRadius: 8, border: "1.5px solid #2ECC71", background: "transparent", color: "#2ECC71", fontWeight: 600, fontSize: "0.82rem", cursor: loading ? "not-allowed" : "pointer", transition: "all 0.15s", letterSpacing: "0.02em" }}>
@@ -468,7 +468,7 @@ function ActionBtn({ label, loadingLabel, loading, onClick, isDark }: { label: s
   );
 }
 
-// ─── Main export ─────────────────────────────────────────────────
+
 export default function AIHardwareAccelerator() {
   const { theme } = useTheme();
   const isDark    = theme === "dark";
@@ -484,7 +484,7 @@ export default function AIHardwareAccelerator() {
   const [activePipeline,     setActivePipeline]     = useState<string[]>([]);
   const [hwModeState,        setHwModeState]        = useState<string | null>(null);
 
-  // Tooltip state — canvas-relative coordinates
+
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<NodeDef | null>(null);
   const [tipX, setTipX] = useState(0);
@@ -600,7 +600,7 @@ export default function AIHardwareAccelerator() {
 
       <div style={{ position: "relative", zIndex: 40, padding: "1.75rem 2rem", maxWidth: 1300, margin: "0 auto" }}>
 
-        {/* Page header */}
+        {                 }
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
             <h1 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: isDark ? '#A8D89A' : '#1B3A20', letterSpacing: "-0.01em" }}>
@@ -617,7 +617,7 @@ export default function AIHardwareAccelerator() {
 
         <AIOverview page="growth" />
 
-        {/* Graph panel with frosted glass card background */}
+        {                                                    }
         <div style={{
           borderRadius: 20,
           border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255,255,255,0.8)",
@@ -636,7 +636,7 @@ export default function AIHardwareAccelerator() {
             Hover over any node for details · Edges animate live data flow
           </p>
 
-          {/* Relative container so tooltip is positioned inside it */}
+          {                                                           }
           <div ref={graphContainerRef} style={{ position: "relative" }}>
             <NodeGraph isDark={isDark} activePipeline={activePipeline} onHover={handleHover} />
             {hoveredNode && (
@@ -645,10 +645,10 @@ export default function AIHardwareAccelerator() {
           </div>
         </div>
 
-        {/* Pipeline cards */}
+        {                    }
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem", marginBottom: "1.75rem" }}>
 
-          {/* Rain */}
+          {          }
           <div style={{
             borderRadius: 18,
             padding: "1.35rem 1.5rem",
@@ -671,7 +671,7 @@ export default function AIHardwareAccelerator() {
             <ActionBtn label="Run Rain Prediction" loadingLabel="Processing on FPGA" loading={loadingRain} onClick={predictRain} isDark={isDark} />
           </div>
 
-          {/* Fusion */}
+          {            }
           <div style={{
             borderRadius: 18,
             padding: "1.35rem 1.5rem",
@@ -694,7 +694,7 @@ export default function AIHardwareAccelerator() {
             <ActionBtn label="Run Sensor Fusion" loadingLabel="Fusing on FPGA" loading={loadingFusion} onClick={runFusion} isDark={isDark} />
           </div>
 
-          {/* Combined */}
+          {              }
           <div style={{
             borderRadius: 18,
             padding: "1.35rem 1.5rem",
@@ -718,7 +718,7 @@ export default function AIHardwareAccelerator() {
           </div>
         </div>
 
-        {/* Results */}
+        {             }
         {rainResult && (
           <ResultCard title="Rain Prediction" modeLabel={rainResult.hardware_mode} isDark={isDark}>
             <Bar value={rainResult.prediction.rain_probability} isDark={isDark} />

@@ -66,7 +66,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
 
     try {
       if (!forceRegenerate) {
-        const cached = null; // Refetch source-backed summaries; old text-only caches have no freshness.
+        const cached = null;
         if (cached) {
           setOverview(String(cached));
           setLoading(false);
@@ -440,7 +440,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
     }
   };
 
-  // **bold** → slightly brighter text, no color change — clean and readable
+
   const renderFormattedText = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, index) => {
@@ -476,7 +476,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
       pa: "PA",
     }[language] || "EN";
 
-  // Emerald accent values — one color, used sparingly
+
   const emerald = {
     solid: "#10b981",
     bg: isDark ? "rgba(16,185,129,0.10)" : "rgba(16,185,129,0.07)",
@@ -494,7 +494,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         borderRadius: "14px",
-        // Emerald top accent — the single colour moment
+
         border: isDark
           ? "0.5px solid rgba(255,255,255,0.08)"
           : "0.5px solid rgba(15,23,42,0.10)",
@@ -506,7 +506,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
-      {/* Header */}
+      {            }
       <div
         style={{
           display: "flex",
@@ -519,7 +519,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* Icon box — emerald tinted */}
+          {                               }
           <div
             style={{
               width: "28px",
@@ -536,7 +536,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
             <ScanLine size={14} color={emerald.solid} />
           </div>
 
-          {/* Title — neutral, professional */}
+          {                                   }
           <span
             style={{
               fontWeight: 600,
@@ -549,7 +549,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
             AI Overview
           </span>
 
-          {/* Language badge — muted */}
+          {                            }
           <span
             style={{
               fontSize: "10px",
@@ -598,7 +598,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
         </div>
       </div>
 
-      {/* Overview text */}
+      {                   }
       <div style={{ padding: "16px 18px 12px" }}>
         {loading && !overview ? (
           <div
@@ -667,7 +667,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
         )}
       </div>
 
-      {/* Expanded drawer */}
+      {                     }
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -685,7 +685,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                   : "0.5px solid rgba(15,23,42,0.06)",
               }}
             >
-              {/* Quick Actions */}
+              {                   }
               <div style={{ marginTop: "18px" }}>
                 <p
                   style={{
@@ -733,7 +733,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                           flexDirection: "column",
                           gap: "5px",
                         }}
-                        // Hover: light emerald border glow via className
+
                         className="hover:border-emerald-500/30 hover:scale-[1.01]"
                       >
                         <div
@@ -743,7 +743,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                             gap: "7px",
                           }}
                         >
-                          {/* Icon gets the emerald accent */}
+                          {                                  }
                           <CardIcon size={13} color={emerald.solid} />
                           <span
                             style={{
@@ -775,7 +775,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                 </div>
               </div>
 
-              {/* Chat section */}
+              {                  }
               <div
                 style={{
                   marginTop: "20px",
@@ -800,7 +800,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                   Ask Kisan Mitra
                 </p>
 
-                {/* Suggestion chips — emerald tint */}
+                {                                     }
                 {chatHistory.length === 0 && (
                   <div
                     style={{
@@ -833,7 +833,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                   </div>
                 )}
 
-                {/* Chat history */}
+                {                  }
                 {chatHistory.length > 0 && (
                   <div
                     ref={chatContainerRef}
@@ -964,7 +964,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                   </div>
                 )}
 
-                {/* Input */}
+                {           }
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -1010,7 +1010,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
                     disabled={chatLoading}
                     onTranscript={setChatInput}
                   />
-                  {/* Send button — emerald when active */}
+                  {                                       }
                   <button
                     type="submit"
                     disabled={chatLoading || !chatInput.trim()}
@@ -1042,7 +1042,7 @@ export function AIOverview({ page, extraContext }: AIOverviewProps) {
         )}
       </AnimatePresence>
 
-      {/* Expand / Collapse */}
+      {                       }
       <div
         onClick={() => setExpanded(!expanded)}
         style={{

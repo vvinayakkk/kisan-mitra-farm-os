@@ -295,7 +295,7 @@ def extend(add, uid, rng, dataset, asof, created, farmers, plots, cycle_ids, reg
             attachment_id=None,
             origin="synthetic",
         )
-        # Harvest belongs to the previous cycle, not the still-growing current crop.
+
         batch = uid(f"batch:{n}")
         previous = uid(f"cycle:{n}:0:0")
         add(
@@ -436,5 +436,3 @@ def extend(add, uid, rng, dataset, asof, created, farmers, plots, cycle_ids, reg
                 acknowledged_at=None,
                 status="active",
             )
-    # A real-memory correction fixture: original current fact expires and new fact cites same own message.
-    # Existing CSV rows are not modified here; correction behavior is tested transactionally.

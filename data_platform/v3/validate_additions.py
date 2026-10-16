@@ -101,13 +101,13 @@ def extend(query, assertq, rejects, rls_count, farmer, other):
         f"BEGIN; UPDATE sv3.tasks SET title=title WHERE farmer_id='{farmer}'; SELECT min(row_version) FROM sv3.tasks WHERE farmer_id='{farmer}'; ROLLBACK;",
         "BEGIN\nUPDATE 6\n2\nROLLBACK",
     )
-    # Successful correction transaction is rolled back after checking unique-current/evidence semantics.
+
     assertq(
         "Correction preserves history and one current memory",
         f"BEGIN; SET search_path=sv3,public; UPDATE memories SET valid_to=valid_from+interval '1 minute' WHERE farmer_id='{farmer}'; INSERT INTO memories(farmer_id,fact_key,value,evidence_message_id,confidence,valid_from,supersedes_id,search_text) SELECT farmer_id,fact_key,'{{\"synthetic\":true,\"corrected\":true}}',evidence_message_id,1,valid_to,id,'Corrected synthetic fixture' FROM memories WHERE farmer_id='{farmer}'; SELECT count(*) FROM current_memories WHERE farmer_id='{farmer}'; ROLLBACK;",
         "BEGIN\nSET\nUPDATE 1\nINSERT 0 1\n1\nROLLBACK",
     )
-    # Matching approval uses server time only in the disposable test transaction. No command is delivered.
+
     setup = f"""INSERT INTO tool_calls(id,farmer_id,run_id,call_key,tool_name,arguments,status) SELECT '00000000-0000-0000-0000-000000000333','{farmer}',id,'test-pump','demo-pump','{{}}','waiting_approval' FROM agent_runs WHERE farmer_id='{farmer}' LIMIT 1;
     INSERT INTO approvals(id,farmer_id,tool_call_id,arguments_hash,decision,decided_at,expires_at) VALUES('00000000-0000-0000-0000-000000000444','{farmer}','00000000-0000-0000-0000-000000000333','test-hash','approved',now(),now()+interval '1 hour');
     """
@@ -125,7 +125,7 @@ def extend(query, assertq, rejects, rls_count, farmer, other):
         ),
         "matching unexpired approval",
     )
-    # Regression for protected child grants: root table reads remain owner-scoped.
+
     rls_count("sensor_packets", f"WHERE farmer_id='{other}'", 0)
 
     rejects(

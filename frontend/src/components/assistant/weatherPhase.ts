@@ -29,6 +29,6 @@ export function weatherPhase(now: Date, timezone: string, daily?: SolarSeries, p
         return local.minute >= sunrise && local.minute < sunset ? "day" : "night";
       }
     }
-  } catch { /* An unavailable timezone falls back to the provider's day flag. */ }
+  } catch {                                                                      }
   return providerIsDay === 0 ? "night" : "day";
 }

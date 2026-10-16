@@ -192,14 +192,14 @@ export async function initializeAssistant() {
   initializing = (async () => {
     try {
       let stored: string | null = null;
-      try { stored = localStorage.getItem(key); } catch { /* Online sessions work without storage. */ }
+      try { stored = localStorage.getItem(key); } catch {                                             }
       if (stored) {
         try {
           const value = JSON.parse(stored);
           if (!session && typeof value.id === "string" && /^[a-f0-9]{32}$/.test(value.id) && typeof value.token === "string" && value.token)
             session = value;
         } catch {
-          try { localStorage.removeItem(key); } catch { /* Storage unavailable. */ }
+          try { localStorage.removeItem(key); } catch {                            }
         }
       }
       const catalog = await (await request("/catalog")).json();
@@ -208,7 +208,7 @@ export async function initializeAssistant() {
         const created = await (await request("/sessions", { method: "POST" })).json();
         assertCurrent(generation);
         session = created;
-        try { localStorage.setItem(key, JSON.stringify(session)); } catch { /* Online session remains usable. */ }
+        try { localStorage.setItem(key, JSON.stringify(session)); } catch {                                      }
       }
       let data;
       try {
@@ -222,7 +222,7 @@ export async function initializeAssistant() {
         const created = await (await request("/sessions", { method: "POST" })).json();
         assertCurrent(generation);
         session = created;
-        try { localStorage.setItem(key, JSON.stringify(session)); } catch { /* Online session remains usable. */ }
+        try { localStorage.setItem(key, JSON.stringify(session)); } catch {                                      }
         data = await sync();
       }
       assertCurrent(generation);
@@ -608,7 +608,7 @@ export async function inspectWorkspaceTool<T = Record<string, unknown>>(
   return result;
 }
 
-/** Small read-only warmup; never delays login or submits a farm task. */
+
 export function warmWorkspaceReads(): void {
   if (typeof document === "undefined" || document.visibilityState === "hidden" || !navigator.onLine) return;
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
@@ -619,7 +619,7 @@ export function warmWorkspaceReads(): void {
   void inspectWorkspaceTool("scheme_search", { query: "", state: "" }).catch(() => {});
 }
 
-/** Capability headers are issued by the server; farmer IDs and phones never define access. */
+
 export async function assistantAuthHeaders(): Promise<Record<string, string>> {
   const generation = sessionGeneration;
   await initializeAssistant();
@@ -643,30 +643,30 @@ export function clearAssistantSession(): void {
     const name = localStorage.key(i);
     if (name?.startsWith("skyview_cache_") || name?.startsWith("skyview_v3_cache_") || name?.startsWith("saved_user_otp_") || name?.startsWith("user_")) localStorage.removeItem(name);
   }
-  } catch { /* Clearing in-memory access always succeeds even if storage is blocked. */ }
+  } catch {                                                                             }
   update({ ready: false, loading: false, running: false, messages: [], pending: null, tasks: [], deletedTasks: [], artifacts: [], attachments: [], conversations: [], catalog: { skills: [], tools: [] }, error: null, status: "" });
 }
 
-/** Install only the capability returned by a successful server identity verification. */
+
 export async function adoptAssistantSession(id: string, token: string): Promise<void> {
   if (!/^[a-f0-9]{32}$/.test(id) || !token) throw new Error("Invalid workspace capability.");
   clearAssistantSession();
   session = { id, token };
   const generation = sessionGeneration, owner = session;
-  try { localStorage.setItem(key, JSON.stringify(session)); } catch { /* Online session remains usable. */ }
+  try { localStorage.setItem(key, JSON.stringify(session)); } catch {                                      }
   await initializeAssistant();
   assertCurrent(generation, owner);
   if (!state.ready) throw new Error(state.error || "Your workspace could not initialize.");
 }
 
-/** Dispatch revocation with the old capability, then clear local state immediately. */
+
 export async function revokeAssistantSession(): Promise<void> {
   let active = session;
   if (!active) {
     try {
       const stored = JSON.parse(localStorage.getItem(key) || "null");
       if (typeof stored?.id === "string" && /^[a-f0-9]{32}$/.test(stored.id) && typeof stored.token === "string") active = stored;
-    } catch { /* Invalid local capabilities are cleared below. */ }
+    } catch {                                                     }
   }
   let pending: Promise<Response | void>;
   try {
@@ -676,10 +676,10 @@ export async function revokeAssistantSession(): Promise<void> {
     return;
   }
   clearAssistantSession();
-  try { await pending; } catch { /* Server expiry still applies offline; never clear a newer login. */ }
+  try { await pending; } catch {                                                                       }
 }
 
-/** Rewrite the owned explanation only; never rerun the task or tool transcript. */
+
 export async function rewriteAssistantAnswer(messageId: string): Promise<string> {
   if (!session || state.running || state.pending) throw new Error("Finish the current request before rewriting an answer.");
   if (!navigator.onLine) throw new Error("Reconnect to rewrite this answer. Your original stays here.");

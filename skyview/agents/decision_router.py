@@ -5,9 +5,8 @@ Provides sub-100ms structured classification and workflow routing for agricultur
 """
 
 import logging
-import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -16,38 +15,107 @@ logger = logging.getLogger(__name__)
 class RouteDecision(BaseModel):
     category: str = Field(description="Target specialized agent category")
     confidence: float = Field(description="Decision confidence score (0-100)")
-    requires_vision: bool = Field(default=False, description="Flag indicating if multimodal image analysis is required")
-    requires_audio: bool = Field(default=False, description="Flag indicating if speech synthesis is required")
+    requires_vision: bool = Field(
+        default=False,
+        description="Flag indicating if multimodal image analysis is required",
+    )
+    requires_audio: bool = Field(
+        default=False, description="Flag indicating if speech synthesis is required"
+    )
     target_route: str = Field(description="Recommended frontend/backend route")
     latency_ms: float = Field(description="Evaluation time in milliseconds")
 
 
 INTENT_KEYWORDS: Dict[str, List[str]] = {
     "crop_doctor": [
-        "disease", "pest", "leaf", "blight", "rust", "fungus", "spot", "yellowing",
-        "wilt", "rot", "infection", "spray", "pesticide", "fungicide", "necrotic",
-        "कीड़ा", "रोग", "झुलसा", "रतुआ", "धब्बा", "फफूंद"
+        "disease",
+        "pest",
+        "leaf",
+        "blight",
+        "rust",
+        "fungus",
+        "spot",
+        "yellowing",
+        "wilt",
+        "rot",
+        "infection",
+        "spray",
+        "pesticide",
+        "fungicide",
+        "necrotic",
+        "कीड़ा",
+        "रोग",
+        "झुलसा",
+        "रतुआ",
+        "धब्बा",
+        "फफूंद",
     ],
     "mandi_rates": [
-        "mandi", "price", "rate", "bhav", "market price", "wholesale", "apmc",
-        "msp", "भाव", "मंडी", "दाम", "कीमत"
+        "mandi",
+        "price",
+        "rate",
+        "bhav",
+        "market price",
+        "wholesale",
+        "apmc",
+        "msp",
+        "भाव",
+        "मंडी",
+        "दाम",
+        "कीमत",
     ],
     "marketplace": [
-        "tractor", "harvester", "pump", "rent", "equipment", "barter", "share",
-        "excess", "hire", "किराया", "ट्रैक्टर", "साझा"
+        "tractor",
+        "harvester",
+        "pump",
+        "rent",
+        "equipment",
+        "barter",
+        "share",
+        "excess",
+        "hire",
+        "किराया",
+        "ट्रैक्टर",
+        "साझा",
     ],
     "gov_schemes": [
-        "scheme", "subsidy", "pm-kisan", "pmfby", "kcc", "loan", "yojana", "grant",
-        "योजना", "सब्सिडी", "ऋण", "मुआवजा"
+        "scheme",
+        "subsidy",
+        "pm-kisan",
+        "pmfby",
+        "kcc",
+        "loan",
+        "yojana",
+        "grant",
+        "योजना",
+        "सब्सिडी",
+        "ऋण",
+        "मुआवजा",
     ],
     "fpga_diagnostics": [
-        "fpga", "accelerator", "hardware", "latency", "hls", "zc706", "xilinx",
-        "neural core", "telemetry"
+        "fpga",
+        "accelerator",
+        "hardware",
+        "latency",
+        "hls",
+        "zc706",
+        "xilinx",
+        "neural core",
+        "telemetry",
     ],
     "weather_advisory": [
-        "weather", "rain", "temperature", "humidity", "monsoon", "frost", "irrigation",
-        "मौसम", "बारिश", "तापमान", "सिंचाई"
-    ]
+        "weather",
+        "rain",
+        "temperature",
+        "humidity",
+        "monsoon",
+        "frost",
+        "irrigation",
+        "मौसम",
+        "बारिश",
+        "तापमान",
+        "सिंचाई",
+    ],
 }
 
 
@@ -67,10 +135,9 @@ def evaluate_intent(prompt: str, has_image: bool = False) -> RouteDecision:
             requires_vision=True,
             requires_audio=False,
             target_route="/crop-doctor",
-            latency_ms=round(elapsed, 2)
+            latency_ms=round(elapsed, 2),
         )
 
-    # Keyword match scoring
     best_category = "General Farm Intelligence"
     best_score = 0
     target_route = "/advisor"
@@ -107,5 +174,5 @@ def evaluate_intent(prompt: str, has_image: bool = False) -> RouteDecision:
         requires_vision=best_category == "Crop Pathology Diagnostics",
         requires_audio=False,
         target_route=target_route,
-        latency_ms=round(elapsed, 2)
+        latency_ms=round(elapsed, 2),
     )

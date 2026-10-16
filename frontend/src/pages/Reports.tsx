@@ -31,7 +31,7 @@ interface SensorData {
 const defaultSensor: SensorData = { temperature: NaN, humidity: NaN, wind_speed: NaN, rainfall: NaN, soil_moisture: NaN, light: NaN, uv_index: NaN, pressure: NaN };
 const formatReading = (value: number, digits = 0) => Number.isFinite(value) ? value.toFixed(digits) : "—";
 
-// ─── Text Preprocessing for Markdown/JSON Cleanliness ────────────────────────
+
 function preprocessText(text: any): string {
   if (!text) return '';
   if (typeof text !== 'string') {
@@ -39,7 +39,7 @@ function preprocessText(text: any): string {
   }
   let cleaned = text;
 
-  // Clean out raw JSON code blocks in text replies
+
   if (cleaned.includes('```json')) {
     cleaned = cleaned.split('```json')[0];
   } else if (cleaned.includes('JSON object:')) {
@@ -48,7 +48,7 @@ function preprocessText(text: any): string {
     cleaned = cleaned.split('{"summary":')[0];
   }
 
-  // Inject structural newlines before bold headers
+
   cleaned = cleaned.replace(/\*\*Farm Advisory System\*\*/gi, '\n# Farm Advisory System\n');
   cleaned = cleaned.replace(/\*\*Current Weather Conditions:?\*\*/gi, '\n## Current Weather Conditions\n');
   cleaned = cleaned.replace(/\*\*Farm Advisory:?\*\*/gi, '\n## Farm Advisory\n');
@@ -56,7 +56,7 @@ function preprocessText(text: any): string {
   cleaned = cleaned.replace(/\*\*Summary:?\*\*/gi, '\n### Summary\n');
   cleaned = cleaned.replace(/\*\*Detailed Advisory:?\*\*/gi, '\n### Detailed Advisory\n');
 
-  // Inject newlines before inline lists and bullet items
+
   cleaned = cleaned.replace(/\s+-\s+\*\*/g, '\n- **');
   cleaned = cleaned.replace(/\.\s+\*\*/g, '.\n**');
   cleaned = cleaned.replace(/\s+(\d+)\.\s+\*\*/g, '\n$1. **');
@@ -64,7 +64,7 @@ function preprocessText(text: any): string {
   return cleaned.trim();
 }
 
-// ─── Custom Message Formatter ────────────────────────────────────────────────
+
 function FormattedMessage({ text }: { text: string }) {
   if (!text || typeof text !== 'string') return null;
   const lines = text.split(/\n/);
@@ -74,7 +74,7 @@ function FormattedMessage({ text }: { text: string }) {
         const trimmed = line.trim();
         if (!trimmed) return <div key={idx} style={{ height: '4px' }} />;
 
-        // Headings
+
         if (trimmed.startsWith('###')) {
           return <h4 key={idx} style={{ fontSize: '14.5px', fontWeight: 800, color: '#2ECC71', margin: '8px 0 2px' }}>{trimmed.replace(/^###\s*/, '')}</h4>;
         }
@@ -85,7 +85,7 @@ function FormattedMessage({ text }: { text: string }) {
           return <h2 key={idx} style={{ fontSize: '17px', fontWeight: 900, color: '#2ECC71', margin: '16px 0 6px' }}>{trimmed.replace(/^#\s*/, '')}</h2>;
         }
 
-        // Bullet lists
+
         let isList = false;
         let content = trimmed;
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
@@ -93,7 +93,7 @@ function FormattedMessage({ text }: { text: string }) {
           content = trimmed.replace(/^[-*]\s*/, '');
         }
 
-        // Bold text **word**
+
         const parts = content.split(/(\*\*.*?\*\*)/g);
         const elements = parts.map((part, pIdx) => {
           if (part.startsWith('**') && part.endsWith('**')) {
@@ -123,7 +123,7 @@ export default function Reports() {
   const { t } = useLanguage();
   const reportRef = useRef<HTMLDivElement>(null);
 
-  // Report selection modules configuration
+
   const [includeWeather, setIncludeWeather] = useState(true);
   const [includeSoil, setIncludeSoil] = useState(true);
   const [includeMandi, setIncludeMandi] = useState(true);
@@ -131,14 +131,14 @@ export default function Reports() {
   const [includeAlerts, setIncludeAlerts] = useState(true);
   const [includePlan, setIncludePlan] = useState(true);
 
-  // Format selection
+
   const [reportFormat, setReportFormat] = useState<'digest' | 'scientific' | 'action'>('digest');
 
-  // Generation log stepper state
+
   const [genSteps, setGenSteps] = useState<string[]>([]);
   const [genProgress, setGenProgress] = useState(0);
 
-  // Loaded database data for the report
+
   const [mandiRecords, setMandiRecords] = useState<any[]>([]);
   const [schemesRecords, setSchemesRecords] = useState<any[]>([]);
 
@@ -147,7 +147,7 @@ export default function Reports() {
   const [reportGenerated, setReportGenerated] = useState(false);
   const [generatedAt, setGeneratedAt] = useState('');
 
-  // Fetch telemetry
+
   const { data: rawSensor, dataUpdatedAt: sensorUpdatedAt } = useQuery({
     queryKey: ['latestSensorData', 'WS01'],
     queryFn: async () => {
@@ -174,7 +174,7 @@ export default function Reports() {
     refetchInterval: 15000,
   });
 
-  // Always guaranteed safe, numeric fields — prevents any possible .toFixed() crash or blank screen
+
   const safeSensor: SensorData = {
     temperature: typeof rawSensor?.temperature === 'number' && !isNaN(rawSensor.temperature) ? rawSensor.temperature : defaultSensor.temperature,
     humidity: typeof rawSensor?.humidity === 'number' && !isNaN(rawSensor.humidity) ? rawSensor.humidity : defaultSensor.humidity,
@@ -198,7 +198,7 @@ export default function Reports() {
     return () => clearInterval(timer);
   }, [sensorUpdatedAt]);
 
-  // Generate Report with animated logs stepper
+
   const generateReport = async () => {
     setAiLoading(true);
     setReportGenerated(false);
@@ -232,7 +232,7 @@ export default function Reports() {
             setMandiRecords(recs);
             await addStep(`✓ Loaded ${recs.length} mandi prices from PostgreSQL history.`, 55, 300);
           } else {
-            // Fallback mandi records if API unavailable
+
             setMandiRecords([]);
           }
         } catch (e) {
@@ -262,7 +262,7 @@ export default function Reports() {
       await addStep("🧠 Synthesizing data prompts and formatting criteria...", 85);
       await addStep("Calling Kisan Mitra AI model (Gemini pool: category overview)...", 92);
 
-      // Gemini AI call with timeout protection
+
       let insights = '';
       try {
         const controller = new AbortController();
@@ -339,7 +339,7 @@ p,span,div,strong{color:#222!important}
     const telemetry = includeWeather
       ? `*Live Telemetry:*\nTemp: ${formatReading(safeSensor.temperature, 1)}°C\nHumidity: ${formatReading(safeSensor.humidity, 0)}%\nWind: ${formatReading(safeSensor.wind_speed, 1)} km/h\nSoil Moisture: ${formatReading(safeSensor.soil_moisture, 0)}%\n\n`
       : '';
-    
+
     let alertsText = '';
     if (includeAlerts) {
       const activeAlerts = getAlerts();
@@ -386,10 +386,10 @@ p,span,div,strong{color:#222!important}
     return a;
   };
 
-  // Styling Primitives
+
   const borderCol = isDark ? 'rgba(46,204,113,0.3)' : 'rgba(46,204,113,0.35)';
   const innerCardBg = isDark ? '#122216' : '#F4F8F4';
-  
+
   const cardStyle = {
     background: isDark ? 'rgba(13, 23, 16, 0.95)' : 'rgba(255, 255, 255, 0.97)',
     backdropFilter: 'blur(20px)',
@@ -440,8 +440,8 @@ p,span,div,strong{color:#222!important}
       </div>
 
       <main style={{ position: 'relative', zIndex: 10, maxWidth: 1200, margin: '0 auto', padding: '24px 20px 60px' }}>
-        
-        {/* Title Header */}
+
+        {                  }
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28, textAlign: "left" }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
@@ -462,11 +462,11 @@ p,span,div,strong{color:#222!important}
           </div>
         </div>
 
-        {/* ─── Setup Phase ─── */}
+        {                         }
         {!reportGenerated && !aiLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            {/* Left Card: Welcome & Description */}
+
+            {                                      }
             <div className="lg:col-span-5 flex flex-col gap-6">
               <div style={{ ...cardStyle, padding: "24px", textAlign: "left" }}>
                 <div style={{
@@ -498,15 +498,15 @@ p,span,div,strong{color:#222!important}
               </div>
             </div>
 
-            {/* Right Card: Choices Workspace */}
+            {                                   }
             <div className="lg:col-span-7 flex flex-col">
               <div style={{ ...cardStyle, padding: "24px", textAlign: "left", flex: 1, display: "flex", flexDirection: "column" }}>
-                
+
                 <h3 style={{ fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: isDark ? "#A8D89A" : "#1B3A20", marginBottom: 16, borderBottom: `1px solid ${borderCol}`, paddingBottom: 8 }}>
                   Configuration Settings
                 </h3>
 
-                {/* Checklist grid */}
+                {                    }
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, marginBottom: 20 }}>
                   {[
                     { state: includeWeather, setter: setIncludeWeather, label: "Live Telemetry", desc: "Temperature, wind, rainfall stats" },
@@ -536,7 +536,7 @@ p,span,div,strong{color:#222!important}
                   ))}
                 </div>
 
-                {/* Report Format Selection */}
+                {                             }
                 <div style={{ marginBottom: 24 }}>
                   <h4 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: isDark ? "#8BAF8C" : "#666", marginBottom: 10 }}>
                     Report Persona / Format
@@ -567,7 +567,7 @@ p,span,div,strong{color:#222!important}
                   </div>
                 </div>
 
-                {/* Trigger Button */}
+                {                    }
                 <button
                   onClick={generateReport}
                   style={{
@@ -592,11 +592,11 @@ p,span,div,strong{color:#222!important}
           </div>
         )}
 
-        {/* ─── Loading / Stepper Phase ─── */}
+        {                                     }
         {aiLoading && (
           <div style={{ maxWidth: "600px", margin: "0 auto" }}>
             <div style={{ ...cardStyle, padding: "24px", textAlign: "left" }}>
-              
+
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Loader2 size={16} style={{ color: "#2ECC71", animation: "spin 1s linear infinite" }} />
@@ -609,12 +609,12 @@ p,span,div,strong{color:#222!important}
                 </span>
               </div>
 
-              {/* Progress Bar */}
+              {                  }
               <div style={{ height: 6, background: isDark ? "#122216" : "#E8F5E9", border: `1px solid ${borderCol}`, borderRadius: 4, overflow: "hidden", marginBottom: 20 }}>
                 <div style={{ width: `${genProgress}%`, height: "100%", background: "#2ECC71", borderRadius: 4, transition: "width 0.4s ease-out" }} />
               </div>
 
-              {/* Steps logs */}
+              {                }
               <div style={{
                 background: isDark ? "#0A130C" : "#F4F8F4",
                 border: `1.5px solid ${borderCol}`,
@@ -642,11 +642,11 @@ p,span,div,strong{color:#222!important}
           </div>
         )}
 
-        {/* ─── Generated Report View ─── */}
+        {                                   }
         {reportGenerated && !aiLoading && (
           <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-            
-            {/* Top Command Bar */}
+
+            {                     }
             <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
               <button
                 onClick={() => {
@@ -688,7 +688,7 @@ p,span,div,strong{color:#222!important}
               </button>
             </div>
 
-            {/* Document sheet - OPAQUE SOLID BACKGROUND, NEVER TRANSPARENT */}
+            {                                                                 }
             <div ref={reportRef} style={{
               background: isDark ? "#0A130C" : "#FFFFFF",
               border: `1.5px solid ${isDark ? "rgba(46, 204, 113, 0.45)" : "#2ECC71"}`,
@@ -698,8 +698,8 @@ p,span,div,strong{color:#222!important}
               color: isDark ? "#E2F0D9" : "#1A2E1C",
               fontFamily: "'Nunito', sans-serif"
             }}>
-              
-              {/* Document Header */}
+
+              {                     }
               <div className="rpt-header" style={{
                 textAlign: 'center', paddingBottom: 20,
                 borderBottom: '3px solid #2ECC71', marginBottom: 28
@@ -724,7 +724,7 @@ p,span,div,strong{color:#222!important}
                 </span>
               </div>
 
-              {/* Section 1: Weather Telemetry */}
+              {                                  }
               {includeWeather && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Weather &amp; Sensor Telemetry</h2>
@@ -754,7 +754,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Section 2: Soil Health */}
+              {                            }
               {includeSoil && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Soil Moisture &amp; Condition</h2>
@@ -775,7 +775,7 @@ p,span,div,strong{color:#222!important}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div style={{
                       background: innerCardBg,
                       border: `1.5px solid ${borderCol}`,
@@ -796,7 +796,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Section 3: Mandi Price Indexes (Postgres Records) */}
+              {                                                       }
               {includeMandi && mandiRecords.length > 0 && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Spot Mandi Market Index</h2>
@@ -825,7 +825,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Section 4: Government Schemes */}
+              {                                   }
               {includeSchemes && schemesRecords.length > 0 && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Government Welfare Programs</h2>
@@ -845,7 +845,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Section 5: Warnings & Alerts */}
+              {                                  }
               {includeAlerts && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Climate Warnings &amp; Advisory</h2>
@@ -873,7 +873,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Section 6: AI Sowing & Advisor Insights */}
+              {                                             }
               {aiAdvice && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Kisan Mitra AI Insights</h2>
@@ -895,7 +895,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Section 7: Action Plan Schedule */}
+              {                                     }
               {includePlan && (
                 <div style={{ marginBottom: 28 }}>
                   <h2 style={sectionTitleStyle}> Daily Operations Action Plan</h2>
@@ -919,7 +919,7 @@ p,span,div,strong{color:#222!important}
                 </div>
               )}
 
-              {/* Document Footer */}
+              {                     }
               <div className="rpt-footer" style={{
                 textAlign: 'center', marginTop: 40, paddingTop: 18,
                 borderTop: `2px solid ${isDark ? 'rgba(46,204,113,0.2)' : '#C8E6C9'}`,
@@ -937,7 +937,7 @@ p,span,div,strong{color:#222!important}
 
       </main>
 
-      {/* Styles for transitions and logs */}
+      {                                     }
       <style>{`
         @keyframes vaPulse {
           0%, 100% { transform: scale(1); opacity: 1; }

@@ -78,7 +78,7 @@ def revoke_session(sid: str, authorization: str | None = Header(default=None)):
         from skyview.assistant.v3_store import revoke_session as persisted_revoke
 
         return persisted_revoke(sid)
-    # Preserve legacy history while invalidating the capability hash.
+
     with store.connection() as conn:
         conn.execute(
             "UPDATE sessions SET token_hash=? WHERE id=?",
@@ -220,7 +220,7 @@ async def rewrite_answer(
         raise HTTPException(
             503, str(exc) or "Rewrite timed out. Your original answer is kept."
         ) from exc
-    # Recheck the capability after the provider call; a revoked session must not receive text.
+
     authorize(sid, authorization)
     return {
         "text": completed["content"],

@@ -1,6 +1,3 @@
-/** Unlock output during the click, before network work loses browser activation.
- * Microphone capture has its own context; cancelling capture cannot close output.
- */
 let outputContext: AudioContext | null = null;
 export function unlockSpeechAudio(): Promise<void> {
   const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -8,7 +5,7 @@ export function unlockSpeechAudio(): Promise<void> {
   try {
     if (!outputContext || outputContext.state === 'closed') outputContext = new AudioCtor();
     const context = outputContext;
-    // Call resume synchronously within the gesture (Safari/iOS require this).
+
     const resumed = context.state === 'running' ? Promise.resolve() : context.resume();
     return new Promise<void>((resolve, reject) => {
       const timer = window.setTimeout(() => reject(new Error('Tap Retry audio to enable your speaker.')), 3000);

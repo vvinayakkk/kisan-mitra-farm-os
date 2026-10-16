@@ -471,8 +471,7 @@ async def test_live_chart_snapshot_and_old_snapshot_recovery_preserve_demo_label
     assert result["provenance"] == completed["result"]["provenance"]
     assert result["note"] == completed["result"]["note"]
     assert len(result["chart"]["points"]) == 365
-    # Reproduce a pre-fix compact snapshot and evict its completed event from the
-    # latest 200-event window. Loading must use bounded exact-run/call recovery.
+
     result.pop("provenance")
     result.pop("note")
     result["chart"]["points"] = []
@@ -502,7 +501,7 @@ async def test_live_chart_snapshot_and_old_snapshot_recovery_preserve_demo_label
                     ),
                 },
             )
-    database.dispose()  # Simulate a process connection-pool restart.
+    database.dispose()
     response = TestClient(app).get(
         f"/api/assistant/sessions/{sid}",
         headers={"Authorization": "Bearer " + pg["token"]},
@@ -580,8 +579,7 @@ def test_pg_memory_correction_survives_repeated_full_state_saves(pg, monkeypatch
     store.save(sid, state)
     for _ in range(3):
         store.save(sid, state)
-    # Defense in depth: even if a future replay/rebuild scans old evidence,
-    # deterministic evidence IDs must prevent superseding the newer report.
+
     from contextlib import contextmanager
     from types import SimpleNamespace
 

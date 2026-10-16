@@ -6,12 +6,12 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-# Use SQLite in-memory for tests — no PostgreSQL needed
+
 os.environ.setdefault("DATABASE_URL", "sqlite:///test_skyview.db")
 os.environ.setdefault("GROQ_API_KEY", "test_key")
 os.environ.setdefault("DEBUG", "True")
 
-from skyview.main import app  # noqa: E402 — env must be set before import
+from skyview.main import app
 
 
 @pytest.fixture(scope="session")
@@ -49,7 +49,7 @@ def mock_llm_invoke(monkeypatch):
         elif "sharing schedule" in prompt or "weekly sharing schedule" in prompt:
             return "Farmer A shares Tractor on Mon-Tue. Farmer B shares Harvester on Wed-Thu. Farmer C shares Labor on Fri-Sat."
         return "Mocked LLM Response"
-    
+
     import skyview.utils.llm_pool
     import skyview.api.marketplace_routes
     import skyview.api.profile_routes

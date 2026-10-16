@@ -47,7 +47,7 @@ def _ensure(conn, owner):
 
 @router.get("")
 def summary(owner: Owner):
-    # Default creation does not opt a farmer into background checks.
+
     with db.connection(owner, write=True) as conn:
         _ensure(conn, owner)
         settings = repository.rows(
@@ -155,8 +155,6 @@ def mark_read(identifier: str, owner: Owner):
     return {"status": "read"}
 
 
-# Draft preparation is separate from approval. A refresh never performs farm actions.
-
 Area = Literal["today", "markets", "schemes", "records", "crops", "exchange"]
 
 
@@ -202,7 +200,6 @@ def proposals(owner: Owner, area: Area = "today"):
 @router.post("/prepare", status_code=202)
 def prepare(body: PrepareRequest, owner: Owner):
     with db.connection(owner, write=True) as conn:
-        # Serializes rapid clicks across tabs for this owner/area; other farmers proceed.
         conn.execute(
             text("SELECT pg_advisory_xact_lock(hashtextextended(:scope,0))"),
             {"scope": f"{owner}:{body.area}"},
@@ -243,7 +240,7 @@ def review_proposal(identifier: uuid.UUID, body: ProposalReview, owner: Owner):
         if not rows:
             raise HTTPException(404, "This suggestion is unavailable.")
         item = rows[0]
-        # Repeated approval after an ambiguous network outcome returns its receipt.
+
         if item["status"] == "approved" and body.action == "approve":
             return {"proposal": item, "mission_id": item["mission_id"]}
         if item["row_version"] != body.row_version or item["status"] != "ready":
@@ -287,11 +284,21 @@ def review_proposal(identifier: uuid.UUID, body: ProposalReview, owner: Owner):
                     (farmer_id,channel,delivery_allowed,scheduled_at,status,payload,dedupe_key)
                     VALUES(:owner,'in_app',true,now(),'ready',CAST(:payload AS jsonb),:key)
                     ON CONFLICT(farmer_id,dedupe_key) DO NOTHING"""),
-                {"owner": owner, "key": f"companion:approved:{identifier}",
-                 "payload": json.dumps({"source": "companion", "kind": "plan_saved",
-                    "title": "Your plan is ready", "detail": f"{title} — saved to your farm notebook.",
-                    "href": f"/workspace?view=records&tab=missions&mission={mission}",
-                    "proposal_id": str(identifier), "mission_id": mission})},
+                {
+                    "owner": owner,
+                    "key": f"companion:approved:{identifier}",
+                    "payload": json.dumps(
+                        {
+                            "source": "companion",
+                            "kind": "plan_saved",
+                            "title": "Your plan is ready",
+                            "detail": f"{title} — saved to your farm notebook.",
+                            "href": f"/workspace?view=records&tab=missions&mission={mission}",
+                            "proposal_id": str(identifier),
+                            "mission_id": mission,
+                        }
+                    ),
+                },
             )
             status = "approved"
         updated = repository.rows(

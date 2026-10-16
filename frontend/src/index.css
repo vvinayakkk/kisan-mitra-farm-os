@@ -3,15 +3,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Edge-Hosted Weather Intelligence Dashboard Design System
-   Clean, minimal, utilitarian design for agricultural monitoring
-   All colors MUST be HSL */
+
+
+
 
 @layer base {
   :root {
-    /* Primary Color: Agricultural Green (HSL: 142 70% 45%) */
+
     --background: 80 40% 98%;
-    /* Light cream/parchment background */
+
     --foreground: 142 50% 10%;
 
     --card: 0 0% 100%;
@@ -21,18 +21,18 @@
     --popover-foreground: 142 50% 10%;
 
     --primary: 160 84% 39%;
-    /* Vibrant Farm Green */
+
     --primary-foreground: 142 10% 98%;
 
     --secondary: 35 40% 92%;
-    /* Earthy/Sandy secondary */
+
     --secondary-foreground: 160 84% 22%;
 
     --muted: 142 10% 94%;
     --muted-foreground: 142 20% 40%;
 
     --accent: 45 90% 60%;
-    /* Sunflower Yellow */
+
     --accent-foreground: 142 50% 10%;
 
     --destructive: 0 84% 60%;
@@ -45,7 +45,7 @@
     --warning-foreground: 210 40% 98%;
 
     --atmospheric: 195 90% 45%;
-    /* Sky Blue */
+
     --atmospheric-foreground: 210 40% 98%;
 
     --border: 142 20% 90%;
@@ -57,7 +57,7 @@
 
   .dark {
     --background: 142 50% 4%;
-    /* Deep forest background */
+
     --foreground: 142 20% 95%;
 
     --card: 142 50% 6%;
@@ -108,7 +108,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Typography Scale */
+
   h1 {
     @apply text-3xl font-bold tracking-tight;
   }
@@ -121,7 +121,7 @@
     @apply text-xl font-semibold;
   }
 
-  /* Large numeric display for weather values */
+
   .value-display {
     @apply text-4xl font-bold tracking-tight tabular-nums;
   }
@@ -137,7 +137,7 @@
 
 @layer components {
 
-  /* Parameter Card Styles */
+
   .parameter-card {
     @apply bg-card border border-border rounded-xl p-5 shadow-sm transition-all duration-200;
   }
@@ -146,7 +146,7 @@
     @apply shadow-md border-primary/20;
   }
 
-  /* Status indicator pill */
+
   .status-pill {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
   }
@@ -163,7 +163,7 @@
     @apply bg-destructive/10 text-destructive;
   }
 
-  /* Freshness indicator */
+
   .freshness-indicator {
     @apply inline-flex items-center gap-2 text-sm text-muted-foreground;
   }
@@ -176,18 +176,18 @@
     @apply w-2 h-2 rounded-full bg-destructive;
   }
 
-  /* System health card */
+
   .health-card {
     @apply bg-secondary/50 border border-border rounded-lg p-4;
   }
 
-  /* Alert item */
+
   .alert-item {
     @apply flex items-start gap-3 p-3 rounded-lg border border-border bg-card;
   }
 }
 
-/* Smooth scrollbar styling */
+
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -222,7 +222,7 @@
     }
   }
 }
-/* Aggressive Google Translate UI Hiding */
+
 #google_translate_element,
 .goog-te-banner-frame,
 .goog-te-menu-frame,
@@ -243,7 +243,7 @@
   display: none !important;
 }
 
-/* Force body and html to ignore Google's added margin */
+
 body, html {
   top: 0 !important;
   position: static !important;
@@ -259,7 +259,7 @@ body {
   box-shadow: none !important;
 }
 
-/* Ensure no offset at the top of the page */
+
 .skiptranslate {
   display: none !important;
 }

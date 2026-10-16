@@ -19,9 +19,9 @@ from sqlalchemy.exc import IntegrityError
 
 from skyview.api.v3_routes import Owner
 from skyview.data.v3 import db, repository
+from skyview.languages import LANGUAGE_NAMES, normalize_language
 
 router = APIRouter(tags=["Farmer onboarding and owned farm records"])
-from skyview.languages import LANGUAGE_NAMES, normalize_language
 
 LANGUAGES = tuple(LANGUAGE_NAMES)
 
@@ -199,7 +199,7 @@ def sql(conn, statement, **params):
 
 
 def owned(conn, table, identifier):
-    # Table comes only from source-code constants, never request text.
+
     if table not in {"farmers", "farms", "plots", "crop_cycles", "stations"}:
         raise ValueError("Unsupported owned entity")
     row = (
@@ -498,7 +498,7 @@ def enroll(payload: Enrollment, owner: Owner):
     identifier = uuid.uuid4()
     key = secrets.token_urlsafe(32)
     station_key = "DEVICE-" + identifier.hex
-    # The server-selected trusted role cannot change the owner taken from the capability.
+
     with db.connection(owner, write=True, ingest=True) as conn:
         if not sql(
             conn,
@@ -513,8 +513,7 @@ def enroll(payload: Enrollment, owner: Owner):
         ).scalar_one()
         release = "physical-device-enrollment:" + str(date.today())
         lane = db.mode().removeprefix("v3_")
-        # Dataset lineage is immutable. Multiple devices enrolled on the same
-        # day share its release without rewriting provenance or its as-of date.
+
         sql(
             conn,
             "INSERT INTO sv3.datasets(provider_id,release_key,lane,origin,as_of_date,source_url) VALUES(:provider,:release,:lane,'user_reported',CURRENT_DATE,'urn:skyview:physical-device-enrollment') ON CONFLICT(release_key) DO NOTHING",
@@ -530,7 +529,9 @@ def enroll(payload: Enrollment, owner: Owner):
             lane=lane,
         ).scalar_one_or_none()
         if dataset is None:
-            raise HTTPException(409, "Device enrollment source does not match this workspace.")
+            raise HTTPException(
+                409, "Device enrollment source does not match this workspace."
+            )
         sql(
             conn,
             "INSERT INTO sv3.stations(id,farmer_id,plot_id,dataset_id,station_key,device_type,calibration,installed_at) VALUES(:id,:owner,:plot,:dataset,:key,'physical-pending',CAST(:metadata AS jsonb),now())",
@@ -704,7 +705,6 @@ def soil_report(payload: SoilReport, owner: Owner):
         ),
     }
     with db.connection(owner, write=True) as conn:
-        # Serialize retries and bind attachment ownership again inside the write transaction.
         sql(
             conn,
             "SELECT pg_advisory_xact_lock(hashtextextended(:key,0))",
@@ -831,7 +831,6 @@ def link_weather(identifier: uuid.UUID, payload: WeatherLink, owner: Owner):
             lon=lon,
         ).scalar_one()
     with db.connection(owner, write=True) as conn:
-        # Row ownership is checked again after the shared reference transaction.
         owned(conn, "farms", identifier)
         current_plot = owned(conn, "plots", payload.plot_id)
         if (

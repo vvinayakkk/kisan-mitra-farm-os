@@ -47,7 +47,7 @@ export default function Login() {
       return;
     }
 
-    // Direct Instant Access for Demo Testing Number
+
     if (isDemoPhoneNumber(fullPhone())) {
       setError('');
       setIsLoading(true);
@@ -109,7 +109,7 @@ export default function Login() {
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {/* Background */}
+      {                }
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: 'url(/frames/ezgif-frame-284.jpg)',
@@ -117,7 +117,7 @@ export default function Login() {
         filter: isDark ? 'brightness(0.35) saturate(0.8)' : 'brightness(0.55) saturate(0.9)',
       }} />
 
-      {/* Emerald gradient overlay */}
+      {                              }
       <div style={{
         position: 'absolute', inset: 0,
         background: isDark
@@ -125,13 +125,13 @@ export default function Login() {
           : 'radial-gradient(ellipse at 30% 60%, rgba(16,185,129,0.08) 0%, transparent 60%)',
       }} />
 
-      {/* Top-right controls */}
+      {                        }
       <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 100, display: 'flex', gap: '8px' }}>
         <ThemeToggle />
         <LanguageSelector />
       </div>
 
-      {/* Card */}
+      {          }
       <div style={{
         position: 'relative', zIndex: 10, width: '100%', maxWidth: '420px',
         margin: '24px',
@@ -145,7 +145,7 @@ export default function Login() {
         padding: '40px 36px 36px',
       }}>
 
-        {/* Logo */}
+        {          }
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{ display: 'inline-flex', marginBottom: '14px' }}>
             <SkyViewLogo size={52} isDark={isDark} showText={false} />
@@ -158,7 +158,7 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Error */}
+        {           }
         {error && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px',
@@ -170,7 +170,7 @@ export default function Login() {
           </div>
         )}
 
-        {/* Discreet Test Button (Not highlighted, clean & subtle) */}
+        {                                                            }
         {!otpSent && (
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
             <button
@@ -205,7 +205,7 @@ export default function Login() {
         )}
 
         <form style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {/* Phone input */}
+          {                 }
           <div>
             <label htmlFor="login-phone-input" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: textMuted, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Phone Number
@@ -220,7 +220,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* SMS Sent confirmation */}
+          {                           }
           {otpSent && (
             <div style={{
               padding: '12px 16px', borderRadius: '12px',
@@ -240,7 +240,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* OTP slots */}
+          {               }
           {otpSent && (
             <div>
               <label htmlFor="login-otp-input" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: textMuted, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -258,7 +258,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* Action button */}
+          {                   }
           {!otpSent ? (
             <button
               type="button" onClick={handleSendOtp} disabled={isLoading || !phone.trim()}
@@ -311,7 +311,7 @@ export default function Login() {
           )}
         </form>
 
-        {/* Divider */}
+        {             }
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
           <div style={{ flex: 1, height: '1px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
           <span style={{ fontSize: '12px', color: textMuted }}>New to SkyView?</span>
@@ -334,7 +334,7 @@ export default function Login() {
           </div>
         </Link>
 
-        {/* Footer */}
+        {            }
         <p style={{ textAlign: 'center', margin: '16px 0 0', fontSize: '11px', color: textMuted }}>
           Powered by SkyView · FPGA AI Platform
         </p>

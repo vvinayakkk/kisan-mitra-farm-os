@@ -146,7 +146,7 @@ def test_single_use_invite_reader_role_and_private_scope(accounts):
     assert client.get(f"{base}/{gid}/invites", headers=reader).status_code == 403
     listing = client.get(f"{base}/{gid}/invites", headers=owner).json()["items"]
     assert not any("token_hash" in r or "code" in r for r in listing)
-    # Private records stay behind the original farmer RLS; group access is isolated.
+
     item = client.post(
         "/api/farm-workspace/ledger",
         headers=owner,

@@ -19,7 +19,7 @@ MIME = {
 
 
 def safe_cell(value):
-    # Treat farmer/model text as data, preventing Excel/DDE formula injection.
+
     if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")):
         return "'" + value
     return value
@@ -104,8 +104,7 @@ def create_file(sid: str, args: FileArgs, *, revision_of: str | None = None):
         if font_path:
             font = TTFont("FarmUnicode", str(font_path))
             if "₹" in text and ord("₹") not in font.face.charToGlyph:
-                # Older macOS Arial Unicode predates the rupee sign. Preserve
-                # the currency meaning instead of failing an otherwise Latin PDF.
+
                 def currency_text(value):
                     if isinstance(value, str):
                         return value.replace("₹", "INR ")
@@ -217,8 +216,7 @@ def create_file(sid: str, args: FileArgs, *, revision_of: str | None = None):
                     )
             sheet.autofilter(0, 0, len(args.rows), len(args.columns) - 1)
             chart_column = None
-            # A model may include a total/subtotal row. Preserve it in the table,
-            # but never add it to the detail sum or chart it as another expense.
+
             detail_rows = [
                 i
                 for i, row in enumerate(args.rows)
@@ -319,7 +317,6 @@ def create_file(sid: str, args: FileArgs, *, revision_of: str | None = None):
         for heading, body in [(args.title, "Prepared with Kisan Mitra")] + [
             (s.heading, s.text) for s in args.sections
         ]:
-            # Split long sections into slides instead of overflowing a text box.
             import textwrap
 
             chunks = textwrap.wrap(
@@ -343,7 +340,6 @@ def create_file(sid: str, args: FileArgs, *, revision_of: str | None = None):
                 for para in tf.paragraphs:
                     para.font.size = Pt(20)
         if args.columns:
-            # Keep supplied records in the presentation as readable paginated tables.
             for offset in range(0, max(1, len(args.rows)), 8):
                 slide = deck.slides.add_slide(deck.slide_layouts[6])
                 title = slide.shapes.add_textbox(

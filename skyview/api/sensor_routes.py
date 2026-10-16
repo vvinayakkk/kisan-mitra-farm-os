@@ -25,8 +25,6 @@ from skyview.utils.logger import get_logger
 router = APIRouter(prefix="/api/sensors", tags=["Sensors"])
 logger = get_logger(__name__)
 
-# ── Models ────────────────────────────────────────────────────────────────────
-
 
 class FlatSensorPayload(BaseModel):
     """Flat sensor payload used by test_all_routes and direct HTTP callers."""
@@ -52,10 +50,7 @@ class FlatSensorPayload(BaseModel):
 class TrendsStoreReq(BaseModel):
     station_id: str = "WS01"
     period: str = "24h"
-    data: list | None = None  # raw chart data to persist if needed
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
+    data: list | None = None
 
 
 def _insert_weather(params: dict) -> bool:
@@ -78,9 +73,6 @@ def _insert_weather(params: dict) -> bool:
         """),
         params,
     )
-
-
-# ── Routes ────────────────────────────────────────────────────────────────────
 
 
 @router.get("/stations")

@@ -40,7 +40,7 @@ const STATES = [
   'West Bengal',
 ];
 
-// ─── Reusable primitives ───────────────────────────────────────────────────────
+
 
 const css = {
   card: (isDark: boolean) => ({
@@ -61,7 +61,7 @@ const css = {
   },
 };
 
-// ─── Tiny sparkline ────────────────────────────────────────────────────────────
+
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   const chartData = data.map((val, index) => ({ val, index }));
   return (
@@ -73,7 +73,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-// ─── Badge ─────────────────────────────────────────────────────────────────────
+
 function Badge({ label, color, bg }: { label: string; color: string; bg?: string }) {
   return (
     <span style={{
@@ -87,7 +87,7 @@ function Badge({ label, color, bg }: { label: string; color: string; bg?: string
   );
 }
 
-// ─── Select wrapper ────────────────────────────────────────────────────────────
+
 function FilterSelect({
   icon, value, onChange, isDark, children,
 }: {
@@ -122,7 +122,7 @@ function FilterSelect({
   );
 }
 
-// ─── Stat card ─────────────────────────────────────────────────────────────────
+
 function StatCard({ label, value, icon, accentColor, isDark }: {
   label: string; value: string | number;
   icon: React.ReactNode; accentColor: string; isDark: boolean;
@@ -144,7 +144,7 @@ function StatCard({ label, value, icon, accentColor, isDark }: {
   );
 }
 
-// ─── Sparkline crop card ───────────────────────────────────────────────────────
+
 function CropCard({ title, data, isDark }: { title: string; data: { prices: number[]; change: number; latest: number }; isDark: boolean }) {
   const isUp = data.change >= 0;
   const color = isUp ? css.text.accent : css.text.danger;
@@ -170,7 +170,7 @@ function CropCard({ title, data, isDark }: { title: string; data: { prices: numb
   );
 }
 
-// ─── Main page ─────────────────────────────────────────────────────────────────
+
 export default function MandiRates() {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
@@ -185,7 +185,7 @@ export default function MandiRates() {
   const [hoveredPoint, setHoveredPoint] = useState<any>(null);
   const [timeframe, setTimeframe] = useState<'1M' | '3M' | 'all'>('3M');
 
-  // ── Queries ──────────────────────────────────────────────────────────────────
+
 
   const { data: commodities = [] } = useQuery({
     queryKey: ['mandiCommodities'],
@@ -252,7 +252,7 @@ export default function MandiRates() {
     staleTime: 30000,
   });
 
-  // ── Derived values ───────────────────────────────────────────────────────────
+
 
   const lastRefresh = ratesUpdatedAt ? new Date(ratesUpdatedAt).toLocaleTimeString() : '';
   const historyRefreshTime = historyUpdatedAt ? new Date(historyUpdatedAt).toLocaleTimeString() : '';
@@ -360,19 +360,19 @@ export default function MandiRates() {
     else setHoveredPoint(null);
   }, [displayedChartData]);
 
-  // ── Theme tokens ──────────────────────────────────────────────────────────────
+
   const textPrimary = css.text.primary(isDark);
   const textSecondary = css.text.secondary(isDark);
   const cardStyle = css.card(isDark);
   const borderColor = isDark ? 'rgba(46,204,113,0.12)' : 'rgba(30,100,50,0.1)';
   const isLoading = activeTab === 'market-intelligence' ? loadingHistory : loading;
 
-  // ─────────────────────────────────────────────────────────────────────────────
+
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
       <FarmBackground />
 
-      {/* Header */}
+      {            }
       <div style={{ position: 'relative', zIndex: 50 }}>
         <DashboardHeader lastUpdateSeconds={0} sensorNodeOnline={true} />
       </div>
@@ -384,7 +384,7 @@ export default function MandiRates() {
         boxSizing: 'border-box',
       }}>
 
-        {/* ── Page header ── */}
+        {                       }
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
@@ -401,7 +401,7 @@ export default function MandiRates() {
               )}
             </div>
 
-            {/* Tab switcher — right aligned */}
+            {                                  }
             <div style={{
               display: 'flex', gap: 6,
               background: 'transparent',
@@ -440,14 +440,14 @@ export default function MandiRates() {
 
         <AIOverview page="mandi" />
 
-        {/* ── Filters bar ── */}
+        {                       }
         <div style={{
           ...cardStyle,
           padding: '14px 18px',
           marginBottom: 24,
           display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center',
         }}>
-          {/* Search — grid tab only */}
+          {                            }
           {activeTab === 'grid' && (
             <div style={{
               flex: '1 1 200px', minWidth: 160,
@@ -470,7 +470,7 @@ export default function MandiRates() {
             </div>
           )}
 
-          {/* State */}
+          {           }
           <FilterSelect
             icon={<MapPin size={16} />}
             value={selectedState}
@@ -481,7 +481,7 @@ export default function MandiRates() {
             {STATES.filter(Boolean).map(s => <option key={s} value={s}>{s}</option>)}
           </FilterSelect>
 
-          {/* Commodity */}
+          {               }
           <FilterSelect
             icon={<Filter size={16} />}
             value={selectedCommodity}
@@ -492,10 +492,10 @@ export default function MandiRates() {
             {commodities.map(c => <option key={c} value={c}>{c}</option>)}
           </FilterSelect>
 
-          {/* Spacer */}
+          {            }
           <div style={{ flex: 1 }} />
 
-          {/* Refresh */}
+          {             }
           <button
             onClick={() => activeTab === 'market-intelligence' ? refetchHistory() : fetchRates()}
             disabled={isLoading}
@@ -517,13 +517,13 @@ export default function MandiRates() {
           </button>
         </div>
 
-        {/* ════════════════════════════════════════════════════════════════════════
-            MARKET INTELLIGENCE TAB
-        ════════════════════════════════════════════════════════════════════════ */}
+        {
+
+                                                                                   }
         {activeTab === 'market-intelligence' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* Marquee ticker */}
+            {                    }
             <div style={{
               ...cardStyle,
               overflow: 'hidden',
@@ -557,7 +557,7 @@ export default function MandiRates() {
               </div>
             </div>
 
-            {/* Crop sparkline cards */}
+            {                          }
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
               {[
                 { title: 'Wheat (Kanak)', data: sparklines.wheat },
@@ -569,12 +569,12 @@ export default function MandiRates() {
               ))}
             </div>
 
-            {/* Main chart + sidebar */}
+            {                          }
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 16, alignItems: 'start' }}>
 
-              {/* Chart card */}
+              {                }
               <div style={{ ...cardStyle, padding: '22px 22px 16px' }}>
-                {/* Chart header */}
+                {                  }
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 12, flexWrap: 'wrap' }}>
                   <div>
                     <p style={{ fontSize: 11, color: textSecondary, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em', margin: '0 0 4px' }}>
@@ -588,7 +588,7 @@ export default function MandiRates() {
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    {/* Timeframe Selector */}
+                    {                        }
                     <div style={{ display: 'flex', gap: 4, background: 'transparent', padding: 4, borderRadius: 10, border: `1.5px solid ${borderColor}` }}>
                       {(['1M', '3M', 'all'] as const).map(tf => {
                         const isActive = timeframe === tf;
@@ -620,7 +620,7 @@ export default function MandiRates() {
                   </div>
                 </div>
 
-                {/* Chart body */}
+                {                }
                 <div style={{ width: '100%', height: 420 }}>
                   {loadingHistory ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12 }}>
@@ -635,7 +635,7 @@ export default function MandiRates() {
                     </div>
                   ) : (
                     <>
-                    {/* Custom legend above chart */}
+                    {                               }
                     <div style={{ display: 'flex', gap: 20, marginBottom: 12, flexWrap: 'wrap' }}>
                       {[
                         { color: '#2ECC71', label: 'Modal Price', dash: false },
@@ -667,7 +667,7 @@ export default function MandiRates() {
                         margin={{ top: 8, right: 8, left: -24, bottom: 0 }}
                       >
                         <defs>
-                          {/* Band fill: renders UNDER lines */}
+                          {                                    }
                           <linearGradient id="cmBandFill" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#2ECC71" stopOpacity={0.18} />
                             <stop offset="100%" stopColor="#2ECC71" stopOpacity={0.04} />
@@ -704,7 +704,7 @@ export default function MandiRates() {
                             );
                           }}
                         />
-                        {/* Ranged Area Band */}
+                        {                      }
                         <Area
                           type="monotone"
                           dataKey="range"
@@ -715,7 +715,7 @@ export default function MandiRates() {
                           activeDot={false}
                           isAnimationActive={false}
                         />
-                        {/* Lines on top */}
+                        {                  }
                         <Line
                           type="monotone"
                           dataKey="modal"
@@ -749,9 +749,9 @@ export default function MandiRates() {
                 </div>
               </div>
 
-              {/* Sidebar */}
+              {             }
               <div style={{ ...cardStyle, padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Header */}
+                {            }
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Activity size={16} color="#2ECC71" />
                   <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: textPrimary }}>
@@ -759,7 +759,7 @@ export default function MandiRates() {
                   </span>
                 </div>
 
-                {/* Stats list */}
+                {                }
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   {[
                     { label: 'Records', value: String(historyData.length || '0'), mono: true },
@@ -786,7 +786,7 @@ export default function MandiRates() {
                   ))}
                 </div>
 
-                {/* Quality bar */}
+                {                 }
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 11, color: textSecondary }}>Data Ingestion Quality</span>
@@ -797,7 +797,7 @@ export default function MandiRates() {
                   </div>
                 </div>
 
-                {/* Hovered node detail */}
+                {                         }
                 <div style={{
                   background: 'transparent',
                   border: `1.5px solid ${borderColor}`,
@@ -837,13 +837,13 @@ export default function MandiRates() {
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════════════════════
-            GRID VIEW TAB
-        ════════════════════════════════════════════════════════════════════════ */}
+        {
+
+                                                                                   }
         {activeTab === 'grid' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* Summary stat cards */}
+            {                        }
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
               <StatCard
                 label={t('mandi_total_entries')} value={filtered.length}
@@ -866,9 +866,9 @@ export default function MandiRates() {
               />
             </div>
 
-            {/* Table card */}
+            {                }
             <div style={{ ...cardStyle, padding: '0 0 4px', overflow: 'hidden' }}>
-              {/* Table header row */}
+              {                      }
               <div style={{
                 padding: '16px 20px 12px',
                 borderBottom: `1px solid ${borderColor}`,

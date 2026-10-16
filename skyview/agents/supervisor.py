@@ -4,25 +4,81 @@ Routes queries to the right specialist agent based on message intent.
 Each agent is a pure async function; the supervisor coordinates them.
 """
 
-import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from skyview.utils.llm_pool import invoke_llm
 
 logger = logging.getLogger(__name__)
 
-# ── Intent detection ──────────────────────────────────────────────────────────
 
 _INTENT_MAP = {
-    "weather": ["weather", "temperature", "humidity", "pressure", "wind", "forecast", "climate"],
-    "alert":   ["rain", "precipitation", "storm", "flood", "alert", "warning", "danger", "critical"],
-    "farm":    ["soil", "moisture", "irrigation", "water", "plant", "crop", "grow", "farm", "seed", "fertilizer"],
-    "trend":   ["trend", "history", "average", "compare", "graph", "chart", "analysis", "weekly", "monthly"],
-    "sensor":  ["sensor", "data", "reading", "status", "battery", "voltage", "connectivity"],
-    "mandi":   ["mandi", "market", "price", "rate", "sell", "buy", "commodity", "bhav", "wheat", "rice", "onion"],
-    "scheme":  ["scheme", "government", "pm kisan", "subsidy", "yojana", "benefit"],
-    "report":  ["report", "summary", "overview", "recommend", "advisory"],
+    "weather": [
+        "weather",
+        "temperature",
+        "humidity",
+        "pressure",
+        "wind",
+        "forecast",
+        "climate",
+    ],
+    "alert": [
+        "rain",
+        "precipitation",
+        "storm",
+        "flood",
+        "alert",
+        "warning",
+        "danger",
+        "critical",
+    ],
+    "farm": [
+        "soil",
+        "moisture",
+        "irrigation",
+        "water",
+        "plant",
+        "crop",
+        "grow",
+        "farm",
+        "seed",
+        "fertilizer",
+    ],
+    "trend": [
+        "trend",
+        "history",
+        "average",
+        "compare",
+        "graph",
+        "chart",
+        "analysis",
+        "weekly",
+        "monthly",
+    ],
+    "sensor": [
+        "sensor",
+        "data",
+        "reading",
+        "status",
+        "battery",
+        "voltage",
+        "connectivity",
+    ],
+    "mandi": [
+        "mandi",
+        "market",
+        "price",
+        "rate",
+        "sell",
+        "buy",
+        "commodity",
+        "bhav",
+        "wheat",
+        "rice",
+        "onion",
+    ],
+    "scheme": ["scheme", "government", "pm kisan", "subsidy", "yojana", "benefit"],
+    "report": ["report", "summary", "overview", "recommend", "advisory"],
 }
 
 
@@ -34,8 +90,6 @@ def detect_intent(message: str) -> str:
     return "general"
 
 
-# ── Specialist agents ─────────────────────────────────────────────────────────
-
 async def weather_agent(message: str, sensor_context: str) -> str:
     system = (
         "You are a precision agricultural meteorologist AI. "
@@ -43,9 +97,10 @@ async def weather_agent(message: str, sensor_context: str) -> str:
         "Be concise and farmer-friendly."
     )
     prompt = f"{system}\n\nSensor Context:\n{sensor_context}\n\nFarmer query: {message}"
-    return await invoke_llm(
-        [("user", prompt)], temperature=0.2, timeout=20
-    ) or "Unable to fetch weather analysis."
+    return (
+        await invoke_llm([("user", prompt)], temperature=0.2, timeout=20)
+        or "Unable to fetch weather analysis."
+    )
 
 
 async def farm_agent(message: str, sensor_context: str) -> str:
@@ -55,9 +110,10 @@ async def farm_agent(message: str, sensor_context: str) -> str:
         "Mention exact values. Be warm and practical."
     )
     prompt = f"{system}\n\nLive Sensor Data:\n{sensor_context}\n\nQuestion: {message}"
-    return await invoke_llm(
-        [("user", prompt)], temperature=0.3, timeout=20
-    ) or "Unable to generate farm advice."
+    return (
+        await invoke_llm([("user", prompt)], temperature=0.3, timeout=20)
+        or "Unable to generate farm advice."
+    )
 
 
 async def alert_agent(message: str, sensor_context: str) -> str:
@@ -67,9 +123,10 @@ async def alert_agent(message: str, sensor_context: str) -> str:
         "Give one clear action item."
     )
     prompt = f"{system}\n\nData:\n{sensor_context}\n\nQuery: {message}"
-    return await invoke_llm(
-        [("user", prompt)], temperature=0.1, timeout=15
-    ) or "Unable to assess alerts."
+    return (
+        await invoke_llm([("user", prompt)], temperature=0.1, timeout=15)
+        or "Unable to assess alerts."
+    )
 
 
 async def mandi_agent(message: str, mandi_context: str) -> str:
@@ -79,9 +136,10 @@ async def mandi_agent(message: str, mandi_context: str) -> str:
         "Give specific prices in ₹/quintal."
     )
     prompt = f"{system}\n\nLive Mandi Rates:\n{mandi_context}\n\nQuery: {message}"
-    return await invoke_llm(
-        [("user", prompt)], temperature=0.2, timeout=20
-    ) or "Mandi data unavailable."
+    return (
+        await invoke_llm([("user", prompt)], temperature=0.2, timeout=20)
+        or "Mandi data unavailable."
+    )
 
 
 async def trend_agent(message: str, sensor_context: str) -> str:
@@ -91,9 +149,10 @@ async def trend_agent(message: str, sensor_context: str) -> str:
         "Be precise with numbers and time references."
     )
     prompt = f"{system}\n\nData:\n{sensor_context}\n\nQuery: {message}"
-    return await invoke_llm(
-        [("user", prompt)], temperature=0.2, timeout=20
-    ) or "Trend analysis unavailable."
+    return (
+        await invoke_llm([("user", prompt)], temperature=0.2, timeout=20)
+        or "Trend analysis unavailable."
+    )
 
 
 async def general_agent(message: str, context: str) -> str:
@@ -102,12 +161,11 @@ async def general_agent(message: str, context: str) -> str:
         "Answer clearly and helpfully. Refer to sensor data when relevant."
     )
     prompt = f"{system}\n\nContext:\n{context}\n\nQuery: {message}"
-    return await invoke_llm(
-        [("user", prompt)], temperature=0.4, timeout=20
-    ) or "I'm unable to respond right now."
+    return (
+        await invoke_llm([("user", prompt)], temperature=0.4, timeout=20)
+        or "I'm unable to respond right now."
+    )
 
-
-# ── Supervisor ────────────────────────────────────────────────────────────────
 
 async def supervisor(
     message: str,

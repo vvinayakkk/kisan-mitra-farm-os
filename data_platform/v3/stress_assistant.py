@@ -6,17 +6,21 @@ Results are evidence for manual review, not a substitute for offline regressions
 """
 
 import asyncio
+import importlib
 import json
 import os
 import sys
 import time
 from pathlib import Path
 
+import httpx
+from dotenv import dotenv_values
+from fastapi import FastAPI
+from sqlalchemy.engine import make_url
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
-from dotenv import dotenv_values
-from sqlalchemy.engine import make_url
 
 config = dotenv_values(".v3-data/runtime.env")
 for key, value in config.items():
@@ -29,10 +33,7 @@ os.environ["V3_DATABASE_URL"] = (
 )
 os.environ["SKYVIEW_DATA_MODE"] = "v3_demo"
 os.environ["ASSISTANT_STORAGE_DIR"] = str(Path(".v3-data/stress-artifacts").resolve())
-import httpx
-from fastapi import FastAPI
-
-from skyview.api.assistant_routes import router
+router = importlib.import_module("skyview.api.assistant_routes").router
 
 app = FastAPI()
 app.include_router(router)

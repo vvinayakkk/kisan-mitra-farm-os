@@ -1,37 +1,7 @@
-# 🛰️ WebSockets & Webhooks Integration
+# Streaming and webhook channels
 
-SkyView provides real-time streaming capabilities and event-driven inbound webhooks for external messaging networks and field gateways.
+The assistant run endpoint streams ordered activity and answer events over an HTTP response. The client can resume its owned conversation using persisted session events; it does not need a separate WebSocket server. Live voice captures a turn, transcribes it, sends it through the assistant task path and synthesizes a spoken answer when speech providers are configured. Microphone access remains a browser/device permission.
 
----
+`skyview/api/v3_voice_routes.py` serves speech capabilities, transcription and synthesis in canonical mode. `skyview/api/v3_whatsapp_routes.py` handles linked WhatsApp identity, signed Twilio callbacks, bounded media retrieval and delivery state. The webhook validates provider signatures and replay identity before associating content with a farmer. Outbound delivery is a distinct channel action; an assistant draft is not a sent message. The retained legacy webhook and voice routers are registered only in legacy mode.
 
-## ⚡ WebSocket Live Sensor Feed
-
-### Endpoint: `ws://<HOST>/api/sensors/ws`
-Allows client interfaces (the React Web Dashboard and Flutter Mobile App) to subscribe to real-time telemetry changes without polling.
-
-```json
-{
-  "event": "TELEMETRY_UPDATE",
-  "data": {
-    "station_id": "WS01",
-    "timestamp": 1790515320,
-    "temperature": 29.1,
-    "humidity": 64.0,
-    "soil_moisture": 38.2,
-    "frost_warning": false
-  }
-}
-```
-
----
-
-## 📲 Inbound Webhooks
-
-### 1. Twilio / WhatsApp Business Webhook (`POST /api/webhooks/whatsapp`)
-Enables farmers without smartphones to send a WhatsApp message or audio voice note to the SkyView agent.
-- Receives Twilio messaging payload.
-- Passes voice notes to Whisper / Gemini multimodal speech-to-text.
-- Replies via WhatsApp sandbox with actionable farming guidance.
-
-### 2. LoRaWAN Gateway Webhook (`POST /api/webhooks/lora-ingest`)
-Enables Dragino, Kerlink, or The Things Network (TTN) gateways to forward base64 encoded LoRa packets directly into FastAPI.
+The exchange UI uses bounded HTTP polling for participant messages and events. It does not claim real-time push delivery or vehicle tracking. Device packets use authenticated station enrollment and receipt checks through the canonical sensor routes; a UI animation is not hardware evidence.

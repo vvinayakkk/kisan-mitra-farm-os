@@ -16,7 +16,7 @@ from skyview.utils.config import get_settings
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-_CACHE_TTL = 1800  # 30 minutes
+_CACHE_TTL = 1800
 _cache: dict = {"data": [], "fetched_at": 0}
 
 _MOCK_COMMODITIES = [
@@ -32,10 +32,26 @@ _MOCK_COMMODITIES = [
     {"commodity": "Banana", "variety": "Robusta", "base": 1600},
 ]
 
-_STATES = ["Madhya Pradesh", "Rajasthan", "Maharashtra", "Uttar Pradesh",
-           "Karnataka", "Gujarat", "Tamil Nadu", "Telangana"]
-_MARKETS = ["Indore", "Jaipur", "Nashik", "Lucknow",
-            "Hubli", "Ahmedabad", "Coimbatore", "Warangal"]
+_STATES = [
+    "Madhya Pradesh",
+    "Rajasthan",
+    "Maharashtra",
+    "Uttar Pradesh",
+    "Karnataka",
+    "Gujarat",
+    "Tamil Nadu",
+    "Telangana",
+]
+_MARKETS = [
+    "Indore",
+    "Jaipur",
+    "Nashik",
+    "Lucknow",
+    "Hubli",
+    "Ahmedabad",
+    "Coimbatore",
+    "Warangal",
+]
 
 
 def _mock_data(state: str = "", commodity: str = "") -> List[dict]:
@@ -47,14 +63,19 @@ def _mock_data(state: str = "", commodity: str = "") -> List[dict]:
         st = state or random.choice(_STATES)
         mk = random.choice(_MARKETS)
         modal = c["base"] + random.randint(-200, 300)
-        results.append({
-            "state": st, "district": mk, "market": mk,
-            "commodity": c["commodity"], "variety": c["variety"],
-            "arrival_date": today,
-            "min_price": str(modal - random.randint(100, 300)),
-            "max_price": str(modal + random.randint(100, 400)),
-            "modal_price": str(modal),
-        })
+        results.append(
+            {
+                "state": st,
+                "district": mk,
+                "market": mk,
+                "commodity": c["commodity"],
+                "variety": c["variety"],
+                "arrival_date": today,
+                "min_price": str(modal - random.randint(100, 300)),
+                "max_price": str(modal + random.randint(100, 400)),
+                "modal_price": str(modal),
+            }
+        )
     return results
 
 
@@ -83,8 +104,8 @@ def fetch_rates(
                     "api-key": settings.DATAGOV_API_KEY,
                     "format": "json",
                     "limit": limit,
-                    **( {"filters[state]": state} if state else {} ),
-                    **( {"filters[commodity]": commodity} if commodity else {} ),
+                    **({"filters[state]": state} if state else {}),
+                    **({"filters[commodity]": commodity} if commodity else {}),
                 },
                 timeout=15,
             )
@@ -128,11 +149,35 @@ def get_context_string(max_items: int = 10) -> str:
 
 
 KNOWN_COMMODITIES = [
-    "wheat", "rice", "onion", "tomato", "potato", "soybean",
-    "cotton", "maize", "chilli", "banana", "jowar", "bajra",
-    "gram", "tur", "arhar", "mustard", "groundnut", "sugarcane",
-    "brinjal", "cabbage", "carrot", "cauliflower", "garlic",
-    "ginger", "lemon", "mango", "apple", "moong", "urad",
+    "wheat",
+    "rice",
+    "onion",
+    "tomato",
+    "potato",
+    "soybean",
+    "cotton",
+    "maize",
+    "chilli",
+    "banana",
+    "jowar",
+    "bajra",
+    "gram",
+    "tur",
+    "arhar",
+    "mustard",
+    "groundnut",
+    "sugarcane",
+    "brinjal",
+    "cabbage",
+    "carrot",
+    "cauliflower",
+    "garlic",
+    "ginger",
+    "lemon",
+    "mango",
+    "apple",
+    "moong",
+    "urad",
 ]
 
 

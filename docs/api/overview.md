@@ -1,56 +1,15 @@
-# 🔌 SkyView Backend API Overview
+# API overview
 
-The SkyView platform is powered by a high-throughput, asynchronous FastAPI backend. The API handles real-time IoT telemetry, AI agricultural reasoning, user authentication, and marketplace barter transactions.
+The service entry point is `skyview.main:app`. Canonical v3 mode registers the routers shown in the [endpoint inventory](endpoints.md). `/docs` and `/openapi.json` expose the running service's request and response schema; they are the first place to inspect exact field definitions after starting the API.
 
----
+## Identity and access
 
-## 🌐 Server Base URLs
+The assistant opens a session with `POST /api/assistant/sessions`. Requests for private assistant and farm data use `Authorization: Bearer <session capability>` and `X-Assistant-Session: <session id>`. In live mode, session creation requires a separately verified account token and configured OIDC issuer, audience and JWKS. `skyview/assistant/auth.py` fails closed when that verification is unavailable. Session revocation invalidates the capability while preserving owned history.
 
-| Environment | Base URL | Access |
-| :--- | :--- | :--- |
-| **Production (Render)** | `https://brics-agrin-platform.onrender.com` | Public HTTPS |
-| **Local Development** | `http://localhost:8000` | Localhost |
-| **Frontend Production** | `https://skyview-ai.vercel.app` | Public Web App |
+The server resolves farmer scope; a query parameter or JSON field cannot select an arbitrary owner. PostgreSQL transaction scope and row policies protect private records. Review actions use row versions and stable execution keys to reject stale or conflicting writes. Uploads, file previews and downloads have owner and size boundaries.
 
----
+## Status, transport and caching
 
-## 🔐 Authentication & Session Flow
+`GET /health` reports API/database readiness. `GET /api/data/status` reports data mode and source state. Assistant runs stream event data through `POST /api/assistant/sessions/{sid}/run`; the streaming path bypasses response compression so incremental events are delivered promptly. Protected responses set `Cache-Control: no-store`. The browser has a bounded, owner-scoped cache for selected reads and invalidates it after mutations.
 
-SkyView utilizes passwordless mobile phone authentication designed for accessibility and operational cost efficiency:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Farmer as Farmer / Mobile User
-    participant App as Web / Mobile Client
-    participant API as FastAPI Backend (/api/auth)
-    participant SMS as Fast2SMS Gateway Pool
-    participant DB as Neon PostgreSQL
-
-    Note over Farmer,DB: Phase 1: Registration / Signup (Live SMS Dispatched)
-    Farmer->>App: Enter Phone & Farmer Profile Details
-    App->>API: POST /api/auth/send-otp { phone, is_signup: true }
-    API->>API: Generate Secure 6-Digit OTP
-    API->>SMS: Dispatch Live OTP SMS via Fast2SMS Pool
-    SMS-->>Farmer: Real SMS arrives on mobile handset
-    Farmer->>App: Enter Received 6-Digit OTP
-    App->>API: POST /api/auth/verify-otp { phone, otp }
-    API->>DB: Save verified phone, name, & profile OTP
-    API-->>App: Session Token Issued
-
-    Note over Farmer,DB: Phase 2: Subsequent Login (Zero SMS Credits Burned)
-    Farmer->>App: Enter Phone Number
-    App->>API: POST /api/auth/send-otp { phone, is_signup: false }
-    API->>DB: Fetch Saved Profile OTP (0 SMS Credits Used)
-    API-->>App: Return Success Notice
-    Farmer->>App: Enter Saved Profile OTP
-    App->>API: POST /api/auth/verify-otp { phone, otp }
-    API-->>App: Session Token Issued
-```
-
-### Fast2SMS Key Pool Failover
-The backend supports comma-separated API keys via `FAST2SMS_API_KEY`:
-```env
-FAST2SMS_API_KEY=key_alpha,key_beta,key_gamma
-```
-If `key_alpha` runs out of credits or encounters an HTTP error, the system automatically fails over to `key_beta` and `key_gamma` sequentially without dropping the user's SMS request.
+Canonical and classic compatibility routes are separate registration lanes in `skyview/main.py`. A route listed for the legacy lane is not necessarily present in canonical mode. Hardware enrollment or a visible station scene does not by itself establish connected live telemetry. External providers and WhatsApp require server-side configuration. See [channels](websocket-and-webhooks.md) and [operations](../operations.md).

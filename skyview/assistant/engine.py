@@ -40,9 +40,7 @@ def market_observation_policy(contract, messages):
 
 
 def bounded_result(result):
-    # Keep public events intact while avoiding duplicated rows and thousands of
-    # chart points in the model's next prompt. Explicit counts prevent claiming
-    # the excerpt is a complete source for exports or arithmetic.
+
     if isinstance(result, dict):
         result = dict(result)
         if result.get("rates") == result.get("records"):
@@ -502,7 +500,6 @@ async def run(sid, req, state):
                 )
                 state["pending"] = None
                 if req.approval is False:
-                    # A declined action is not unfinished work to retry.
                     state["execution_contract"] = {
                         "skills": [],
                         "reads": [],
@@ -551,8 +548,7 @@ async def run(sid, req, state):
             contract = state.get(
                 "execution_contract", {"skills": [], "reads": [], "formats": []}
             )
-            # Pin requested workflows across this turn so a fourth skill cannot
-            # hide file generation or earlier capabilities in a complex task.
+
             recovery_attempts = 0
             for iteration in range(MAX_ROUNDS):
                 yield event(
@@ -578,8 +574,6 @@ async def run(sid, req, state):
                     contract, messages
                 )
                 if memory.tokens(tool_schemas) > 2600:
-                    # Expose the next required actions, not every unrelated write
-                    # from six workflows at once. load_skill remains available.
                     needed = {
                         "load_skill",
                         "ask_farmer",
@@ -597,8 +591,6 @@ async def run(sid, req, state):
                     ]
                 needs_execution = bool(missing_reads or missing_formats)
                 if contract["formats"] and not needs_execution:
-                    # All requested execution receipts exist. The final summary
-                    # does not need thousands of tokens of generation schemas.
                     tool_schemas = []
                 if (
                     "crop-scouting" in contract["skills"]
@@ -710,8 +702,6 @@ async def run(sid, req, state):
                         else:
                             yield event("model", model=part["model"])
                 except provider.ProviderUnavailable:
-                    # No tool call from this model turn has executed. If its
-                    # draft was held, one fresh round can safely replace it.
                     if hold_text and recovery_attempts < 1:
                         recovery_attempts += 1
                         continue
@@ -763,9 +753,7 @@ async def run(sid, req, state):
                             }
                         )
                     calls = normalized_calls
-                # A trend chart covers one dated market series, while a price
-                # comparison needs its own lookup. Keep the requested pair
-                # together even when the model emits only the trend call.
+
                 if (
                     "market_prices" in missing_reads
                     and any(c["function"]["name"] == "market_trend" for c in calls)
@@ -784,9 +772,9 @@ async def run(sid, req, state):
                         c for c in calls if c["function"]["name"] == "market_trend"
                     )
                     try:
-                        trend_args = TOOLS["market_trend"].arguments.model_validate_json(
-                            trend["function"]["arguments"]
-                        )
+                        trend_args = TOOLS[
+                            "market_trend"
+                        ].arguments.model_validate_json(trend["function"]["arguments"])
                     except (ValueError, ValidationError):
                         pass
                     else:
@@ -806,8 +794,6 @@ async def run(sid, req, state):
                             },
                         ]
                 if needs_execution and not calls and not provider_failed:
-                    # Some compatible endpoints ignore required tool choice. Do
-                    # not publish a refusal/fictional completion as a result.
                     recovery_attempts += 1
                     if recovery_attempts >= 2:
                         yield event(
@@ -829,8 +815,7 @@ async def run(sid, req, state):
                             safe_answer = execution_contract.verified_summary(
                                 contract,
                                 messages,
-                                hinglish="Hinglish"
-                                in reply_style,
+                                hinglish="Hinglish" in reply_style,
                             )
                             message["content"] = safe_answer
                             turn_text = [safe_answer]
@@ -876,7 +861,7 @@ async def run(sid, req, state):
                     message["content"] = public_text or None
                     if public_text:
                         yield event("delta", text=public_text)
-                # The orchestrator loads a real workflow even when the model skips the skill tool.
+
                 skill_map = {
                     "seasonal_planning_context": "crop-calendar",
                     "read_file": "documents",
@@ -1027,7 +1012,7 @@ async def run(sid, req, state):
                                 "call_id": call_id,
                                 "arguments": args,
                             }
-                            # Satisfy other calls in this batch so a resumed native-tool transcript stays valid.
+
                             for remaining in calls[index + 1 :]:
                                 messages.append(
                                     {
@@ -1081,7 +1066,7 @@ async def run(sid, req, state):
                             label=TOOLS[name].label if name in TOOLS else name,
                             error=result["error"],
                         )
-                    except Exception as exc:  # noqa: BLE001 -- isolate untrusted tool failures without exposing secrets
+                    except Exception as exc:
                         logger.warning(
                             "Assistant tool %s failed (%s)", name, type(exc).__name__
                         )
@@ -1111,7 +1096,7 @@ async def run(sid, req, state):
             raise
         except provider.ProviderUnavailable as exc:
             yield event("error", message=str(exc))
-        except Exception as exc:  # noqa: BLE001 -- a streaming boundary must return a safe terminal event
+        except Exception as exc:
             logger.warning("Assistant run failed (%s)", type(exc).__name__)
             yield event(
                 "error",
@@ -1129,7 +1114,7 @@ async def run(sid, req, state):
                     task.cancel()
             if parallel:
                 await asyncio.gather(*parallel.values(), return_exceptions=True)
-            # Remove incomplete tool batches left by cancellation; completed artifacts/tasks remain stored.
+
             if not state.get("pending"):
                 unresolved = set()
                 last_batch = None

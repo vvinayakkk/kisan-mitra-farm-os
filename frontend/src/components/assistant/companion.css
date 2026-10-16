@@ -2,7 +2,7 @@
 
 .saathi-channel-action{font-size:11px;color:#456a34;padding:7px 0;margin-bottom:6px}.saathi-link{border:1px solid #d3dec8;border-radius:12px;padding:12px;margin:8px 0;font-size:12px;line-height:1.6}.saathi-link code{display:block;letter-spacing:1px;margin:8px 0;color:#314d2b}.saathi-link a{display:flex;gap:4px;align-items:center;color:#456a34}
 
-/* A light header signature, with a compact companion card. */
+
 .mitra-page-header { position: relative; }
 .mitra-page-header > .workspace-companion-anchor {
   position: absolute;
@@ -62,10 +62,10 @@
   .mitra-page-header > .workspace-companion-anchor { left: 29%; }
 }
 
-/* Portalled to the document so every workspace view shares the same overlay. */
+
 .saathi-panel { z-index: 80; }
 
-/* Companion previews deliberately have their own styles, separate from page plans. */
+
 .saathi-review-list h3{display:flex;align-items:center;gap:6px;margin-bottom:10px}
 .saathi-review-item{padding:10px 0;border-bottom:1px solid #dce5d2;min-width:0}
 .saathi-review-item:last-child{border-bottom:0;padding-bottom:0}

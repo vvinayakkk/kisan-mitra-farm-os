@@ -1,4 +1,3 @@
--- Durable, owner-scoped preparation. Approving a proposal saves a plan, never executes field work.
 BEGIN;
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS companion_jobs (

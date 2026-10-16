@@ -21,7 +21,6 @@ frontend/node_modules/
 frontend/dist/
 .turbo/
 
-# my files
 .claude
 .code-review-graph
 .cursor
@@ -35,18 +34,18 @@ CLAUDE.md
 GEMINI.md
 backend/myenv/*
 
-
 .vercel
 *.db
 .assistant-data/
 carrier-sms-portal/
 admin-portal/
 
-
-# Local v3 database configuration, downloaded source payloads and device credentials
 .v3-data/
 .v3-data
 
 .assistant-data-v3/
 
 .env.docker
+
+*.apk
+*.aab

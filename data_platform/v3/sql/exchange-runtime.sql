@@ -1,4 +1,3 @@
--- Consented public resource notices; private bilateral coordination.
 BEGIN;
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS exchange_listings(
@@ -30,7 +29,7 @@ CREATE OR REPLACE FUNCTION exchange_listing_open(identifier uuid) RETURNS boolea
 $$;
 REVOKE ALL ON FUNCTION exchange_listing_open(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION exchange_listing_open(uuid) TO sv3_app,sv3_writer;
--- Serialize acceptance per notice without exposing another farmer's private threads.
+
 CREATE OR REPLACE FUNCTION exchange_available(identifier uuid) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,sv3 AS $$
 BEGIN
  PERFORM pg_advisory_xact_lock(hashtextextended(identifier::text,0));

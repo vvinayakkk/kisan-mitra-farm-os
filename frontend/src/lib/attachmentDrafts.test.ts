@@ -3,8 +3,8 @@ const permission = vi.hoisted(() => ({ enabled: true }));
 vi.mock('./offlineConsent', () => ({ offlineEnabled: () => permission.enabled }));
 import { clearAttachmentDrafts, DRAFT_BYTE_LIMIT, DRAFT_TTL_MS, listAttachmentDrafts, readAttachmentDraft, removeAttachmentDraft, storeAttachmentDraft } from './attachmentDrafts';
 
-// Small event-driven IDB harness; assertions exercise ownership, limits and lifecycle,
-// while the production module exclusively uses the browser's native IndexedDB API.
+
+
 const records = new Map<string, any>();
 function transaction() {
   const tx: any = { pending: 0, aborted: false, abort() { this.aborted = true; queueMicrotask(() => this.onabort?.()); } };

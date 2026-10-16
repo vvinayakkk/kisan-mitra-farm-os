@@ -53,7 +53,7 @@ export function ParameterCard({
       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = cfg.color; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; }}
     >
-      {/* Icon bubble */}
+      {                 }
       <div style={{
         width: '42px',
         height: '42px',
@@ -69,7 +69,7 @@ export function ParameterCard({
         {icon}
       </div>
 
-      {/* Label + value */}
+      {                   }
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
           margin: 0,
@@ -100,7 +100,7 @@ export function ParameterCard({
         </p>
       </div>
 
-      {/* Status pill */}
+      {                 }
       <span style={{
         flexShrink: 0,
         padding: '3px 9px',

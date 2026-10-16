@@ -79,27 +79,27 @@ export function BaseBoard({ isActive, onClick }: SensorComponentProps) {
 export function Structure() {
   return (
     <group>
-      {/* Main vertical pole */}
+      {                        }
       <mesh position={[0, 1.5, 0]} castShadow>
         <cylinderGeometry args={[0.1, 0.1, 3]} />
         <meshStandardMaterial color="#D1D5DB" metalness={0.9} roughness={0.1} />
       </mesh>
-      {/* Base flange */}
+      {                 }
       <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[0.35, 0.35, 0.1]} />
         <meshStandardMaterial color="#9CA3AF" metalness={0.45} />
       </mesh>
-      {/* Horizontal bar */}
+      {                    }
       <mesh position={[0, 3, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.1, 0.1, 6]} />
         <meshStandardMaterial color="#D1D5DB" metalness={0.9} roughness={0.1} />
       </mesh>
-      {/* T-junction */}
+      {                }
       <mesh position={[0, 3, 0]}>
         <sphereGeometry args={[0.22]} />
         <meshStandardMaterial color="#9CA3AF" metalness={0.45} />
       </mesh>
-      {/* End collars */}
+      {                 }
       <mesh position={[-2.5, 3, 0]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.18, 0.18, 0.4]} />
         <meshStandardMaterial color="#9CA3AF" />
@@ -141,7 +141,7 @@ export function WindVane({
         onClick();
       }}
     >
-      {/* Base for vane */}
+      {                   }
       <mesh position={[0, -0.2, 0]}>
         <cylinderGeometry args={[0.35, 0.35, 0.6]} />
         <meshStandardMaterial
@@ -158,23 +158,23 @@ export function WindVane({
         color="#1d4ed8"
       />
 
-      {/* Rotating part */}
+      {                   }
       <group ref={group}>
         <mesh position={[0, 0.3, 0]}>
           <cylinderGeometry args={[0.2, 0.2, 0.6]} />
           <meshStandardMaterial color="#F3F4F6" />
         </mesh>
-        {/* Arrow shaft */}
+        {                 }
         <mesh position={[0, 0.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.05, 0.05, 1.2]} />
           <meshStandardMaterial color="#111827" />
         </mesh>
-        {/* Arrow head */}
+        {                }
         <mesh position={[0, 0.6, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
           <coneGeometry args={[0.12, 0.3, 8]} />
           <meshStandardMaterial color="#111827" />
         </mesh>
-        {/* Arrow fin */}
+        {               }
         <mesh position={[0, 0.8, -0.6]}>
           <boxGeometry args={[0.04, 0.5, 0.5]} />
           <meshStandardMaterial color="#111827" />
@@ -223,7 +223,7 @@ export function Anemometer({
           <meshStandardMaterial color="#F3F4F6" />
         </mesh>
 
-        {/* 3 Cups */}
+        {            }
         {[0, 1, 2].map((i) => (
           <group key={i} rotation={[0, (i * Math.PI * 2) / 3, 0]}>
             <mesh position={[0.6, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
@@ -258,7 +258,7 @@ export function RainGauge({
         onClick();
       }}
     >
-      {/* Main body */}
+      {               }
       <mesh castShadow>
         <cylinderGeometry args={[0.6, 0.6, 1.2, 32]} />
         <meshStandardMaterial
@@ -267,12 +267,12 @@ export function RainGauge({
           roughness={0.1}
         />
       </mesh>
-      {/* Funnel top */}
+      {                }
       <mesh position={[0, 0.65, 0]} castShadow>
         <cylinderGeometry args={[0.7, 0.6, 0.3, 32]} />
         <meshStandardMaterial color="#F9FAFB" />
       </mesh>
-      {/* Inside look */}
+      {                 }
       <mesh position={[0, 0.75, 0]}>
         <cylinderGeometry args={[0.65, 0.65, 0.02, 32]} />
         <meshStandardMaterial color="#000000" />
@@ -294,7 +294,7 @@ export function Controller({
         onClick();
       }}
     >
-      {/* PCB */}
+      {         }
       <mesh castShadow>
         <boxGeometry args={[1, 0.1, 1.2]} />
         <meshStandardMaterial
@@ -302,7 +302,7 @@ export function Controller({
           roughness={0.4}
         />
       </mesh>
-      {/* Components */}
+      {                }
       <mesh position={[0.25, 0.2, 0.25]}>
         <boxGeometry args={[0.4, 0.25, 0.4]} />
         <meshStandardMaterial color="#0F172A" />
@@ -311,7 +311,7 @@ export function Controller({
         <boxGeometry args={[0.3, 0.25, 0.5]} />
         <meshStandardMaterial color="#334155" />
       </mesh>
-      {/* Connector header pins and copper PCB traces */}
+      {                                                 }
       {[-0.4, -0.2, 0, 0.2, 0.4].map((x) => (
         <group key={x}>
           <mesh position={[x, 0.12, 0.48]}>
@@ -328,7 +328,7 @@ export function Controller({
           </mesh>
         </group>
       ))}
-      {/* LED Status */}
+      {                }
       <mesh position={[-0.3, 0.2, 0.3]}>
         <sphereGeometry args={[0.06]} />
         <meshStandardMaterial
@@ -355,12 +355,12 @@ export function LCD({
         onClick();
       }}
     >
-      {/* Case */}
+      {          }
       <mesh castShadow>
         <boxGeometry args={[1.6, 0.4, 0.9]} />
         <meshStandardMaterial color="#1E293B" metalness={0.5} roughness={0.2} />
       </mesh>
-      {/* Screen */}
+      {            }
       <mesh position={[0, 0.22, 0]}>
         <boxGeometry args={[1.3, 0.05, 0.65]} />
         <meshStandardMaterial
@@ -394,12 +394,12 @@ export function SolarPanel({
         onClick();
       }}
     >
-      {/* Frame */}
+      {           }
       <mesh castShadow>
         <boxGeometry args={[1.8, 0.12, 1.8]} />
         <meshStandardMaterial color="#1F2937" metalness={0.9} roughness={0.1} />
       </mesh>
-      {/* Cells */}
+      {           }
       <mesh position={[0, 0.1, 0]}>
         <boxGeometry args={[1.65, 0.02, 1.65]} />
         <meshStandardMaterial
@@ -408,7 +408,7 @@ export function SolarPanel({
           roughness={0.28}
         />
       </mesh>
-      {/* Grid lines */}
+      {                }
       <group position={[0, 0.12, 0]}>
         {[-0.5, -0.25, 0, 0.25, 0.5].map((x) => (
           <mesh key={`h-${x}`} position={[x, 0, 0]}>
@@ -440,17 +440,17 @@ export function SoilMoisture({
         onClick();
       }}
     >
-      {/* Soil patch */}
+      {                }
       <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[1.2, 64]} />
         <meshStandardMaterial color="#302015" roughness={1} />
       </mesh>
-      {/* Soil displacement */}
+      {                       }
       <mesh position={[0, 0.08, 0]}>
         <sphereGeometry args={[0.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial color="#402D20" roughness={1} />
       </mesh>
-      {/* Sensor handle */}
+      {                   }
       <mesh position={[0, 1.3, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.12, 1]} />
         <meshStandardMaterial
@@ -459,7 +459,7 @@ export function SoilMoisture({
           metalness={0.3}
         />
       </mesh>
-      {/* Probe */}
+      {           }
       <mesh position={[0, 0.5, 0]}>
         <cylinderGeometry args={[0.04, 0.04, 1.8]} />
         <meshStandardMaterial color="#F3F4F6" metalness={0.45} roughness={0} />

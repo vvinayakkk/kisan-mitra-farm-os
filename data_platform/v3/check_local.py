@@ -1,6 +1,7 @@
 """Read-only local readiness report. No seed/reset, credentials, or farmer content in output."""
 
 import hashlib
+import importlib
 import json
 import os
 import sys
@@ -17,7 +18,8 @@ for key, value in dotenv_values(ROOT / ".v3-data/runtime.env").items():
     if value is not None:
         os.environ[key] = value
 
-from skyview.data.v3 import db, repository
+db = importlib.import_module("skyview.data.v3.db")
+repository = importlib.import_module("skyview.data.v3.repository")
 
 
 def main():

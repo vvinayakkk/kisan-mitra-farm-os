@@ -3,22 +3,23 @@ SkyView Smart Agriculture — FastAPI Application
 Entry point. Thin orchestrator — logic lives in routers/agents.
 """
 
+import time
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from skyview.data.db import init_db
+from skyview.data.v3.db import enabled as v3_enabled
 from skyview.utils.config import get_settings
 from skyview.utils.logger import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)
-import time
-
-from fastapi.middleware.gzip import GZipMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response
 
 settings = get_settings()
 
@@ -29,7 +30,6 @@ app = FastAPI(
 )
 
 
-# 1. Performance timing & intelligent HTTP Cache-Control injection
 class PerformanceAndCacheMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.perf_counter()
@@ -37,7 +37,6 @@ class PerformanceAndCacheMiddleware(BaseHTTPMiddleware):
         process_time = time.perf_counter() - start_time
         response.headers["X-Process-Time-Ms"] = f"{process_time * 1000:.2f}"
 
-        # Inject Cache-Control for read-only GET endpoints to allow browser & edge caching
         if request.method == "GET" and response.status_code == 200:
             path = request.url.path
             if (
@@ -87,7 +86,6 @@ class PerformanceAndCacheMiddleware(BaseHTTPMiddleware):
 app.add_middleware(PerformanceAndCacheMiddleware)
 
 
-# 2. GZip compression (reduces JSON payload size across the wire by up to 80%)
 class SelectiveGZipMiddleware:
     """Do not buffer incremental assistant events behind a compression threshold."""
 
@@ -109,7 +107,7 @@ class SelectiveGZipMiddleware:
 
 app.add_middleware(SelectiveGZipMiddleware, minimum_size=1000)
 
-# 3. Secure CORS Configuration (Sonar S5122 compliant)
+
 safe_cors_origins = [o for o in settings.CORS_ORIGINS if o != "*"]
 if not safe_cors_origins:
     safe_cors_origins = ["http://localhost:5173", "http://localhost:3000"]
@@ -157,7 +155,6 @@ async def on_startup():
     except SQLAlchemyError as exc:
         logger.warning("DB init warning (%s)", type(exc).__name__)
 
-    # Ensure users table always exists (safe fallback)
     from sqlalchemy import text
 
     from skyview.data.db import get_session
@@ -178,8 +175,6 @@ async def on_startup():
         )
         db.commit()
 
-        # Add new marketplace/geographic columns if they don't exist
-        # Using explicit static DDL statements to satisfy static analysis (Sonar S3649)
         column_ddls = [
             text(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION"
@@ -209,9 +204,6 @@ async def on_startup():
         logger.warning("Users table check (%s)", type(exc).__name__)
 
 
-# ── Router registration ───────────────────────────────────────────────────────
-
-
 def _register(module_path: str, attr: str = "router", prefix: str = ""):
     try:
         import importlib
@@ -226,10 +218,7 @@ def _register(module_path: str, attr: str = "router", prefix: str = ""):
         )
 
 
-from skyview.data.v3.db import enabled as v3_enabled
-
 if v3_enabled():
-    # Import failures are fatal in v3: an incomplete router is not a healthy backend.
     from skyview.api.assistant_routes import router as assistant_router
     from skyview.api.disease_routes import router as disease_router
     from skyview.api.v3_companion_routes import router as companion_router
@@ -261,47 +250,33 @@ if v3_enabled():
     app.include_router(assistant_router)
     app.include_router(disease_router)
 else:
-    # Core system routes
     _register("skyview.api.core_routes")
 
-    # Sensor / IoT routes
     _register("skyview.api.sensor_routes")
 
-    # Auth
     _register("skyview.api.auth_routes")
 
-    # AI / Chat
     _register("skyview.api.chat_routes")
     _register("skyview.api.assistant_routes")
 
-    # FPGA accelerator
     _register("skyview.api.fpga_routes")
 
-    # Farm advisor
     _register("skyview.api.advisor_routes")
 
-    # Mandi rates
     _register("skyview.api.mandi_routes")
 
-    # WhatsApp webhooks
     _register("skyview.api.webhook_routes")
 
-    # Voice / speech / translation
     _register("skyview.api.voice_routes")
 
-    # Agentic voice orchestration (Sarvam STT/TTS + multi-step agent)
     _register("skyview.api.voice_agent")
 
-    # Farmer profile & government schemes
     _register("skyview.api.profile_routes")
 
-    # Marketplace matching
     _register("skyview.api.marketplace_routes")
 
-    # Crop disease detection & plant pathology diagnostics
     _register("skyview.api.disease_routes")
 
-    # Admin panel
     _register("skyview.admin.admin_routes")
 
 

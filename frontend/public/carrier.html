@@ -47,7 +47,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    
+
     body {
       background-color: var(--bg-base);
       color: var(--text-main);
@@ -60,7 +60,7 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Ambient Subtle Glow Overlay (No background image) */
+
     .bg-gradient {
       position: fixed;
       inset: 0;
@@ -70,7 +70,7 @@
       pointer-events: none;
     }
 
-    /* iOS / Android Dynamic Island Push Notification Banner */
+
     .dynamic-island {
       position: fixed;
       top: 14px;
@@ -169,7 +169,7 @@
       transform: scale(0.95);
     }
 
-    /* Glass Top Header */
+
     header {
       position: sticky;
       top: 0;
@@ -253,7 +253,7 @@
       font-weight: 600;
     }
 
-    /* Action Controls */
+
     .controls-group {
       display: flex;
       align-items: center;
@@ -275,7 +275,7 @@
     .btn-ctrl:active { transform: scale(0.92); }
     .btn-ctrl.muted { color: var(--text-dim); }
 
-    /* Main Container */
+
     main {
       position: relative;
       z-index: 10;
@@ -289,7 +289,7 @@
       gap: 16px;
     }
 
-    /* Network Telemetry Card */
+
     .telemetry-card {
       background: var(--bg-card);
       backdrop-filter: blur(24px);
@@ -321,7 +321,7 @@
       letter-spacing: 0.04em;
     }
 
-    /* Empty Waiting State */
+
     .empty-card {
       margin-top: 30px;
       background: var(--bg-card);
@@ -393,7 +393,7 @@
       box-shadow: 0 0 14px var(--emerald-glow);
     }
 
-    /* Message Cards */
+
     .msg-card {
       background: var(--bg-card);
       backdrop-filter: blur(28px);
@@ -438,7 +438,7 @@
       color: var(--emerald);
     }
 
-    /* High-Tech Security OTP Digits Box */
+
     .otp-stage-box {
       background: var(--bg-slot);
       border: 1.5px solid var(--border-accent);
@@ -494,7 +494,7 @@
       color: #042f1a;
     }
 
-    /* Full Carrier Text Bubble */
+
     .carrier-bubble {
       background: rgba(16, 185, 129, 0.05);
       border: 1px solid var(--border-main);
@@ -507,7 +507,7 @@
       margin-bottom: 12px;
     }
 
-    /* Card Footer Meta */
+
     .card-footer-row {
       display: flex;
       align-items: center;
@@ -527,7 +527,7 @@
       font-weight: 700;
     }
 
-    /* App Footer */
+
     footer {
       position: relative;
       z-index: 10;
@@ -543,10 +543,10 @@
 </head>
 <body>
 
-  <!-- Ambient Glow Overlay -->
+
   <div class="bg-gradient"></div>
 
-  <!-- iOS / Android Dynamic Island SMS Push Notification Toast -->
+
   <div class="dynamic-island" id="dynamic-island">
     <div class="island-top">
       <div class="island-app-badge">
@@ -564,7 +564,7 @@
     </div>
   </div>
 
-  <!-- Glass Top Header -->
+
   <header>
     <div class="carrier-brand">
       <div class="logo-emblem-wrap">
@@ -583,7 +583,7 @@
     </div>
 
     <div class="controls-group">
-      <!-- Theme Toggle (Light / Dark) -->
+
       <button class="btn-ctrl" id="theme-btn" title="Toggle Light/Dark Theme">
         <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -601,7 +601,7 @@
         </svg>
       </button>
 
-      <!-- Audio Chime Toggle -->
+
       <button class="btn-ctrl" id="sound-btn" title="Toggle Sound Chime">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
@@ -609,7 +609,7 @@
         </svg>
       </button>
 
-      <!-- Clear Feed -->
+
       <button class="btn-ctrl" id="clear-btn" title="Clear Message Feed" style="color: #ef4444;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="3 6 5 6 21 6"/>
@@ -619,9 +619,9 @@
     </div>
   </header>
 
-  <!-- Main Feed Area -->
+
   <main>
-    <!-- Telemetry Status Bar -->
+
     <div class="telemetry-card">
       <div class="telemetry-item">
         <span class="telemetry-tag">5G SA</span>
@@ -633,9 +633,9 @@
       </div>
     </div>
 
-    <!-- Feed Container -->
+
     <div id="messages-container" style="display:flex; flex-direction:column; gap:16px;">
-      <!-- Empty State -->
+
       <div class="empty-card" id="empty-card">
         <div class="radar-icon-wrap">
           <div class="radar-sweep"></div>
@@ -662,7 +662,7 @@
     let prevCount = 0;
     let islandTimer = null;
 
-    // Elements
+
     const rootHtml = document.documentElement;
     const themeBtn = document.getElementById('theme-btn');
     const moonIcon = document.getElementById('theme-icon-moon');
@@ -675,14 +675,14 @@
     const latencyVal = document.getElementById('latency-val');
     const testTriggerBtn = document.getElementById('test-trigger-btn');
 
-    // Dynamic Island Elements
+
     const dynamicIsland = document.getElementById('dynamic-island');
     const islandSender = document.getElementById('island-sender');
     const islandMsg = document.getElementById('island-msg');
     const islandOtp = document.getElementById('island-otp');
     const islandTime = document.getElementById('island-time');
 
-    // Theme Setup
+
     const savedTheme = localStorage.getItem('skyview_theme') || 'dark';
     applyTheme(savedTheme);
 
@@ -758,7 +758,7 @@
     }
 
     function playHighTechChime() {
-      // Haptic Vibration Pattern
+
       if ('vibrate' in navigator) {
         try { navigator.vibrate([200, 80, 200, 80, 300]); } catch (e) {}
       }
@@ -770,9 +770,9 @@
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
-        osc.frequency.setValueAtTime(987.77, ctx.currentTime + 0.08); // B5
-        osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.16); // E6
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+        osc.frequency.setValueAtTime(987.77, ctx.currentTime + 0.08);
+        osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.16);
         gain.gain.setValueAtTime(0.20, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.40);
         osc.connect(gain);

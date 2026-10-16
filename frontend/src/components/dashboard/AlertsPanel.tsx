@@ -108,7 +108,7 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
         )}
       </div>
 
-      {/* Messaging note */}
+      {                    }
       <div style={{
         marginTop: '18px', paddingTop: '18px',
         borderTop: isDark ? '1px solid rgba(46,204,113,0.08)' : '1px solid rgba(200,220,200,0.3)',

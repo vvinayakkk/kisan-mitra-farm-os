@@ -465,8 +465,7 @@ SKILL_TOOLS = {
 
 
 def schemas(loaded_skills=None, *, pinned_skills=()):
-    # Discover workflows first, then expose their real executable tools. Sending
-    # all 50 schemas with every greeting exceeds entry-tier provider TPM limits.
+
     names = set(TOOLS) if loaded_skills is None else set(CORE_TOOLS)
     if loaded_skills is not None:
         for skill in [*loaded_skills[-3:], *pinned_skills]:
@@ -1031,7 +1030,7 @@ class Executor:
                     <= today.isoformat()
                 ]
             points = []
-            # Separate market/variety series: averaging unrelated markets creates misleading trends.
+
             groups = {}
             for row in records:
                 key = (
@@ -1240,7 +1239,9 @@ class Executor:
         if name == "net_sale":
             from decimal import ROUND_HALF_UP
 
-            amount = lambda x: Decimal(str(x))
+            def amount(x):
+                return Decimal(str(x))
+
             gross = amount(args.quantity_quintals) * amount(args.price_per_quintal)
             commission = gross * amount(args.commission_percent) / 100
             costs = (
@@ -1249,9 +1250,10 @@ class Executor:
                 + amount(args.other_cost)
                 + commission
             )
-            rounded = lambda x: float(
-                x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            )
+
+            def rounded(x):
+                return float(x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
             return {
                 "gross_inr": rounded(gross),
                 "costs_inr": rounded(costs),

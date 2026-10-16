@@ -122,7 +122,7 @@ export default function BuyHardware() {
           padding: "40px 24px 80px",
         }}
       >
-        {/* Back button */}
+        {                 }
         <button
           onClick={() => navigate("/hardware-setup")}
           style={{
@@ -143,7 +143,7 @@ export default function BuyHardware() {
           Back to Hardware Setup
         </button>
 
-        {/* Hero */}
+        {          }
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -171,7 +171,7 @@ export default function BuyHardware() {
               alignItems: "center",
             }}
           >
-            {/* Left: info */}
+            {                }
             <div>
               <div
                 style={{
@@ -383,7 +383,7 @@ export default function BuyHardware() {
               </div>
             </div>
 
-            {/* Right: hardware physical image */}
+            {                                    }
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div
                 style={{
@@ -424,7 +424,7 @@ export default function BuyHardware() {
           </div>
         </motion.div>
 
-        {/* Specs grid */}
+        {                }
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

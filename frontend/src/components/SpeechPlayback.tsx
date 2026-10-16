@@ -4,7 +4,7 @@ import { apiFetch } from '@/lib/apiClient';
 import { SpeechAudio, unlockSpeechAudio } from '@/lib/speechAudio';
 import { voiceLanguageCode } from '@/hooks/useVoiceInput';
 
-/** Read aloud is always requested by the farmer; no unexpected audio starts. */
+
 export function SpeechPlayback({ text, language, compact = false }: { text: string; language?: string; compact?: boolean }) {
   const [phase, setPhase] = useState<'idle' | 'loading' | 'playing'>('idle');
   const [error, setError] = useState('');

@@ -105,9 +105,7 @@ def test_market_quarantines_future_units_bad_bands():
 def test_mock_bounded_smooth_deterministic():
     now = datetime(2026, 10, 14, 12, tzinfo=UTC)
     first = mock_values("station", now)
-    second = mock_values(
-        "station", datetime(2026, 10, 14, 12, 0, 5, tzinfo=UTC)
-    )
+    second = mock_values("station", datetime(2026, 10, 14, 12, 0, 5, tzinfo=UTC))
     assert first == mock_values("station", now)
     assert 0 <= first["humidity_pct"] <= 100 and 0 <= first["soil_moisture_pct"] <= 100
     assert abs(first["temperature_c"] - second["temperature_c"]) < 0.1

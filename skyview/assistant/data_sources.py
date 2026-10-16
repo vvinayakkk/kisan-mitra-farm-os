@@ -88,7 +88,7 @@ async def station_snapshot(client, station_id, reader=None):
             "available": False,
             "message": "The station supplied an invalid measurement time.",
         }
-    # Never promote non-finite values or booleans into measured telemetry.
+
     clean = {
         key: (
             None

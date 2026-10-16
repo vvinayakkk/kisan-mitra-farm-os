@@ -47,7 +47,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Semantic status colors
+
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
@@ -56,7 +56,7 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
-        // Weather-specific semantic colors
+
         atmospheric: {
           DEFAULT: "hsl(var(--atmospheric))",
           foreground: "hsl(var(--atmospheric-foreground))",
@@ -65,7 +65,7 @@ export default {
           DEFAULT: "hsl(var(--soil))",
           foreground: "hsl(var(--soil-foreground))",
         },
-        // Chart colors
+
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",

@@ -1,4 +1,3 @@
--- Apply after schema.sql and runtime roles. Capability hashes never enter public tables.
 BEGIN;
 SET search_path=sv3,public;
 CREATE TABLE IF NOT EXISTS assistant_sessions (
@@ -23,7 +22,7 @@ DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['assistant_sessions','assis
  IF NOT EXISTS(SELECT FROM pg_policies WHERE schemaname='sv3' AND tablename=t AND policyname='farmer_scope') THEN
  EXECUTE format('CREATE POLICY farmer_scope ON sv3.%I USING (farmer_id=nullif(current_setting(''app.farmer_id'',true),'''')::uuid) WITH CHECK (farmer_id=nullif(current_setting(''app.farmer_id'',true),'''')::uuid)',t);
  END IF; END LOOP; END $$;
--- Only the trusted backend credential is granted execution; frontend never has SQL access.
+
 CREATE OR REPLACE FUNCTION assistant_session_identity(sid text) RETURNS TABLE(farmer_id uuid,token_hash text)
 LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,sv3 AS $$ SELECT farmer_id,token_hash FROM sv3.assistant_sessions WHERE id=sid AND revoked_at IS NULL AND expires_at>now() $$;
 CREATE OR REPLACE FUNCTION assistant_demo_farmer(profile text) RETURNS uuid
@@ -38,7 +37,7 @@ GRANT SELECT,INSERT,UPDATE,DELETE ON assistant_sessions,assistant_records,assist
 GRANT SELECT,INSERT,UPDATE ON conversations,messages,agent_runs,tool_calls,approvals,artifacts,attachments,memories,context_compactions,run_events,question_requests,question_answers,tasks,task_events,expenses TO sv3_writer;
 COMMIT;
 
--- Verified OIDC accounts can chat before completing location onboarding.
+
 BEGIN;
 ALTER TABLE sv3.farmers ALTER COLUMN region_id DROP NOT NULL;
 DO $$ BEGIN
@@ -68,13 +67,13 @@ REVOKE ALL ON FUNCTION sv3.assistant_oidc_farmer(text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION sv3.assistant_oidc_farmer(text,text) TO sv3_writer;
 COMMIT;
 
--- Versioned actual runtime catalog and exact skill-file linkage for audits.
+
 BEGIN;
 ALTER TABLE sv3.tool_calls ADD COLUMN IF NOT EXISTS skill_version_id uuid REFERENCES sv3.skill_versions(id);
 GRANT SELECT,INSERT,UPDATE ON sv3.skill_versions,sv3.tool_versions TO sv3_ingest;
 COMMIT;
 
--- Capability lifetime and explicit logout revocation retain farmer-owned history.
+
 BEGIN;
 ALTER TABLE sv3.assistant_sessions ADD COLUMN IF NOT EXISTS expires_at timestamptz NOT NULL DEFAULT (now()+interval '30 days');
 ALTER TABLE sv3.assistant_sessions ADD COLUMN IF NOT EXISTS revoked_at timestamptz;

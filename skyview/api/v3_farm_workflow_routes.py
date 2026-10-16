@@ -122,7 +122,7 @@ def one(connection, sql, params):
 
 
 def versioned(connection, table, identifier, version):
-    # table is a call-site constant; never sourced from HTTP input.
+
     row = one(
         connection,
         f"SELECT * FROM sv3.{table} WHERE id=:id FOR UPDATE",

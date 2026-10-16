@@ -1,4 +1,3 @@
-/* Public static shell only. Authenticated APIs, uploads and writes never enter CacheStorage. */
 const CACHE = "skyview-shell-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/farm-icon.svg"];
 const ASSET = /^\/assets\/[A-Za-z0-9_./-]+\.(?:js|css|woff2?|svg|png)$/;
@@ -8,8 +7,8 @@ self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     await cache.addAll(SHELL);
-    // The initial page loads before a newly installed worker controls it. Cache its
-    // hashed entry bundles now, so the first offline reload has actual JS and CSS.
+
+
     const index = await cache.match("/");
     if (!index) throw new Error("The offline shell was not saved.");
     const html = await index.text();
@@ -18,7 +17,7 @@ self.addEventListener("install", event => {
       const url = new URL(match[1], self.location.origin);
       if (url.origin === self.location.origin && !url.search && ASSET.test(url.pathname)) assets.add(url.pathname);
     }
-    // Vite emits the full public bundle list, including route chunks loaded lazily.
+
     const manifest = await fetch('/offline-assets.json', { credentials: 'omit', cache: 'no-store' });
     if (!manifest.ok) throw new Error('The offline bundle manifest is unavailable.');
     const bundle = await manifest.json();
@@ -45,8 +44,8 @@ self.addEventListener("fetch", event => {
   try { path = decodeURIComponent(url.pathname); } catch { return; }
   if (request.method !== "GET" || url.origin !== self.location.origin || request.headers.has("Authorization") || request.headers.has("X-Assistant-Session") || PRIVATE.test(path)) return;
   if (request.mode === "navigate") {
-    // Only the public app HTML is used as fallback; responses from authenticated
-    // requests are neither stored nor replaced with a successful-looking shell.
+
+
     event.respondWith(fetch(request).catch(async () => (await caches.open(CACHE)).match("/") || Response.error()));
   } else if (!url.search && ASSET.test(url.pathname)) {
     event.respondWith(caches.open(CACHE).then(async cache => {

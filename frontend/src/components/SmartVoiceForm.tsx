@@ -11,7 +11,7 @@ interface SmartVoiceFormProps {
   lang?: string;
 }
 
-/** Reviewed dictation becomes editable proposed fields. The parent still owns saving. */
+
 export function SmartVoiceForm({ title, description, onDataExtracted, lang = 'en-IN' }: SmartVoiceFormProps) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');

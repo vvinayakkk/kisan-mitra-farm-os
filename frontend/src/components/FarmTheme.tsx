@@ -19,7 +19,7 @@ export function FarmBackground() {
                 backgroundRepeat: 'no-repeat',
                 transition: 'background 0.6s ease',
             }} />
-            {/* Blurr and grayish tint overlay */}
+            {                                    }
             <div style={{
                 position: 'absolute', inset: 0,
                 backdropFilter: 'blur(2px)',

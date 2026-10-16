@@ -46,7 +46,7 @@ export function HardwareCheckoutModal({
   const [applySubsidy, setApplySubsidy] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "kcc" | "dbt">("cod");
 
-  // Form Fields (pre-filled with real farm defaults)
+
   const [name, setName] = useState(localStorage.getItem("user_name") || "Ramesh Patil");
   const [phone, setPhone] = useState(localStorage.getItem("user_phone") || "+91 98201 44821");
   const [plotAddress, setPlotAddress] = useState("Survey No. 44/2, Agro-Corridor");
@@ -55,7 +55,7 @@ export function HardwareCheckoutModal({
   const [pincode, setPincode] = useState("412260");
   const [installationAssistance, setInstallationAssistance] = useState(true);
 
-  // Confirmed Order Details
+
   const [orderDetails, setOrderDetails] = useState<any>(initialOrder || null);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export function HardwareCheckoutModal({
           const parsed = JSON.parse(saved);
           setOrderDetails(parsed);
         } catch (e) {
-          // ignore
+
         }
       }
     }
@@ -165,7 +165,7 @@ export function HardwareCheckoutModal({
           flexDirection: "column",
         }}
       >
-        {/* Modal Header */}
+        {                  }
         <div
           style={{
             padding: "20px 28px",
@@ -237,12 +237,12 @@ export function HardwareCheckoutModal({
           </button>
         </div>
 
-        {/* Modal Body */}
+        {                }
         <div style={{ padding: "24px 28px", overflowY: "auto", flex: 1 }}>
-          {/* ================= STEP 1: FORM ================= */}
+          {                                                      }
           {step === "form" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* Product Kit Overview Box */}
+              {                              }
               <div
                 style={{
                   padding: "16px 18px",
@@ -291,7 +291,7 @@ export function HardwareCheckoutModal({
                 </div>
               </div>
 
-              {/* Delivery Details Form */}
+              {                           }
               <div>
                 <h4
                   style={{
@@ -433,7 +433,7 @@ export function HardwareCheckoutModal({
                 </div>
               </div>
 
-              {/* Subsidy Benefit Breakdown */}
+              {                               }
               <div
                 style={{
                   padding: "14px 18px",
@@ -479,7 +479,7 @@ export function HardwareCheckoutModal({
                 </label>
               </div>
 
-              {/* Payment / Settlement Choice */}
+              {                                 }
               <div>
                 <label style={{ fontSize: "11px", fontWeight: 700, color: subTextColor, display: "block", marginBottom: "8px" }}>
                   Payment & Verification Method
@@ -516,7 +516,7 @@ export function HardwareCheckoutModal({
                 </div>
               </div>
 
-              {/* Free Installation Assistance Checkbox */}
+              {                                           }
               <label
                 style={{
                   display: "flex",
@@ -536,7 +536,7 @@ export function HardwareCheckoutModal({
                 <span>Include free on-farm mast mounting & sensor orientation assistance by district technician</span>
               </label>
 
-              {/* Action Buttons */}
+              {                    }
               <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
                 <Button
                   onClick={handlePlaceOrder}
@@ -573,7 +573,7 @@ export function HardwareCheckoutModal({
             </div>
           )}
 
-          {/* ================= STEP 2: PROCESSING SIMULATION ================= */}
+          {                                                                       }
           {step === "processing" && (
             <div
               style={{
@@ -598,10 +598,10 @@ export function HardwareCheckoutModal({
             </div>
           )}
 
-          {/* ================= STEP 3: ORDER CONFIRMED & TRACKING HUB ================= */}
+          {                                                                                }
           {step === "confirmed" && orderDetails && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* Confirmed Banner */}
+              {                      }
               <div
                 style={{
                   padding: "18px 20px",
@@ -673,7 +673,7 @@ export function HardwareCheckoutModal({
                 </Button>
               </div>
 
-              {/* Realistic Dispatch Progress Timeline */}
+              {                                          }
               <div>
                 <h4
                   style={{
@@ -783,7 +783,7 @@ export function HardwareCheckoutModal({
                 </div>
               </div>
 
-              {/* Assigned Technician Profile */}
+              {                                 }
               <div
                 style={{
                   padding: "14px 18px",
@@ -841,7 +841,7 @@ export function HardwareCheckoutModal({
                 </a>
               </div>
 
-              {/* Action Buttons: Instant Pair vs Close */}
+              {                                           }
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
                 <Button
                   onClick={() => {
@@ -883,7 +883,7 @@ export function HardwareCheckoutModal({
             </div>
           )}
 
-          {/* ================= STEP 4: OFFICIAL TAX INVOICE ================= */}
+          {                                                                      }
           {step === "invoice" && orderDetails && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div
@@ -895,7 +895,7 @@ export function HardwareCheckoutModal({
                   fontFamily: "'Courier New', Courier, monospace, sans-serif",
                 }}
               >
-                {/* Invoice Top Header */}
+                {                        }
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: borderColor, paddingBottom: "16px", marginBottom: "16px" }}>
                   <div>
                     <h3 style={{ fontSize: "18px", fontWeight: 900, color: textColor, margin: 0, fontFamily: "sans-serif" }}>
@@ -921,7 +921,7 @@ export function HardwareCheckoutModal({
                   </div>
                 </div>
 
-                {/* Farmer & Dispatch Details */}
+                {                               }
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", fontSize: "11.5px", marginBottom: "16px", borderBottom: borderColor, paddingBottom: "16px" }}>
                   <div>
                     <strong style={{ color: textColor }}>Billed & Shipped To:</strong>
@@ -937,7 +937,7 @@ export function HardwareCheckoutModal({
                   </div>
                 </div>
 
-                {/* Bill Table */}
+                {                }
                 <div style={{ fontSize: "12px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, color: textColor, borderBottom: borderColor, paddingBottom: "6px" }}>
                     <span>Item Description</span>
@@ -966,7 +966,7 @@ export function HardwareCheckoutModal({
                   </div>
                 </div>
 
-                {/* Total */}
+                {           }
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "2px dashed rgba(46, 204, 113, 0.4)", paddingTop: "12px" }}>
                   <div>
                     <div style={{ fontSize: "11px", color: subTextColor }}>Payment Status: Verified / {orderDetails.paymentMethod?.toUpperCase()}</div>
@@ -981,7 +981,7 @@ export function HardwareCheckoutModal({
                 </div>
               </div>
 
-              {/* Action buttons on invoice */}
+              {                               }
               <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                 <Button
                   onClick={() => window.print()}

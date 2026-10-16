@@ -2,7 +2,7 @@ import { preferredLanguage } from './languagePreference';
 
 const states = ['listening', 'speaking', 'working', 'preparing', 'muted', 'understanding', 'connecting', 'review'] as const;
 type State = typeof states[number];
-// Dynamic live captions must not wait for the page translation service.
+
 const captions: Record<string, readonly string[]> = {
   en: ['Listening', 'Mitra is speaking', 'Mitra is working', 'Preparing voice reply', 'Microphone off', 'Understanding', 'Connecting microphone', 'Review the card to continue'],
   hi: ['सुन रहा हूँ', 'मित्र बोल रहा है', 'मित्र काम कर रहा है', 'आवाज़ में उत्तर तैयार हो रहा है', 'माइक्रोफ़ोन बंद है', 'समझ रहा हूँ', 'माइक्रोफ़ोन जुड़ रहा है', 'आगे बढ़ने के लिए कार्ड देखें'],

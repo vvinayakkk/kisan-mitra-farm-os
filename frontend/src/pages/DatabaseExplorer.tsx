@@ -130,7 +130,7 @@ const prettyValue = (value: unknown): string => {
   return String(value);
 };
 
-// Simplified type badges — no rainbow colors, just subtle monochrome categories
+
 const getTypeBadge = (type: string) => {
   const t = type.toLowerCase();
   if (t.includes('int') || t.includes('serial') || t.includes('numeric') || t.includes('float') || t.includes('real') || t.includes('double'))
@@ -271,7 +271,7 @@ export default function DatabaseExplorer() {
     URL.revokeObjectURL(url);
   };
 
-  /* ─── Design tokens — clean, monochromatic, dense ─── */
+
   const bg          = 'transparent';
   const panel       = isDark ? 'rgba(20, 20, 25, 0.75)' : 'rgba(255, 255, 255, 0.75)';
   const panelHover  = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
@@ -289,7 +289,7 @@ export default function DatabaseExplorer() {
 
   const rowHoverBg  = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
 
-  // compact input
+
   const input: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -371,7 +371,7 @@ export default function DatabaseExplorer() {
 
       <main style={{ position: 'relative', zIndex: 40, height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', padding: '12px 16px 12px', gap: 10, boxSizing: 'border-box' }}>
 
-        {/* ── Top bar ── */}
+        {                   }
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Database size={14} style={{ color: textSub }} />
@@ -404,7 +404,7 @@ export default function DatabaseExplorer() {
             )}
           </div>
 
-          {/* Compact stat pills */}
+          {                        }
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {[
               { label: 'tables', value: tables.length },
@@ -427,10 +427,10 @@ export default function DatabaseExplorer() {
           </div>
         </div>
 
-        {/* ── 3-col body ── */}
+        {                      }
         <div style={{ display: 'grid', gridTemplateColumns: '210px minmax(0,1fr) 240px', gap: 10, flex: 1, minHeight: 0 }}>
 
-          {/* ── LEFT: Table list ── */}
+          {                            }
           <div style={{
             background: panel,
             border: `1px solid ${border}`,
@@ -439,7 +439,7 @@ export default function DatabaseExplorer() {
             flexDirection: 'column',
             overflow: 'hidden',
           }}>
-            {/* Search */}
+            {            }
             <div style={{ padding: '10px 10px 8px', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
               <div style={{ ...input, padding: '5px 8px' }}>
                 <Search size={11} style={{ color: textDim, flexShrink: 0 }} />
@@ -452,7 +452,7 @@ export default function DatabaseExplorer() {
               </div>
             </div>
 
-            {/* Table rows */}
+            {                }
             <div style={{ overflowY: 'auto', flex: 1, padding: '6px' }}>
               {loadingTables ? (
                 <div style={{ padding: '16px 8px', textAlign: 'center', color: textDim, fontSize: 12 }}>Loading…</div>
@@ -501,10 +501,10 @@ export default function DatabaseExplorer() {
             </div>
           </div>
 
-          {/* ── CENTER: Data panel ── */}
+          {                              }
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
 
-            {/* Toolbar */}
+            {             }
             <div style={{
               background: panel,
               border: `1px solid ${border}`,
@@ -512,7 +512,7 @@ export default function DatabaseExplorer() {
               padding: '8px 10px',
               flexShrink: 0,
             }}>
-              {/* Row 1: table name + view tabs + actions */}
+              {                                             }
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: text, fontFamily: mono }}>
@@ -526,7 +526,7 @@ export default function DatabaseExplorer() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {/* View tabs */}
+                  {               }
                   <div style={{ display: 'flex', gap: 2, marginRight: 6 }}>
                     {([
                       { key: 'table', icon: <Table2 size={11} />, label: 'Table' },
@@ -546,7 +546,7 @@ export default function DatabaseExplorer() {
                 </div>
               </div>
 
-              {/* Row 2: filters */}
+              {                    }
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ ...input, flex: '1 1 160px', minWidth: 120 }}>
                   <Search size={11} style={{ color: textDim, flexShrink: 0 }} />
@@ -595,7 +595,7 @@ export default function DatabaseExplorer() {
               </div>
             </div>
 
-            {/* Error */}
+            {           }
             {error && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px',
@@ -606,7 +606,7 @@ export default function DatabaseExplorer() {
               </div>
             )}
 
-            {/* ── TABLE VIEW ── */}
+            {                      }
             {viewMode === 'table' && (
               <div style={{
                 background: panel,
@@ -711,7 +711,7 @@ export default function DatabaseExplorer() {
               </div>
             )}
 
-            {/* ── JSON VIEW ── */}
+            {                     }
             {viewMode === 'json' && (
               <div style={{
                 background: isDark ? '#0a0a0a' : '#f8f8f8',
@@ -736,7 +736,7 @@ export default function DatabaseExplorer() {
               </div>
             )}
 
-            {/* ── QUERY VIEW ── */}
+            {                      }
             {viewMode === 'query' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 8, flex: 1, minHeight: 0 }}>
                 <div style={{
@@ -779,7 +779,7 @@ export default function DatabaseExplorer() {
               </div>
             )}
 
-            {/* Pagination */}
+            {                }
             <div style={{
               background: panel,
               border: `1px solid ${border}`,
@@ -820,7 +820,7 @@ export default function DatabaseExplorer() {
             </div>
           </div>
 
-          {/* ── RIGHT: Schema panel ── */}
+          {                               }
           <div style={{
             background: panel,
             border: `1px solid ${border}`,
@@ -845,7 +845,7 @@ export default function DatabaseExplorer() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {/* Summary */}
+                  {             }
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
@@ -867,7 +867,7 @@ export default function DatabaseExplorer() {
                     ))}
                   </div>
 
-                  {/* Column list */}
+                  {                 }
                   {(selectedTableMeta.columns || []).map((col) => (
                     <div
                       key={col.name}

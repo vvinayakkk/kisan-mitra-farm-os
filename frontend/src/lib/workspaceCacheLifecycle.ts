@@ -1,4 +1,3 @@
-/** Shared invalidation boundary; contains no authentication or UI dependencies. */
 export type CacheInvalidationReason = "mutation" | "session" | "refresh";
 const listeners = new Set<(reason: CacheInvalidationReason) => void>();
 export function onWorkspaceCacheInvalidated(listener: (reason: CacheInvalidationReason) => void): () => void {

@@ -40,7 +40,7 @@ export default function FarmersMap() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersGroupRef = useRef<any>(null);
 
-  // Load Leaflet dynamically from CDN to bypass Vite bundling and TypeScript build issues
+
   useEffect(() => {
     if (window.L) {
       setLReady(true);
@@ -58,7 +58,7 @@ export default function FarmersMap() {
     document.head.appendChild(script);
   }, []);
 
-  // Fetch farmers list
+
   const loadFarmers = async () => {
     setLoading(true);
     try {
@@ -78,15 +78,15 @@ export default function FarmersMap() {
     loadFarmers();
   }, []);
 
-  // Initialize Leaflet Map
+
   useEffect(() => {
     if (!lReady || !mapContainerRef.current || mapRef.current) return;
 
-    // Center of India coordinates
+
     const map = window.L.map(mapContainerRef.current).setView([22.9734, 78.6569], 5);
     mapRef.current = map;
 
-    // Apply CartoDB tiles with global English language labels (Authenticated with CARTO API Key)
+
     const cartoKey = import.meta.env.VITE_CARTO_API_KEY || "cb1_4027_1_e44dbe2716879040d24e7d61";
     const tileUrl = isDark
       ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`
@@ -100,7 +100,7 @@ export default function FarmersMap() {
 
     markersGroupRef.current = window.L.layerGroup().addTo(map);
 
-    // Listen to AIOverview custom event triggers for map focus
+
     const handleFocusEvent = (e: Event) => {
       const { lat, lon, zoom } = (e as CustomEvent).detail;
       if (mapRef.current) {
@@ -112,14 +112,14 @@ export default function FarmersMap() {
     return () => window.removeEventListener("map-focus", handleFocusEvent);
   }, [lReady, isDark]);
 
-  // Redraw Markers when farmers data or searchQuery changes
+
   useEffect(() => {
     if (!lReady || !mapRef.current || !markersGroupRef.current) return;
 
-    // Clear previous markers
+
     markersGroupRef.current.clearLayers();
 
-    // Filter farmers based on query
+
     const query = searchQuery.toLowerCase();
     const filtered = farmers.filter(f => {
       if (!f.latitude || !f.longitude) return false;
@@ -134,7 +134,7 @@ export default function FarmersMap() {
     });
 
     filtered.forEach(farmer => {
-      // Glow marker icon matching the agricultural green theme
+
       const customIcon = window.L.divIcon({
         className: 'custom-pulsing-marker',
         html: `
@@ -166,8 +166,8 @@ export default function FarmersMap() {
       });
 
       const marker = window.L.marker([farmer.latitude, farmer.longitude], { icon: customIcon });
-      
-      // Hook click to show sliding panel profile details
+
+
       marker.on("click", () => {
         setSelectedFarmer(farmer);
         mapRef.current.setView([farmer.latitude, farmer.longitude], 8, { animate: true });
@@ -177,7 +177,7 @@ export default function FarmersMap() {
     });
   }, [farmers, searchQuery, lReady]);
 
-  // Update Map Tile Layer on Theme change
+
   useEffect(() => {
     if (!mapRef.current) return;
     mapRef.current.eachLayer((layer: any) => {
@@ -212,8 +212,8 @@ export default function FarmersMap() {
       </div>
 
       <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "2rem", position: "relative", zIndex: 40 }}>
-        
-        {/* Header */}
+
+        {            }
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <div>
             <h1 className="text-3xl font-bold font-sans" style={{ color: isDark ? '#A8D89A' : '#1B3A20' }}>
@@ -228,16 +228,16 @@ export default function FarmersMap() {
           </Button>
         </div>
 
-        {/* AI Overview Panel */}
+        {                       }
         <AIOverview page="map" />
 
-        {/* Map and Filter Layout */}
+        {                           }
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", position: "relative" }}>
-          
-          {/* Main Map Box */}
+
+          {                  }
           <GlassSection style={{ padding: "12px", height: "620px", position: "relative", overflow: "hidden" }}>
-            
-            {/* Overlay Search Bar */}
+
+            {                        }
             <div style={{
               position: "absolute",
               top: "24px",
@@ -259,14 +259,14 @@ export default function FarmersMap() {
               <VoiceInput label="Speak a farm map search" language={`${language}-IN`} onTranscript={setSearchQuery} />
             </div>
 
-            {/* Map Placeholder/Container */}
+            {                               }
             {!lReady && (
               <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900/40 rounded-xl">
                 <RotateCw size={36} className="animate-spin text-emerald-500 mb-2" />
                 <p className="text-gray-500 font-semibold">Loading map components...</p>
               </div>
             )}
-            
+
             <div
               ref={mapContainerRef}
               style={{
@@ -278,7 +278,7 @@ export default function FarmersMap() {
               }}
             />
 
-            {/* Drawer: Detailed Profile View on Pin Click */}
+            {                                                }
             <AnimatePresence>
               {selectedFarmer && (
                 <motion.div
@@ -304,7 +304,7 @@ export default function FarmersMap() {
                     boxSizing: "border-box"
                   }}
                 >
-                  {/* Close drawer button */}
+                  {                         }
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                     <span style={{
                       background: "transparent", color: "#10B981", border: "1.5px solid #10B981",
@@ -320,10 +320,10 @@ export default function FarmersMap() {
                     </button>
                   </div>
 
-                  {/* Body Content */}
+                  {                  }
                   <div style={{ flex: 1, overflowY: "auto", paddingRight: "4px" }} className="scrollbar-none">
                     <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{selectedFarmer.name}</h3>
-                    
+
                     <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
                       <MapPin size={13} color="#10B981" />
                       <span>{selectedFarmer.district ? `${selectedFarmer.district}, ${selectedFarmer.state}` : selectedFarmer.location}</span>
@@ -331,7 +331,7 @@ export default function FarmersMap() {
 
                     <div style={{ margin: "20px 0", borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }} />
 
-                    {/* Stats */}
+                    {           }
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
                       <div className="bg-transparent p-3 rounded-lg border border-emerald-600/30">
                         <span className="text-[10px] text-gray-400 uppercase font-bold block">Landholding</span>
@@ -347,7 +347,7 @@ export default function FarmersMap() {
                       </div>
                     </div>
 
-                    {/* Excess Listings */}
+                    {                     }
                     <div className="mb-4">
                       <h4 className="text-xs uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
                         <Check size={14} /> Available Excess (Offering)
@@ -365,7 +365,7 @@ export default function FarmersMap() {
                       </div>
                     </div>
 
-                    {/* Required Listings */}
+                    {                       }
                     <div className="mb-6">
                       <h4 className="text-xs uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1.5">
                         <Shield size={14} className="text-amber-500" /> Resources Needed (Seeking)
@@ -385,7 +385,7 @@ export default function FarmersMap() {
 
                   </div>
 
-                  {/* Call to Actions */}
+                  {                     }
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
                     {getWhatsAppLink(selectedFarmer) && <Button
                       asChild

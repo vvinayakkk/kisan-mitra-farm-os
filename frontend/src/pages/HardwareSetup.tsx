@@ -19,7 +19,7 @@ export default function HardwareSetup() {
 
   const handleConnect = async () => {
     setConnecting(true);
-    // Simulate device pairing (1.5s)
+
     await new Promise(r => setTimeout(r, 1500));
     connectHardware(DEVICE_ID);
     setConnected(true);
@@ -47,7 +47,7 @@ export default function HardwareSetup() {
           transition={{ duration: 0.5 }}
           style={{ width: '100%', maxWidth: '760px' }}
         >
-          {/* Header */}
+          {            }
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
 
             <h1 style={{
@@ -63,10 +63,10 @@ export default function HardwareSetup() {
             </p>
           </div>
 
-          {/* Two Option Cards */}
+          {                      }
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
-            {/* Option 1: Connect Existing */}
+            {                                }
             <motion.div
               whileHover={{ y: -4, boxShadow: '0 16px 40px rgba(46,204,113,0.2)' }}
               transition={{ duration: 0.2 }}
@@ -107,7 +107,7 @@ export default function HardwareSetup() {
                 Pair your <strong style={{ color: textPrimary }}>AgriSense WS01</strong> station to start streaming live weather, soil, and crop data directly to your dashboard.
               </p>
 
-              {/* Device chip */}
+              {                 }
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 background: 'transparent',
@@ -147,7 +147,7 @@ export default function HardwareSetup() {
               </button>
             </motion.div>
 
-            {/* Option 2: Buy Hardware */}
+            {                            }
             <motion.div
               whileHover={{ y: -4, boxShadow: '0 16px 40px rgba(33,150,243,0.2)' }}
               transition={{ duration: 0.2 }}
@@ -180,7 +180,7 @@ export default function HardwareSetup() {
                 Don't have a device yet? Order the <strong style={{ color: textPrimary }}>AgriSense WS01</strong> — our FPGA-powered precision weather station built for modern farms.
               </p>
 
-              {/* Feature chips */}
+              {                   }
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '24px' }}>
                 {['FPGA Accelerated', 'IoT + MQTT', '8 Sensors', 'AI Ready'].map(f => (
                   <span key={f} style={{

@@ -25,7 +25,7 @@ def setup_logging() -> None:
         level=getattr(logging, settings.LOG_LEVEL, logging.INFO),
         handlers=[handler],
     )
-    # HTTP client INFO logs include full query strings, including provider API keys.
+
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 

@@ -67,7 +67,7 @@ def parse_grounded_response(payload, query, language):
     ):
         return unavailable
     candidate = candidates[0]
-    # A partial or safety-blocked result must not masquerade as complete research.
+
     if candidate.get("finishReason", "STOP") != "STOP":
         return unavailable
     content = candidate.get("content") or {}
@@ -131,7 +131,7 @@ def parse_grounded_response(payload, query, language):
                 index_to_id[i] for i in indices if type(i) is int and i in index_to_id
             )
         )
-        # Exact segments avoid misusing byte offsets in multilingual responses.
+
         if isinstance(text, str) and text.strip() and text in answer and source_ids:
             evidence.append({"text": text[:6000], "source_ids": source_ids})
         if len(evidence) >= 40:
@@ -156,7 +156,6 @@ def parse_grounded_response(payload, query, language):
         "search_queries": [q[:500] for q in queries if isinstance(q, str)][:10]
         if isinstance(queries, list)
         else [],
-        # Provider HTML is for an isolated, sandboxed search-suggestions frame only.
         "search_suggestions_html": suggestions[:100000]
         if isinstance(suggestions, str)
         else "",
@@ -207,7 +206,7 @@ async def research(
     }
 
     async def fetch(http):
-        # Header credentials avoid API keys in access/request URLs and exceptions.
+
         async with http.stream(
             "POST",
             f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
@@ -233,7 +232,6 @@ async def research(
             return parse_grounded_response(json.loads(data), query, language)
 
     try:
-        # Hard wall-clock bound covers slow streams as well as individual reads.
         async with asyncio.timeout(TIMEOUT_SECONDS):
             if client is not None:
                 return await fetch(client)
@@ -242,5 +240,4 @@ async def research(
     except (httpx.TimeoutException, TimeoutError):
         return _unavailable(query, language, "timeout")
     except (httpx.HTTPError, ValueError, TypeError):
-        # Never expose response bodies, credentials, or provider exception text.
         return _unavailable(query, language, "provider_unavailable")

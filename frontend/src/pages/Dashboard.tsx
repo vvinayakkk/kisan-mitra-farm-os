@@ -35,7 +35,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-// Add pulse animation styles
+
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes pulse {
@@ -132,8 +132,8 @@ export default function Dashboard() {
     );
   }
 
-  // Use live sensor data for display (updates every 10 seconds), fallback to weatherData
-  // Format all numbers to 2 decimal places for readability
+
+
   const displayTemp = Number((currentSensorData?.temperature ?? weatherData.temperature).toFixed(2));
   const displayHumidity = Number((currentSensorData?.humidity ?? weatherData.humidity).toFixed(2));
   const displayPressure = Number((currentSensorData?.pressure ?? weatherData.pressure).toFixed(2));
@@ -212,7 +212,7 @@ export default function Dashboard() {
             </GlassSection>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <SystemHealthPanel health={systemHealth} />
-              {/* <StationMapPanel /> */}
+              {                         }
               <AlertsPanel alerts={alerts} />
             </div>
           </div>

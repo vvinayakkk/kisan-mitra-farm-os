@@ -85,10 +85,10 @@ export function CircularBarterLoopCard({
   const [simulationStep, setSimulationStep] = useState<number | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
-  // Check if current user is part of this loop
+
   const containsMe = !!currentUserPhone && loop.farmers.some((f) => !!f.phone && f.phone === currentUserPhone);
 
-  // Helper to extract initials
+
   const getInitials = (name: string) => {
     if (!name) return "F";
     const parts = name.trim().split(" ");
@@ -98,21 +98,21 @@ export function CircularBarterLoopCard({
     return parts[0].slice(0, 2).toUpperCase();
   };
 
-  // Color tokens per node (border accents only, no solid fills)
+
   const nodeBorders = [
     { border: "rgba(59, 130, 246, 0.5)", glow: "rgba(59, 130, 246, 0.25)", text: "#3B82F6", label: "Node 01" },
     { border: "rgba(16, 185, 129, 0.5)", glow: "rgba(16, 185, 129, 0.25)", text: "#10B981", label: "Node 02" },
     { border: "rgba(168, 85, 247, 0.5)", glow: "rgba(168, 85, 247, 0.25)", text: "#A855F7", label: "Node 03" },
   ];
 
-  // Robust Schedule Parser: Converts AI raw markdown tables, pipe strings, or bullets into structured rota items
+
   const parseSchedule = (raw: string): { rows: ParsedScheduleRow[]; notes: string } => {
     if (!raw) return { rows: [], notes: "" };
 
     const rows: ParsedScheduleRow[] = [];
     let summaryNotes = "";
 
-    // 1. Check for markdown table format (| Day | Who Gives | ...)
+
     if (raw.includes("|") && raw.includes("---")) {
       const lines = raw.split("\n").filter((l) => l.trim().length > 0);
       for (const line of lines) {
@@ -123,7 +123,7 @@ export function CircularBarterLoopCard({
             .map((c) => c.trim())
             .filter((c) => c.length > 0);
 
-          // Skip header and divider
+
           if (
             cells.length >= 4 &&
             !cells[0].toLowerCase().includes("day") &&
@@ -142,7 +142,7 @@ export function CircularBarterLoopCard({
       }
     }
 
-    // 2. If table didn't yield items, check for bullet points or day mentions
+
     if (rows.length === 0) {
       const bullets = raw.split(/[-•\n]+/).map((b) => b.trim()).filter((b) => b.length > 10);
       const dayKeywords = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Mon-Tue", "Wed-Thu", "Fri-Sat"];
@@ -156,7 +156,7 @@ export function CircularBarterLoopCard({
           }
         }
 
-        // Try to identify from & to farmers from the loop
+
         let matchedGiver = "";
         let matchedReceiver = "";
         for (const f of loop.farmers) {
@@ -180,7 +180,7 @@ export function CircularBarterLoopCard({
       }
     }
 
-    // 3. Fallback: If still empty, build a clean 3-phase structured weekly schedule from loop.transfer_flow
+
     if (rows.length === 0 && loop.transfer_flow?.length >= 3) {
       const days = ["Mon – Tue", "Wed – Thu", "Fri – Sat"];
       loop.transfer_flow.forEach((flow, i) => {
@@ -200,7 +200,7 @@ export function CircularBarterLoopCard({
 
   const { rows: scheduleRows, notes: scheduleNotes } = parseSchedule(loop.ai_schedule);
 
-  // Trigger interactive loop simulation
+
   const runSimulation = () => {
     if (isSimulating) return;
     setIsSimulating(true);
@@ -238,7 +238,7 @@ export function CircularBarterLoopCard({
         transition: "all 0.3s ease",
       }}
     >
-      {/* Top Header Banner */}
+      {                       }
       <div
         style={{
           padding: "18px 24px 14px",
@@ -311,7 +311,7 @@ export function CircularBarterLoopCard({
           </div>
         </div>
 
-        {/* Metrics & Interactive Simulation Button */}
+        {                                             }
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <div
             style={{
@@ -383,7 +383,7 @@ export function CircularBarterLoopCard({
         </div>
       </div>
 
-      {/* Active Simulation Status Banner */}
+      {                                     }
       <AnimatePresence>
         {isSimulating && simulationStep !== null && (
           <motion.div
@@ -418,7 +418,7 @@ export function CircularBarterLoopCard({
         )}
       </AnimatePresence>
 
-      {/* Main Body: 3 Transfer Nodes (Small Cards with Border Colour, NO Background Colour) */}
+      {                                                                                        }
       <div style={{ padding: "20px 24px" }}>
         <div
           style={{
@@ -441,7 +441,7 @@ export function CircularBarterLoopCard({
                 }}
                 transition={{ duration: 0.25 }}
                 style={{
-                  /* STRICT USER RULE: DO NOT ADD BACKGROUND COLOUR TO SMALL CARDS, USE BORDER COLOUR */
+
                   background: "transparent",
                   border: isNodeActive
                     ? `2px solid ${nodeStyle.text}`
@@ -456,7 +456,7 @@ export function CircularBarterLoopCard({
                   justifyContent: "space-between",
                 }}
               >
-                {/* Top Node Indicator & Role */}
+                {                               }
                 <div>
                   <div
                     style={{
@@ -493,7 +493,7 @@ export function CircularBarterLoopCard({
                     </span>
                   </div>
 
-                  {/* Provider Info */}
+                  {                   }
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
                     <div
                       style={{
@@ -546,7 +546,7 @@ export function CircularBarterLoopCard({
                     </div>
                   </div>
 
-                  {/* Handover Asset Pill (Border Only, No Background Fill) */}
+                  {                                                           }
                   <div
                     style={{
                       padding: "10px 14px",
@@ -592,7 +592,7 @@ export function CircularBarterLoopCard({
                     </div>
                   </div>
 
-                  {/* Recipient Target */}
+                  {                      }
                   <div
                     style={{
                       padding: "8px 0",
@@ -627,7 +627,7 @@ export function CircularBarterLoopCard({
                   </div>
                 </div>
 
-                {/* Direct Handover WhatsApp Action */}
+                {                                     }
                 <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
                   {toFarmer && toFarmer.phone !== currentUserPhone && /^\+?[\d\s-]{8,20}$/.test(toFarmer.whatsapp || "") && (
                     <a
@@ -666,9 +666,9 @@ export function CircularBarterLoopCard({
           })}
         </div>
 
-        {/* ========================================================================= */}
-        {/* REFORMED WEEKLY HANDOVER ROTA (CALENDAR-KIND VIEW & BULLETINS) */}
-        {/* ========================================================================= */}
+        {                                                                               }
+        {                                                                    }
+        {                                                                               }
         <div
           style={{
             marginTop: "24px",
@@ -678,7 +678,7 @@ export function CircularBarterLoopCard({
             background: isDark ? "rgba(16, 185, 129, 0.03)" : "rgba(240, 253, 244, 0.65)",
           }}
         >
-          {/* Header of Schedule: Clean, Professional, Authentic */}
+          {                                                        }
           <div
             style={{
               display: "flex",
@@ -749,7 +749,7 @@ export function CircularBarterLoopCard({
             </div>
           </div>
 
-          {/* Calendar-Kind Weekly Grid */}
+          {                               }
           <div
             style={{
               display: "grid",
@@ -790,7 +790,7 @@ export function CircularBarterLoopCard({
                     minHeight: "125px",
                   }}
                 >
-                  {/* Calendar Day Header */}
+                  {                         }
                   <div
                     style={{
                       display: "flex",
@@ -822,7 +822,7 @@ export function CircularBarterLoopCard({
                     )}
                   </div>
 
-                  {/* Day Events */}
+                  {                }
                   {hasEvents ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       {dayHandovers.map((item, idx) => (
@@ -866,7 +866,7 @@ export function CircularBarterLoopCard({
             })}
           </div>
 
-          {/* Structured Operational Bulletins (Replacing raw unformatted dump) */}
+          {                                                                       }
           {scheduleNotes && (
             <div
               style={{

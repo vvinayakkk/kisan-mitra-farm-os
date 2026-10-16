@@ -13,7 +13,7 @@ import httpx
 
 from skyview.utils.config import get_settings
 
-# HTTP request URLs can contain the market API's query credential.
+
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -45,8 +45,7 @@ def inline_schema(schema):
             return value
         if "$ref" in value:
             return resolve(definitions[value["$ref"].split("/")[-1]])
-        # Pydantic's generated titles/defaults add thousands of prompt tokens
-        # across the tool catalogue. Validation and defaults remain server-side.
+
         return {
             k: {name: resolve(field) for name, field in v.items()}
             if k == "properties"
@@ -113,8 +112,6 @@ def quota_delay(response):
     return min(delay, 86400)
 
 
-# Avoid retrying the same exhausted credential on every tool round. Keys never
-# leave this process and only their hashes are retained in cooldown metadata.
 _cooldowns: dict[str, float] = {}
 _key_rotation = count()
 
@@ -194,7 +191,6 @@ async def _stream_attempt(
                 timeout=httpx.Timeout(35, connect=5),
             ) as response:
                 if response.status_code != 200:
-                    # Never log response bodies, credentials, or request URLs with secrets.
                     logger.warning(
                         "Assistant provider rejected request: provider=%s model=%s status=%s",
                         "groq" if groq else "gemini",
@@ -209,7 +205,6 @@ async def _stream_attempt(
                     if groq and shared_quota_limit(response):
                         groq_unavailable_for_request = True
                     if groq and response.status_code in (400, 404, 422):
-                        # Payload/model errors are unchanged by rotating keys.
                         groq_unavailable_for_request = True
                     continue
                 yield {"type": "model", "model": model}
@@ -227,14 +222,12 @@ async def _stream_attempt(
                     for choice in packet.get("choices", []):
                         delta = choice.get("delta", {})
                         text = delta.get("content")
-                        # Provider reasoning channels are intentionally never forwarded.
+
                         if text:
                             started = True
                             content += text
                             yield {"type": "delta", "text": text}
                         for position, part in enumerate(delta.get("tool_calls", [])):
-                            # Calls are only returned after the complete turn;
-                            # malformed partial calls have not executed anything.
                             call = calls.setdefault(
                                 part.get("index", position),
                                 {

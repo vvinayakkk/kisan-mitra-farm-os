@@ -77,7 +77,10 @@ def listing_context(item):
 
 def conversation_context(payload, owner):
     thread = payload["thread"]
-    role = lambda person: "you" if str(person) == str(owner) else "other farmer"
+
+    def role(person):
+        return "you" if str(person) == str(owner) else "other farmer"
+
     kept, remaining = [], 12000
     for message in reversed(payload["messages"][-20:]):
         if remaining <= 0:
@@ -129,7 +132,7 @@ def conversation_context(payload, owner):
 
 
 def grounded_context(body, owner):
-    # Each read uses the verified owner and the existing RLS-backed exchange APIs.
+
     with connection_scope(owner) as conn:
         profile = one(
             conn,
@@ -158,7 +161,7 @@ def grounded_context(body, owner):
         }
     if body.conversation_id:
         thread = conversation(body.conversation_id, owner)
-        # Explicit participation check also protects future changes to query policy.
+
         if str(owner) not in {
             str(thread["thread"]["owner_id"]),
             str(thread["thread"]["requester_id"]),
@@ -233,7 +236,7 @@ def reviewed_draft(reply, body, context):
     evidence = body.message + "\n" + prose_evidence(context)
     if body.intent == "prepare_listing" and reply.fields:
         fields = reply.fields.model_dump(exclude_none=True, mode="json")
-        # UUID/timestamps/match scores cannot justify a new quantity.
+
         source_quantity = (context.get("listing") or {}).get("quantity")
         supported = number_tokens(body.message)
         if source_quantity is not None:
@@ -245,7 +248,7 @@ def reviewed_draft(reply, body, context):
             if key in fields and str(fields[key]).casefold() not in evidence.casefold():
                 fields.pop(key)
                 reply.questions.append(f"Please confirm the {key.replace('_', ' ')}.")
-        # Do not let a polished description introduce unsupported prices or quantities.
+
         for key in ("title", "description", "exchange_for"):
             if key in fields and not grounded_numbers(fields[key], evidence):
                 fields.pop(key)
@@ -343,7 +346,7 @@ async def assist(body: Assist, owner: Owner, request: Request):
             502,
             "Mitra could not prepare a valid draft. Your exchange is unchanged; please retry.",
         ) from exc
-    # A revoked capability or removed participation must not receive private context.
+
     if (
         identity(
             request.headers.get("authorization"),

@@ -122,7 +122,11 @@ def test_hinglish_persists_across_followup_but_explicit_english_wins():
         ("আমার ধানের কী যত্ন দরকার?", "en", "Bengali"),
         ("Mere khet ke liye kya ugau?", "en", "Hinglish using Latin/Roman"),
         ("What should I grow?", "hi", "Reply in English"),
-        ("¿Qué cultivo debo sembrar en marzo?", "en", "same language and writing system"),
+        (
+            "¿Qué cultivo debo sembrar en marzo?",
+            "en",
+            "same language and writing system",
+        ),
         ("Quel temps fera-t-il demain ?", "en", "same language and writing system"),
     ],
 )

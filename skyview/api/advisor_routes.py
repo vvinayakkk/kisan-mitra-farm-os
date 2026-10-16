@@ -4,8 +4,8 @@ POST /api/advisor/insights  — AI category-based advice
 """
 
 import json
+import re
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 
 
 class AdvisorReq(BaseModel):
-    category: str = "overview"  # alerts|crops|water|tips|soil|pests|overview
+    category: str = "overview"
     station_id: str = "WS01"
 
 
@@ -35,7 +35,6 @@ def _build_prompt(category: str, s: dict) -> str:
     uv = s.get("uv_index", "not measured")
     pres = s.get("pressure", "not measured")
     pm25 = s.get("pm25", "N/A")
-    pm10 = s.get("pm10", "N/A")
     bat = s.get("battery_voltage", "N/A")
     sol = s.get("solar_voltage", "N/A")
 
@@ -87,9 +86,6 @@ def _build_prompt(category: str, s: dict) -> str:
         ),
     }
     return prompts.get(category, prompts["overview"])
-
-
-import re
 
 
 def _extract_json(raw: str):

@@ -106,7 +106,7 @@ def sync_runtime_catalog():
     if not db.enabled():
         return {"skills": 0, "tools": 0, "mode": "legacy"}
     skills, tools, fingerprint = definitions()
-    # Distinct URL/database/version key; credentials never leave process memory or logs.
+
     engine_url = db.engine().url
     database_key = (
         engine_url.host,

@@ -3,9 +3,6 @@ test_ingestion.py — Tests for sensor data ingestion pipeline.
 Run: pytest tests/test_ingestion.py -v
 """
 
-import pytest
-
-
 NESTED_PAYLOAD = {
     "id": "WS01",
     "ts": 1700000000,
@@ -57,7 +54,7 @@ class TestIngestion:
     def test_missing_fields_returns_error(self, client):
         """Partial nested payload should return error, not 500."""
         r = client.post("/api/sensors/data", json={"id": "WS01"})
-        assert r.status_code == 200   # FastAPI returns 200 with error body
+        assert r.status_code == 200
         assert r.json()["status"] == "error"
 
     def test_invalid_json_returns_error(self, client):

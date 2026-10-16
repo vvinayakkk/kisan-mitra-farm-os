@@ -1,4 +1,3 @@
-/* A labelled field stays one form item, including its shared dictation control. */
 .feature-search-field {
   flex: 1 1 0%;
   min-width: 0;

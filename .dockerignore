@@ -15,5 +15,5 @@ frontend/.env*
 *.db
 docs/media
 tests
-skyview_flutter_app
+mobile
 hardware

@@ -1,4 +1,3 @@
--- Personal preparation only: these flags never represent official eligibility or approval.
 BEGIN;
 SET search_path=sv3,pg_catalog;
 CREATE TABLE IF NOT EXISTS support_folder_preparation(

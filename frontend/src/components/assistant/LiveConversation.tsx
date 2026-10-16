@@ -8,7 +8,7 @@ import './live-conversation.css';
 import { SpeechAudio, unlockSpeechAudio } from '@/lib/speechAudio';
 import { voiceStatus } from '@/lib/voiceStatus';
 
-/** Automatic speech turns use the same owned farm agent, tools and review cards as typing. */
+
 export function LiveConversation({ visible = true, startRequest = 0, container, disabled, running, pending, latest, onSend, onInterrupt, onActive }: {
   visible?: boolean; startRequest?: number; container: HTMLElement | null; disabled: boolean; running: boolean; pending: boolean;
   latest?: ChatMessage; onSend: (text: string) => Promise<void> | void;

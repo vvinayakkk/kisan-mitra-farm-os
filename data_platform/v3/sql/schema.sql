@@ -1,6 +1,3 @@
--- SkyView v3: fresh databases only. Never apply to the existing farm database.
--- PostgreSQL 16+. Live and demo databases use this same schema; different credentials.
--- No DROP/TRUNCATE or import of legacy identities. Money NUMERIC, instants TIMESTAMPTZ.
 BEGIN;
 DO $$ BEGIN
  IF current_database() NOT IN ('skyview_v3_live','skyview_v3_demo','skyview_v3_test') THEN
@@ -10,377 +7,377 @@ END $$;
 CREATE SCHEMA sv3;
 SET search_path = sv3, public;
 
--- ingestion: Source contract, license, access and refresh policy
+
 CREATE TABLE providers (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL UNIQUE, name text NOT NULL, homepage text NOT NULL, access_method text NOT NULL, license_name text, attribution text NOT NULL, status text NOT NULL DEFAULT 'planned', refresh_seconds integer CHECK(refresh_seconds>0), configuration jsonb NOT NULL DEFAULT '{}', created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- ingestion: Immutable release boundary for live versus synthetic data
+
 CREATE TABLE datasets (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), release_key text NOT NULL UNIQUE, lane text NOT NULL CHECK(lane IN ('live','demo')), origin text NOT NULL CHECK(origin IN ('observed','reanalysis','modeled','synthetic','user_reported','derived','curated')), as_of_date date NOT NULL, generator_version text, seed bigint, source_url text NOT NULL, checksum text, created_at timestamptz NOT NULL DEFAULT now(), CHECK(lane<>'live' OR origin<>'synthetic'), CHECK(origin<>'synthetic' OR generator_version IS NOT NULL)
 ) ;
 
--- ingestion: Watermark, retries, bounded jobs and source failure audit
+
 CREATE TABLE ingest_runs (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), dataset_id uuid REFERENCES datasets(id), job_key text NOT NULL UNIQUE, state text NOT NULL CHECK(state IN ('queued','running','done','failed')), cursor jsonb, attempts integer NOT NULL DEFAULT 0, rows_received bigint NOT NULL DEFAULT 0, rows_accepted bigint NOT NULL DEFAULT 0, started_at timestamptz, finished_at timestamptz, next_attempt_at timestamptz, safe_error text, created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- ingestion: Original payload in object storage, hash and request identity
+
 CREATE TABLE raw_objects (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), run_id uuid NOT NULL REFERENCES ingest_runs(id), request_key text NOT NULL, content_hash text NOT NULL, object_uri text NOT NULL, media_type text NOT NULL, bytes bigint NOT NULL CHECK(bytes>=0), fetched_at timestamptz NOT NULL, UNIQUE(run_id,request_key)
 ) ;
 
--- ingestion: Quarantine incorrect timestamps, units and conflicting duplicate values
+
 CREATE TABLE quality_issues (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), raw_object_id uuid REFERENCES raw_objects(id), dataset_id uuid REFERENCES datasets(id), entity_type text NOT NULL, natural_key jsonb NOT NULL, code text NOT NULL, details jsonb NOT NULL, resolved_at timestamptz, created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- reference: Official versioned state/district/tehsil/village hierarchy; demo IDs separate
+
 CREATE TABLE regions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), parent_id uuid REFERENCES regions(id), level text NOT NULL CHECK(level IN ('state','ut','district','block','village')), code_system text NOT NULL, code text NOT NULL, name text NOT NULL, valid_from date NOT NULL, valid_to date, UNIQUE(dataset_id,code_system,code), CHECK(valid_to IS NULL OR valid_to>=valid_from)
 ) ;
 
--- reference: Shared weather grid or public location anchor
+
 CREATE TABLE locations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), region_id uuid NOT NULL REFERENCES regions(id), location_key text NOT NULL, label text NOT NULL, latitude numeric(9,6) NOT NULL CHECK(latitude BETWEEN -90 AND 90), longitude numeric(9,6) NOT NULL CHECK(longitude BETWEEN -180 AND 180), resolution_m integer CHECK(resolution_m>0), UNIQUE(dataset_id,location_key)
 ) ;
 
--- reference: Canonical crops with multilingual aliases
+
 CREATE TABLE crops (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL UNIQUE, name text NOT NULL, names jsonb NOT NULL DEFAULT '{}', category text NOT NULL, perennial boolean NOT NULL DEFAULT false
 ) ;
 
--- reference: Keep crop variety/grade distinct for market comparisons
+
 CREATE TABLE crop_varieties (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), crop_id uuid NOT NULL REFERENCES crops(id), code text NOT NULL, name text NOT NULL, UNIQUE(crop_id,code), UNIQUE(id,crop_id)
 ) ;
 
--- reference: Explicit dimensions and conversion factors, never infer price units
+
 CREATE TABLE units (
  code text PRIMARY KEY, dimension text NOT NULL, symbol text NOT NULL, factor_to_base numeric(16,8), CHECK(factor_to_base IS NULL OR factor_to_base>0)
 ) ;
 
--- reference: Real official markets or explicitly named demo markets
+
 CREATE TABLE markets (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), region_id uuid NOT NULL REFERENCES regions(id), code_system text NOT NULL, external_code text NOT NULL, name text NOT NULL, latitude numeric(9,6), longitude numeric(9,6), UNIQUE(dataset_id,code_system,external_code)
 ) ;
 
--- market: One market/crop/variety/grade/unit series
+
 CREATE TABLE market_series (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), market_id uuid NOT NULL REFERENCES markets(id), crop_id uuid NOT NULL REFERENCES crops(id), variety_id uuid NOT NULL, grade text NOT NULL DEFAULT 'unspecified', unit_code text NOT NULL REFERENCES units(code), currency char(3) NOT NULL DEFAULT 'INR', FOREIGN KEY(variety_id,crop_id) REFERENCES crop_varieties(id,crop_id), UNIQUE(market_id,crop_id,variety_id,grade,unit_code,currency)
 ) ;
 
--- farm: Consented account and synthetic profile; no Aadhaar or stored plaintext OTP
+
 CREATE TABLE farmers (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), profile_key text NOT NULL UNIQUE, auth_subject text UNIQUE, display_name text NOT NULL, region_id uuid NOT NULL REFERENCES regions(id), preferred_language text NOT NULL, age_band text, farming_experience_years integer CHECK(farming_experience_years BETWEEN 0 AND 80), profile_attributes jsonb NOT NULL DEFAULT '{}', contact_email text, contact_phone text, contact_verified_at timestamptz, status text NOT NULL DEFAULT 'active', created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- farm: Purpose-scoped permissions, expiry and revocation
+
 CREATE TABLE consents (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), purpose text NOT NULL, granted_at timestamptz NOT NULL, expires_at timestamptz, revoked_at timestamptz, evidence_hash text NOT NULL
 ) ;
 
--- farm: One farmer can own/manage several farms
+
 CREATE TABLE farms (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), farm_key text NOT NULL UNIQUE, name text NOT NULL, region_id uuid NOT NULL REFERENCES regions(id), location_id uuid REFERENCES locations(id), ownership_type text NOT NULL, irrigation_method text NOT NULL, water_source text, UNIQUE(id,farmer_id)
 ) ;
 
--- farm: Real user-drawn field geometry or an explicitly synthetic example
+
 CREATE TABLE plots (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), farm_id uuid NOT NULL, plot_key text NOT NULL UNIQUE, area_ha numeric(10,4) NOT NULL CHECK(area_ha>0), latitude numeric(9,6) NOT NULL CHECK(latitude BETWEEN -90 AND 90), longitude numeric(9,6) NOT NULL CHECK(longitude BETWEEN -180 AND 180), boundary_geojson jsonb, soil_texture text, UNIQUE(id,farmer_id), FOREIGN KEY(farm_id,farmer_id) REFERENCES farms(id,farmer_id), CHECK(boundary_geojson IS NULL OR jsonb_typeof(boundary_geojson)='object')
 ) ;
 
--- farm: Crop, sowing date, harvest window and season per plot
+
 CREATE TABLE crop_cycles (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, crop_id uuid NOT NULL REFERENCES crops(id), variety_id uuid, season text NOT NULL, sowing_date date NOT NULL, expected_harvest_date date, actual_harvest_date date, status text NOT NULL CHECK(status IN ('planned','growing','harvested','failed')), expected_yield_t_ha numeric(10,3), actual_yield_t_ha numeric(10,3), UNIQUE(id,farmer_id), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), FOREIGN KEY(variety_id,crop_id) REFERENCES crop_varieties(id,crop_id), CHECK(expected_harvest_date IS NULL OR expected_harvest_date>=sowing_date)
 ) ;
 
--- farm: Irrigation/sowing/fertilizing/scouting actual events, not inferred execution
+
 CREATE TABLE farm_operations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, operation text NOT NULL, occurred_at timestamptz NOT NULL, quantity numeric(14,4), unit_code text REFERENCES units(code), notes text, evidence_uri text, FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)
 ) ;
 
--- sharing: Farmer inventory of equipment, produce or supplies
+
 CREATE TABLE resources (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), category text NOT NULL, name text NOT NULL, quantity numeric(14,4) NOT NULL CHECK(quantity>=0), unit_code text NOT NULL REFERENCES units(code), UNIQUE(id,farmer_id)
 ) ;
 
--- sharing: Opt-in public/neighbor sharing availability, prices and date window
+
 CREATE TABLE resource_listings (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), resource_id uuid NOT NULL, visibility text NOT NULL CHECK(visibility IN ('private','neighbors','public')), available_from date NOT NULL, available_to date NOT NULL, asking_price_inr numeric(14,2) CHECK(asking_price_inr>=0), status text NOT NULL, FOREIGN KEY(resource_id,farmer_id) REFERENCES resources(id,farmer_id), CHECK(available_to>=available_from)
 ) ;
 
--- sharing: Proposals between consenting participants; no invented agreements
+
 CREATE TABLE resource_matches (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), listing_id uuid NOT NULL REFERENCES resource_listings(id), requester_id uuid NOT NULL REFERENCES farmers(id), proposed_at timestamptz NOT NULL, status text NOT NULL, terms jsonb NOT NULL DEFAULT '{}', requester_accepted_at timestamptz, owner_accepted_at timestamptz
 ) ;
 
--- farm: Exact decimal INR expenses, quantities and idempotency
+
 CREATE TABLE expenses (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid, description text NOT NULL, spent_on date NOT NULL, amount_inr numeric(14,2) NOT NULL CHECK(amount_inr>=0), category text NOT NULL, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)
 ) ;
 
--- farm: Owned calendar plan with recoverable deletion
+
 CREATE TABLE tasks (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid, title text NOT NULL, due_at timestamptz NOT NULL, timezone text NOT NULL DEFAULT 'Asia/Kolkata', status text NOT NULL CHECK(status IN ('open','done','cancelled')), notes text, deleted_at timestamptz, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), UNIQUE(id,farmer_id), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id), row_version bigint NOT NULL DEFAULT 1 CHECK(row_version>0)
 ) ;
 
--- farm: Audit events and before/after edits for undo
+
 CREATE TABLE task_events (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), task_id uuid NOT NULL, event_type text NOT NULL, before_state jsonb, after_state jsonb NOT NULL, actor text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(task_id,farmer_id) REFERENCES tasks(id,farmer_id)
 ) ;
 
--- telemetry: Real device or simulated station with explicit source identity
+
 CREATE TABLE stations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, dataset_id uuid NOT NULL REFERENCES datasets(id), station_key text NOT NULL UNIQUE, device_type text NOT NULL, calibration jsonb NOT NULL DEFAULT '{}', installed_at timestamptz NOT NULL, last_received_at timestamptz, UNIQUE(id,farmer_id), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id)
 ) ;
 
--- telemetry: Metric/unit/depth/calibration per station
+
 CREATE TABLE station_sensors (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, metric text NOT NULL, unit_code text NOT NULL REFERENCES units(code), depth_cm numeric(6,2), enabled boolean NOT NULL DEFAULT true, FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), UNIQUE(station_id,metric,depth_cm), measurement_basis text NOT NULL DEFAULT 'unknown', calibration jsonb NOT NULL DEFAULT '{}'
 ) ;
 
--- telemetry: Global boot/sequence replay protection across monthly partitions
+
 CREATE TABLE packet_receipts (
  dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, boot_id uuid NOT NULL, sequence bigint NOT NULL, observed_at timestamptz NOT NULL, PRIMARY KEY(dataset_id,station_id,boot_id,sequence), UNIQUE(dataset_id,station_id,boot_id,sequence,observed_at), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id)
 ) ;
 
--- telemetry: Idempotent packet with event/received time and valid readings
+
 CREATE TABLE sensor_packets (
  dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, observed_at timestamptz NOT NULL, received_at timestamptz NOT NULL, boot_id uuid NOT NULL, sequence bigint NOT NULL CHECK(sequence>=0), temperature_c numeric(6,2) CHECK(temperature_c BETWEEN -80 AND 70), humidity_pct numeric(6,2) CHECK(humidity_pct BETWEEN 0 AND 100), pressure_hpa numeric(7,2) CHECK(pressure_hpa BETWEEN 500 AND 1200), wind_kmh numeric(7,2) CHECK(wind_kmh BETWEEN 0 AND 400), wind_direction_degrees numeric(6,2) CHECK(wind_direction_degrees>=0 AND wind_direction_degrees<360), rainfall_increment_mm numeric(8,3) CHECK(rainfall_increment_mm>=0), soil_temperature_c numeric(6,2), soil_moisture_pct numeric(6,2) CHECK(soil_moisture_pct BETWEEN 0 AND 100), pm25_ug_m3 numeric(10,3), pm10_ug_m3 numeric(10,3), uv_index numeric(6,3), lux numeric(12,2), battery_v numeric(7,3), solar_v numeric(7,3), quality_flags jsonb NOT NULL DEFAULT '[]', PRIMARY KEY(dataset_id,station_id,observed_at), FOREIGN KEY(dataset_id,station_id,boot_id,sequence,observed_at) REFERENCES packet_receipts(dataset_id,station_id,boot_id,sequence,observed_at), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), CHECK(received_at>=observed_at)
 ) PARTITION BY RANGE(observed_at);
 
--- telemetry: UTC daily aggregates with counts/completeness
+
 CREATE TABLE sensor_daily (
  dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, day date NOT NULL, sample_count integer NOT NULL CHECK(sample_count>=0), completeness numeric(5,4) NOT NULL CHECK(completeness BETWEEN 0 AND 1), temperature_min_c numeric(6,2), temperature_max_c numeric(6,2), rainfall_mm numeric(9,3), soil_moisture_mean_pct numeric(6,2), PRIMARY KEY(dataset_id,station_id,day), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id)
 ) ;
 
--- environment: Shared provider/grid/model series; never pretend to be on-farm hardware
+
 CREATE TABLE weather_series (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), location_id uuid NOT NULL REFERENCES locations(id), model_name text NOT NULL, resolution_m integer NOT NULL CHECK(resolution_m>0), UNIQUE(provider_id,location_id,model_name), max_forecast_lead_days integer NOT NULL DEFAULT 15 CHECK(max_forecast_lead_days BETWEEN 0 AND 45)
 ) ;
 
--- environment: Historical observations, reanalysis or simulated history
+
 CREATE TABLE weather_daily (
  dataset_id uuid NOT NULL REFERENCES datasets(id), series_id uuid NOT NULL REFERENCES weather_series(id), day date NOT NULL, kind text NOT NULL CHECK(kind IN ('observed','reanalysis','synthetic')), temperature_min_c numeric(6,2), temperature_max_c numeric(6,2), rainfall_mm numeric(9,3) CHECK(rainfall_mm>=0), humidity_mean_pct numeric(6,2) CHECK(humidity_mean_pct BETWEEN 0 AND 100), et0_mm numeric(8,3) CHECK(et0_mm>=0), PRIMARY KEY(dataset_id,series_id,day), CHECK(temperature_max_c>=temperature_min_c)
 ) ;
 
--- environment: Issued short-range forecasts or explicitly labeled long-range scenarios
+
 CREATE TABLE weather_forecasts (
  dataset_id uuid NOT NULL REFERENCES datasets(id), series_id uuid NOT NULL REFERENCES weather_series(id), issued_at timestamptz NOT NULL, valid_on date NOT NULL, kind text NOT NULL CHECK(kind IN ('forecast','scenario')), temperature_min_c numeric(6,2), temperature_max_c numeric(6,2), rainfall_mm numeric(9,3) CHECK(rainfall_mm>=0), rainfall_probability numeric(5,4) CHECK(rainfall_probability BETWEEN 0 AND 1), method text NOT NULL, PRIMARY KEY(dataset_id,series_id,issued_at,valid_on), CHECK(valid_on>= (issued_at AT TIME ZONE 'Asia/Kolkata')::date), CHECK(temperature_max_c>=temperature_min_c)
 ) ;
 
--- environment: Consent-scoped real lab reports or demo samples
+
 CREATE TABLE soil_samples (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, dataset_id uuid NOT NULL REFERENCES datasets(id), sampled_on date NOT NULL, sample_type text NOT NULL CHECK(sample_type IN ('lab','farmer_report','synthetic')), lab_name text, report_uri text, UNIQUE(id,farmer_id), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), report_metadata jsonb NOT NULL DEFAULT '{}'
 ) ;
 
--- environment: Property/unit/depth/uncertainty, with predicted values distinct from lab values
+
 CREATE TABLE soil_indicators (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, sample_id uuid, dataset_id uuid NOT NULL REFERENCES datasets(id), property text NOT NULL, depth_top_cm numeric(6,2) NOT NULL CHECK(depth_top_cm>=0), depth_bottom_cm numeric(6,2) NOT NULL, unit_code text NOT NULL REFERENCES units(code), mean_value numeric(14,4) NOT NULL, lower_value numeric(14,4), upper_value numeric(14,4), evidence_type text NOT NULL CHECK(evidence_type IN ('lab','grid_prediction','synthetic','farmer_report')), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), FOREIGN KEY(sample_id,farmer_id) REFERENCES soil_samples(id,farmer_id), CHECK(depth_bottom_cm>depth_top_cm), CHECK(lower_value IS NULL OR lower_value<=mean_value), CHECK(upper_value IS NULL OR upper_value>=mean_value), reported_basis text NOT NULL DEFAULT 'unspecified'
 ) ;
 
--- environment: STAC scene metadata and immutable external asset reference
+
 CREATE TABLE satellite_assets (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), provider_item_id text NOT NULL, acquired_at timestamptz NOT NULL, collection text NOT NULL, cloud_pct numeric(5,2) CHECK(cloud_pct BETWEEN 0 AND 100), asset_uri text NOT NULL, footprint_geojson jsonb, UNIQUE(dataset_id,collection,provider_item_id)
 ) ;
 
--- environment: Cloud-masked vegetation indicators with valid pixel coverage
+
 CREATE TABLE plot_indices (
  dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, asset_id uuid REFERENCES satellite_assets(id), day date NOT NULL, index_name text NOT NULL, value numeric(8,5) NOT NULL, valid_pixel_fraction numeric(5,4) NOT NULL CHECK(valid_pixel_fraction BETWEEN 0 AND 1), method_version text NOT NULL, PRIMARY KEY(dataset_id,plot_id,day,index_name), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id)
 ) ;
 
--- market: Daily market observations; synthetic history only in the demo DB
+
 CREATE TABLE price_observations (
  dataset_id uuid NOT NULL REFERENCES datasets(id), series_id uuid NOT NULL REFERENCES market_series(id), observed_on date NOT NULL, min_price numeric(14,2) NOT NULL, modal_price numeric(14,2) NOT NULL, max_price numeric(14,2) NOT NULL, arrivals_quantity numeric(14,3), arrivals_unit text REFERENCES units(code), fetched_at timestamptz NOT NULL, revision integer NOT NULL DEFAULT 1 CHECK(revision>0), PRIMARY KEY(dataset_id,series_id,observed_on), CHECK(min_price>=0 AND min_price<=modal_price AND modal_price<=max_price)
 ) PARTITION BY RANGE(observed_on);
 
--- market: Training cutoff, backtest evidence and scenario-only markers
+
 CREATE TABLE model_versions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, version text NOT NULL, purpose text NOT NULL, trained_until date, validation jsonb NOT NULL, artifact_uri text, status text NOT NULL CHECK(status IN ('scenario_only','validated','retired')), UNIQUE(name,version)
 ) ;
 
--- market: One issuance with training cutoff and horizon
+
 CREATE TABLE forecast_runs (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), model_id uuid NOT NULL REFERENCES model_versions(id), issued_at timestamptz NOT NULL, training_cutoff date NOT NULL, horizon_days integer NOT NULL CHECK(horizon_days BETWEEN 1 AND 365), kind text NOT NULL CHECK(kind IN ('forecast','scenario')), UNIQUE(id,kind), CHECK(training_cutoff<=(issued_at AT TIME ZONE 'Asia/Kolkata')::date)
 ) ;
 
--- market: Future scenarios or backtested forecasts; never observed prices
+
 CREATE TABLE price_projections (
  run_id uuid NOT NULL, series_id uuid NOT NULL REFERENCES market_series(id), valid_on date NOT NULL, kind text NOT NULL CHECK(kind IN ('forecast','scenario')), lower_price numeric(14,2) NOT NULL, central_price numeric(14,2) NOT NULL, upper_price numeric(14,2) NOT NULL, interval_definition text NOT NULL, PRIMARY KEY(run_id,series_id,valid_on), FOREIGN KEY(run_id,kind) REFERENCES forecast_runs(id,kind), CHECK(lower_price>=0 AND lower_price<=central_price AND central_price<=upper_price)
 ) ;
 
--- market: Official policy by crop/grade/marketing season with notification URL
+
 CREATE TABLE msp_announcements (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), crop_id uuid NOT NULL REFERENCES crops(id), grade text NOT NULL, marketing_season text NOT NULL, announced_on date NOT NULL, effective_from date NOT NULL, amount_inr_quintal numeric(14,2) NOT NULL CHECK(amount_inr_quintal>0), official_url text NOT NULL, UNIQUE(dataset_id,crop_id,grade,marketing_season)
 ) ;
 
--- knowledge: Versioned official source document, language, license and review date
+
 CREATE TABLE documents (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), source_url text NOT NULL, title text NOT NULL, language text NOT NULL, checksum text NOT NULL, published_on date, retrieved_at timestamptz NOT NULL, review_status text NOT NULL CHECK(review_status IN ('needs_review','reviewed','retired')), object_uri text, UNIQUE(dataset_id,checksum)
 ) ;
 
--- knowledge: Citable document sections; PostgreSQL text search before optional embeddings
+
 CREATE TABLE document_chunks (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), document_id uuid NOT NULL REFERENCES documents(id), ordinal integer NOT NULL, page_number integer, section_title text, content text NOT NULL, search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple',coalesce(section_title,'')||' '||content)) STORED, UNIQUE(document_id,ordinal)
 ) ;
 
--- knowledge: Region/season/crop stage guidance and validated assumptions
+
 CREATE TABLE crop_guides (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), document_id uuid NOT NULL REFERENCES documents(id), crop_id uuid NOT NULL REFERENCES crops(id), region_id uuid REFERENCES regions(id), season text NOT NULL, growth_stage text NOT NULL, guidance jsonb NOT NULL, verified_at timestamptz
 ) ;
 
--- knowledge: Reference symptoms and expert-reviewed support, not fabricated dosage
+
 CREATE TABLE diseases (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL UNIQUE, name text NOT NULL, crop_id uuid NOT NULL REFERENCES crops(id), reference_document_id uuid REFERENCES documents(id), symptoms jsonb NOT NULL, expert_reviewed_at timestamptz
 ) ;
 
--- knowledge: Real submitted image and uncertain model assessment; no invented ground truth
+
 CREATE TABLE disease_cases (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, image_uri text NOT NULL, image_hash text NOT NULL, captured_at timestamptz, assessment jsonb, model_version text, clinician_label text, reviewed_by text, status text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)
 ) ;
 
--- knowledge: Versioned real scheme requirements and official application link
+
 CREATE TABLE scheme_versions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), document_id uuid NOT NULL REFERENCES documents(id), scheme_code text NOT NULL, version text NOT NULL, name text NOT NULL, region_id uuid REFERENCES regions(id), requirements jsonb NOT NULL, benefits jsonb NOT NULL, application_url text NOT NULL, verified_at timestamptz, valid_from date, valid_to date, UNIQUE(scheme_code,version)
 ) ;
 
--- knowledge: Explained recommendation, missing answers and reviewed application checklist
+
 CREATE TABLE scheme_checks (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), scheme_version_id uuid NOT NULL REFERENCES scheme_versions(id), result text NOT NULL CHECK(result IN ('potential_match','missing_information','not_matched')), reasons jsonb NOT NULL, checked_at timestamptz NOT NULL, official_decision_reference text
 ) ;
 
--- knowledge: Published aggregate crop area, production and yield; no farm-level inference
+
 CREATE TABLE regional_statistics (
  dataset_id uuid NOT NULL REFERENCES datasets(id), region_id uuid NOT NULL REFERENCES regions(id), crop_id uuid NOT NULL REFERENCES crops(id), year integer NOT NULL, season text NOT NULL, area_ha numeric(16,3), production_t numeric(16,3), yield_t_ha numeric(12,4), estimate_stage text NOT NULL, PRIMARY KEY(dataset_id,region_id,crop_id,year,season,estimate_stage)
 ) ;
 
--- agent: Owned conversation header and resumable summary cursor
+
 CREATE TABLE conversations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), title text NOT NULL, summary text, summarized_through bigint NOT NULL DEFAULT 0, archived_at timestamptz, UNIQUE(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- agent: Append-only complete public transcript, sequence and token accounting
+
 CREATE TABLE messages (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), conversation_id uuid NOT NULL, sequence bigint NOT NULL, role text NOT NULL CHECK(role IN ('user','assistant','tool')), content jsonb NOT NULL, token_count integer CHECK(token_count>=0), created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(conversation_id,sequence), UNIQUE(id,farmer_id), FOREIGN KEY(conversation_id,farmer_id) REFERENCES conversations(id,farmer_id)
 ) ;
 
--- agent: Bounded run, lease owner, cancellation and terminal state
+
 CREATE TABLE agent_runs (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), conversation_id uuid NOT NULL, request_key text NOT NULL, status text NOT NULL, lease_expires_at timestamptz, started_at timestamptz, ended_at timestamptz, model_name text, UNIQUE(farmer_id,request_key), UNIQUE(id,farmer_id), FOREIGN KEY(conversation_id,farmer_id) REFERENCES conversations(id,farmer_id)
 ) ;
 
--- agent: Validated arguments, result and idempotent execution identity
+
 CREATE TABLE tool_calls (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, call_key text NOT NULL, tool_name text NOT NULL, arguments jsonb NOT NULL, result jsonb, status text NOT NULL, started_at timestamptz, ended_at timestamptz, UNIQUE(run_id,call_key), UNIQUE(id,farmer_id), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id), tool_version_id uuid
 ) ;
 
--- agent: Exact argument hash and explicit decision before a write
+
 CREATE TABLE approvals (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), tool_call_id uuid NOT NULL, arguments_hash text NOT NULL, decision text CHECK(decision IN ('approved','rejected')), decided_at timestamptz, expires_at timestamptz NOT NULL, UNIQUE(tool_call_id), FOREIGN KEY(tool_call_id,farmer_id) REFERENCES tool_calls(id,farmer_id)
 ) ;
 
--- agent: Owned file metadata, safe excerpt, hash and object storage reference
+
 CREATE TABLE artifacts (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid, title text NOT NULL, format text NOT NULL CHECK(format IN ('docx','pdf','xlsx','csv','pptx')), object_uri text NOT NULL, bytes bigint NOT NULL CHECK(bytes>=0), checksum text NOT NULL, preview jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id)
 ) ;
 
--- agent: Correction-aware durable farmer facts with evidence, expiry and text search
+
 CREATE TABLE memories (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), fact_key text NOT NULL, value jsonb NOT NULL, evidence_message_id uuid, confidence numeric(5,4) CHECK(confidence BETWEEN 0 AND 1), valid_from timestamptz NOT NULL, valid_to timestamptz, supersedes_id uuid, search_text text NOT NULL, search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple',search_text)) STORED, UNIQUE(id,farmer_id), FOREIGN KEY(evidence_message_id,farmer_id) REFERENCES messages(id,farmer_id), FOREIGN KEY(supersedes_id,farmer_id) REFERENCES memories(id,farmer_id), CHECK(valid_to IS NULL OR valid_to>valid_from)
 ) ;
 
--- agent: Answer evidence references with exact excerpts and source versions
+
 CREATE TABLE retrieval_citations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, chunk_id uuid REFERENCES document_chunks(id), dataset_id uuid REFERENCES datasets(id), source_record_key jsonb, excerpt text NOT NULL, FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id)
 ) ;
 
--- agent: Transactional outbox; demo delivery disabled, never imply an actual send
+
 CREATE TABLE notifications (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), task_id uuid, channel text NOT NULL CHECK(channel IN ('in_app','sms','whatsapp','email')), delivery_allowed boolean NOT NULL DEFAULT false, scheduled_at timestamptz NOT NULL, status text NOT NULL, payload jsonb NOT NULL, dedupe_key text NOT NULL, attempts integer NOT NULL DEFAULT 0, UNIQUE(farmer_id,dedupe_key), FOREIGN KEY(task_id,farmer_id) REFERENCES tasks(id,farmer_id)
 ) ;
 
--- reference: Reviewed external crop/variety/market/region identifiers, never fuzzy-merge silently
+
 CREATE TABLE source_mappings (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), entity_type text NOT NULL CHECK(entity_type IN ('crop','variety','market','region')), external_key text NOT NULL, crop_id uuid REFERENCES crops(id), variety_id uuid REFERENCES crop_varieties(id), market_id uuid REFERENCES markets(id), region_id uuid REFERENCES regions(id), valid_from date NOT NULL, valid_to date, reviewed_at timestamptz, CHECK(valid_to IS NULL OR valid_to>=valid_from), CHECK(num_nonnulls(crop_id,variety_id,market_id,region_id)=1), CHECK((entity_type='crop')=(crop_id IS NOT NULL)), CHECK((entity_type='variety')=(variety_id IS NOT NULL)), CHECK((entity_type='market')=(market_id IS NOT NULL)), CHECK((entity_type='region')=(region_id IS NOT NULL))
 ) ;
 
--- ingestion: Per-provider/scope freshness, outage, rate limiting and last-good state
+
 CREATE TABLE source_health (
  provider_id uuid NOT NULL REFERENCES providers(id), scope_key text NOT NULL, checked_at timestamptz NOT NULL, last_success_at timestamptz, source_valid_through date, status text NOT NULL CHECK(status IN ('healthy','stale','outage','rate_limited','unknown')), retry_after timestamptz, safe_error text, PRIMARY KEY(provider_id,scope_key)
 ) ;
 
--- reference: Soil property basis, accepted units, bounds and non-convertible nutrient forms
+
 CREATE TABLE measurement_definitions (
  code text PRIMARY KEY, name text NOT NULL, basis text NOT NULL, allowed_units jsonb NOT NULL CHECK(jsonb_typeof(allowed_units)='array'), minimum_value numeric, maximum_value numeric, interpretation text NOT NULL, CHECK(maximum_value IS NULL OR minimum_value IS NULL OR maximum_value>=minimum_value)
 ) ;
 
--- environment: Plot/depth field capacity and wilting point for explicit volumetric water balance
+
 CREATE TABLE soil_calibrations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, dataset_id uuid NOT NULL REFERENCES datasets(id), measured_on date NOT NULL, depth_top_cm numeric NOT NULL CHECK(depth_top_cm>=0), depth_bottom_cm numeric NOT NULL, field_capacity_vwc_pct numeric NOT NULL CHECK(field_capacity_vwc_pct BETWEEN 0 AND 100), wilting_point_vwc_pct numeric NOT NULL CHECK(wilting_point_vwc_pct BETWEEN 0 AND 100), bulk_density_g_cm3 numeric CHECK(bulk_density_g_cm3>0 AND bulk_density_g_cm3<3), method text NOT NULL, evidence_type text NOT NULL CHECK(evidence_type IN ('lab','derived','synthetic')), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), CHECK(depth_bottom_cm>depth_top_cm), CHECK(field_capacity_vwc_pct>wilting_point_vwc_pct)
 ) ;
 
--- agent: Owned input image/report/audio metadata with quarantine and extraction status
+
 CREATE TABLE attachments (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), message_id uuid, object_uri text NOT NULL, original_name text NOT NULL, mime_type text NOT NULL, bytes bigint NOT NULL CHECK(bytes>0), checksum text NOT NULL, scan_status text NOT NULL CHECK(scan_status IN ('pending','clean','rejected')), extracted_text text, metadata jsonb NOT NULL DEFAULT '{}', UNIQUE(id,farmer_id), FOREIGN KEY(message_id,farmer_id) REFERENCES messages(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- farm: Farmer reports of stage, symptoms, pests, moisture and uncertainty with optional photo
+
 CREATE TABLE field_observations (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, observed_at timestamptz NOT NULL, type text NOT NULL, observation jsonb NOT NULL CHECK(jsonb_typeof(observation)='object'), attachment_id uuid, origin text NOT NULL CHECK(origin IN ('user_reported','synthetic')), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id), FOREIGN KEY(attachment_id,farmer_id) REFERENCES attachments(id,farmer_id)
 ) ;
 
--- farm: Actual harvest stock, moisture/grade evidence and storage; units never inferred
+
 CREATE TABLE harvest_batches (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, harvested_on date NOT NULL, quantity numeric(14,3) NOT NULL CHECK(quantity>0), unit_code text NOT NULL REFERENCES units(code), grade text NOT NULL, moisture_pct numeric CHECK(moisture_pct BETWEEN 0 AND 100), quality_evidence jsonb NOT NULL DEFAULT '{}', storage_notes text, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), UNIQUE(id,farmer_id), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)
 ) ;
 
--- farm: Recorded sale proceeds and selling costs, distinct from mandi quotes and payment claims
+
 CREATE TABLE sale_records (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), batch_id uuid NOT NULL, sold_on date NOT NULL, quantity numeric(14,3) NOT NULL CHECK(quantity>0), unit_code text NOT NULL REFERENCES units(code), unit_price_inr numeric(14,2) NOT NULL CHECK(unit_price_inr>=0), selling_cost_inr numeric(14,2) NOT NULL CHECK(selling_cost_inr>=0), gross_inr numeric(18,2) GENERATED ALWAYS AS (round(quantity*unit_price_inr,2)) STORED, net_inr numeric(18,2) GENERATED ALWAYS AS (round(quantity*unit_price_inr-selling_cost_inr,2)) STORED, payment_status text NOT NULL CHECK(payment_status IN ('reported_paid','pending','unknown','demo')), receipt_uri text, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), FOREIGN KEY(batch_id,farmer_id) REFERENCES harvest_batches(id,farmer_id)
 ) ;
 
--- agent: Versioned skill descriptions, farmer purpose, workflow hash and allowed tools
+
 CREATE TABLE skill_versions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL, version text NOT NULL, title text NOT NULL, farmer_description text NOT NULL, workflow text NOT NULL, workflow_hash text NOT NULL, allowed_tools jsonb NOT NULL, active boolean NOT NULL DEFAULT false, UNIQUE(code,version)
 ) ;
 
--- agent: Versioned tool argument/output schemas and side-effect policy
+
 CREATE TABLE tool_versions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL, version text NOT NULL, title text NOT NULL, arguments_schema jsonb NOT NULL, output_schema jsonb NOT NULL, effect text NOT NULL CHECK(effect IN ('read','artifact','write','external','hardware')), requires_approval boolean NOT NULL, active boolean NOT NULL DEFAULT false, UNIQUE(code,version), CHECK(effect NOT IN ('write','external','hardware') OR requires_approval)
 ) ;
 
--- agent: Resumable public progress/tool/artifact/question timeline; no hidden chain-of-thought
+
 CREATE TABLE run_events (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, sequence bigint NOT NULL CHECK(sequence>0), event_type text NOT NULL CHECK(event_type IN ('started','skill','tool_started','tool_result','question','approval','text_delta','artifact','completed','failed','cancelled')), payload jsonb NOT NULL, occurred_at timestamptz NOT NULL, UNIQUE(run_id,sequence), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id)
 ) ;
 
--- agent: Persisted structured farmer question and waiting state across reconnect/restart
+
 CREATE TABLE question_requests (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, tool_call_id uuid, prompt text NOT NULL, form_schema jsonb NOT NULL, status text NOT NULL CHECK(status IN ('waiting','answered','cancelled','expired')), expires_at timestamptz NOT NULL, UNIQUE(id,farmer_id), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id), FOREIGN KEY(tool_call_id,farmer_id) REFERENCES tool_calls(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- agent: Typed answer payload and revision identity; server validates against request form schema
+
 CREATE TABLE question_answers (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), question_id uuid NOT NULL, answer_version integer NOT NULL CHECK(answer_version>0), answers jsonb NOT NULL CHECK(jsonb_typeof(answers)='object'), submitted_at timestamptz NOT NULL, execution_key text NOT NULL, UNIQUE(question_id,answer_version), UNIQUE(farmer_id,execution_key), FOREIGN KEY(question_id,farmer_id) REFERENCES question_requests(id,farmer_id)
 ) ;
 
--- agent: Versioned summary checkpoints, covered sequences, open questions and token budget audit
+
 CREATE TABLE context_compactions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), conversation_id uuid NOT NULL, first_sequence bigint NOT NULL CHECK(first_sequence>0), last_sequence bigint NOT NULL, summary text NOT NULL, pending_work jsonb NOT NULL, tokens_before integer NOT NULL CHECK(tokens_before>=0), tokens_after integer NOT NULL CHECK(tokens_after>=0), method_version text NOT NULL, UNIQUE(conversation_id,last_sequence,method_version), FOREIGN KEY(conversation_id,farmer_id) REFERENCES conversations(id,farmer_id), CHECK(last_sequence>=first_sequence), created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- farm: Farmer-facing sourced/derived warning lifecycle with expiry and acknowledgment
+
 CREATE TABLE alert_events (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), dataset_id uuid NOT NULL REFERENCES datasets(id), station_id uuid, source_key text NOT NULL, category text NOT NULL, severity text NOT NULL CHECK(severity IN ('info','watch','warning','critical')), message text NOT NULL, source_url text NOT NULL, issued_at timestamptz NOT NULL, expires_at timestamptz NOT NULL, acknowledged_at timestamptz, status text NOT NULL CHECK(status IN ('active','resolved','expired')), UNIQUE(farmer_id,dataset_id,source_key), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), CHECK(expires_at>issued_at)
 ) ;
 
--- telemetry: Approved bounded command intent: mock/live, exact approval link, expiry and execution identity
+
 CREATE TABLE device_commands (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, tool_call_id uuid NOT NULL, approval_id uuid NOT NULL REFERENCES approvals(id), command text NOT NULL, arguments_hash text NOT NULL, payload jsonb NOT NULL, mode text NOT NULL CHECK(mode IN ('demo','live')), status text NOT NULL CHECK(status IN ('queued','sent','acknowledged','failed','expired','cancelled')), expires_at timestamptz NOT NULL, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), UNIQUE(id,farmer_id), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), FOREIGN KEY(tool_call_id,farmer_id) REFERENCES tool_calls(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()
 ) ;
 
--- telemetry: Device acknowledgment/rejection/timeout audit; broker delivery is not execution proof
+
 CREATE TABLE device_command_events (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), command_id uuid NOT NULL, event_key text NOT NULL, event_type text NOT NULL CHECK(event_type IN ('sent','acknowledged','rejected','timeout','cancelled')), occurred_at timestamptz NOT NULL, device_response jsonb NOT NULL, UNIQUE(command_id,event_key), FOREIGN KEY(command_id,farmer_id) REFERENCES device_commands(id,farmer_id)
 ) ;
@@ -456,7 +453,7 @@ CREATE INDEX idx_alert_events_farmer ON alert_events(farmer_id);
 CREATE INDEX idx_device_commands_farmer ON device_commands(farmer_id);
 CREATE INDEX idx_device_command_events_farmer ON device_command_events(farmer_id);
 
--- Monthly partition manager: identifier/value quoting, fixed allowlist and UTC bounds.
+
 CREATE FUNCTION ensure_month_partitions(parent_name text, first_month date, last_month date)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE month_start date; next_month date; suffix text;
@@ -471,7 +468,7 @@ BEGIN
  END LOOP;
 END $$;
 
--- Dataset provenance enforcement, including synthetic-to-live leakage prevention.
+
 CREATE FUNCTION guard_dataset() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
  IF TG_OP='UPDATE' AND (NEW.provider_id,NEW.release_key,NEW.lane,NEW.origin,NEW.as_of_date,NEW.generator_version,NEW.seed,NEW.source_url) IS DISTINCT FROM (OLD.provider_id,OLD.release_key,OLD.lane,OLD.origin,OLD.as_of_date,OLD.generator_version,OLD.seed,OLD.source_url) THEN RAISE EXCEPTION 'Dataset lineage is immutable; create a new release'; END IF;
@@ -517,7 +514,7 @@ CREATE TRIGGER weather_kind_guard BEFORE INSERT OR UPDATE ON weather_daily FOR E
 CREATE TRIGGER weather_forecast_kind_guard BEFORE INSERT OR UPDATE ON weather_forecasts FOR EACH ROW EXECUTE FUNCTION guard_evidence_kind();
 CREATE TRIGGER soil_sample_kind_guard BEFORE INSERT OR UPDATE ON soil_samples FOR EACH ROW EXECUTE FUNCTION guard_evidence_kind();
 CREATE TRIGGER soil_indicator_kind_guard BEFORE INSERT OR UPDATE ON soil_indicators FOR EACH ROW EXECUTE FUNCTION guard_evidence_kind();
--- Uniqueness on nullable sensor depth must also cover surface sensors (PostgreSQL 15+).
+
 CREATE UNIQUE INDEX idx_sensor_metric_depth ON station_sensors(station_id,metric,depth_cm) NULLS NOT DISTINCT;
 
 ALTER TABLE sensor_packets ADD CONSTRAINT sensor_nonnegative CHECK((pm25_ug_m3 IS NULL OR pm25_ug_m3>=0) AND (pm10_ug_m3 IS NULL OR pm10_ug_m3>=0) AND (uv_index IS NULL OR uv_index>=0) AND (lux IS NULL OR lux>=0) AND (battery_v IS NULL OR battery_v>=0) AND (solar_v IS NULL OR solar_v>=0));

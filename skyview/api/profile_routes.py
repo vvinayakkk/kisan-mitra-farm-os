@@ -5,6 +5,7 @@ POST /api/profile/save            - create/update farmer profile
 GET  /api/schemes                 - full government scheme catalog
 GET  /api/schemes/recommendations - government scheme recommendations
 """
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
@@ -169,9 +170,17 @@ def _fallback_catalog(
 ) -> List[Dict[str, Any]]:
     records = FALLBACK_SCHEMES
     if state:
-        records = [item for item in records if state.lower() in str(item.get("state", "")).lower()]
+        records = [
+            item
+            for item in records
+            if state.lower() in str(item.get("state", "")).lower()
+        ]
     if status:
-        records = [item for item in records if status.lower() in str(item.get("status", "")).lower()]
+        records = [
+            item
+            for item in records
+            if status.lower() in str(item.get("status", "")).lower()
+        ]
     if query_text:
         lowered = query_text.lower()
         records = [
@@ -195,7 +204,9 @@ def get_schemes_catalog(
     """Return the full government scheme catalog with complete metadata."""
     db = get_session()
     try:
-        records = _catalog_from_db(db, state=state, status=status, query_text=q, limit=limit)
+        records = _catalog_from_db(
+            db, state=state, status=status, query_text=q, limit=limit
+        )
     finally:
         db.close()
 
@@ -264,8 +275,6 @@ def get_scheme_detail(scheme_id: str):
     raise HTTPException(status_code=404, detail="Scheme not found")
 
 
-# ── Models ────────────────────────────────────────────────────────────────────
-
 class ProfileSaveReq(BaseModel):
     phone: str
     name: Optional[str] = None
@@ -280,8 +289,6 @@ class ProfileSaveReq(BaseModel):
     required_resources: Optional[Union[str, List[str]]] = None
     whatsapp_number: Optional[str] = None
 
-
-# ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.get("/api/profile")
 def get_profile(phone: str):
@@ -305,10 +312,7 @@ def get_profile(phone: str):
         db.close()
 
     if not row:
-        return {
-            "status": "error",
-            "message": "Profile not found"
-        }
+        return {"status": "error", "message": "Profile not found"}
 
     return {
         "status": "success",
@@ -317,22 +321,28 @@ def get_profile(phone: str):
             "name": row[1],
             "land_size_acres": row[2],
             "location": row[3],
-            "crops": [c.strip() for c in row[4].split(",") if c.strip()] if row[4] else [],
+            "crops": [c.strip() for c in row[4].split(",") if c.strip()]
+            if row[4]
+            else [],
             "latitude": row[5],
             "longitude": row[6],
             "state": row[7],
             "district": row[8],
-            "excess_resources": [r.strip() for r in row[9].split(",") if r.strip()] if row[9] else [],
-            "required_resources": [r.strip() for r in row[10].split(",") if r.strip()] if row[10] else [],
+            "excess_resources": [r.strip() for r in row[9].split(",") if r.strip()]
+            if row[9]
+            else [],
+            "required_resources": [r.strip() for r in row[10].split(",") if r.strip()]
+            if row[10]
+            else [],
             "whatsapp_number": row[11],
-        }
+        },
     }
 
 
 @router.post("/api/profile/save")
 async def save_profile(req: ProfileSaveReq):
     """Create or update a farmer profile."""
-    # Convert lists to comma-separated strings
+
     crops_str = None
     if req.crops is not None:
         if isinstance(req.crops, list):
@@ -378,18 +388,18 @@ async def save_profile(req: ProfileSaveReq):
                     whatsapp_number    = COALESCE(EXCLUDED.whatsapp_number, users.whatsapp_number)
             """),
             {
-                "phone":              req.phone,
-                "name":               req.name,
-                "land":               req.land_size_acres,
-                "location":           req.location,
-                "crops":              crops_str,
-                "latitude":           req.latitude,
-                "longitude":          req.longitude,
-                "state":              req.state,
-                "district":           req.district,
-                "excess_resources":   excess_str,
+                "phone": req.phone,
+                "name": req.name,
+                "land": req.land_size_acres,
+                "location": req.location,
+                "crops": crops_str,
+                "latitude": req.latitude,
+                "longitude": req.longitude,
+                "state": req.state,
+                "district": req.district,
+                "excess_resources": excess_str,
                 "required_resources": required_str,
-                "whatsapp_number":    req.whatsapp_number,
+                "whatsapp_number": req.whatsapp_number,
             },
         )
         db.commit()
@@ -431,10 +441,19 @@ async def scheme_recommendations(
     schemes = []
     if raw:
         import json
+
         try:
             cleaned = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
             schemes = json.loads(cleaned)
         except Exception:
-            schemes = [{"name": "PM-KISAN", "description": raw[:200], "benefit": "N/A", "eligibility": "All farmers", "link": "https://pmkisan.gov.in"}]
+            schemes = [
+                {
+                    "name": "PM-KISAN",
+                    "description": raw[:200],
+                    "benefit": "N/A",
+                    "eligibility": "All farmers",
+                    "link": "https://pmkisan.gov.in",
+                }
+            ]
 
     return {"status": "success", "schemes": schemes, "context": context}

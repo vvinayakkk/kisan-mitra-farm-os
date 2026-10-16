@@ -3,9 +3,9 @@ import { ChevronDown, Search } from 'lucide-react';
 
 export interface Country {
   name: string;
-  code: string;   // dial code e.g. "+91"
-  iso: string;    // ISO-2 e.g. "IN"
-  flag: string;   // emoji flag
+  code: string;
+  iso: string;
+  flag: string;
 }
 
 export const COUNTRIES: Country[] = [
@@ -84,14 +84,14 @@ function matchesCountry(c: Country, query: string): boolean {
 }
 
 export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProps) {
-  const [selected, setSelected]   = useState<Country>(COUNTRIES[0]); // India default
+  const [selected, setSelected]   = useState<Country>(COUNTRIES[0]);
   const [open, setOpen]           = useState(false);
   const [search, setSearch]       = useState('');
   const [number, setNumber]       = useState(value.replace(/^\+\d+\s?/, ''));
   const dropdownRef               = useRef<HTMLDivElement>(null);
   const searchRef                 = useRef<HTMLInputElement>(null);
 
-  // Close dropdown when clicking outside
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -103,7 +103,7 @@ export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProp
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Focus search input when dropdown opens
+
   useEffect(() => {
     if (open && searchRef.current) {
       setTimeout(() => searchRef.current?.focus(), 50);
@@ -134,7 +134,7 @@ export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProp
 
   return (
     <div style={{ position: 'relative', display: 'flex', gap: '0' }} ref={dropdownRef}>
-      {/* Country code selector button */}
+      {                                  }
       <button
         type="button"
         disabled={disabled}
@@ -160,13 +160,13 @@ export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProp
         }} />
       </button>
 
-      {/* Separator line */}
+      {                    }
       <div style={{
         width: '1px', background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(15,23,42,0.12)',
         flexShrink: 0,
       }} />
 
-      {/* Phone number input */}
+      {                        }
       <input
         type="tel"
         value={number}
@@ -192,7 +192,7 @@ export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProp
         }}
       />
 
-      {/* Dropdown */}
+      {              }
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 9999,
@@ -204,7 +204,7 @@ export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProp
           boxShadow: isDark ? '0 20px 60px rgba(0,0,0,0.60)' : '0 20px 50px rgba(0,0,0,0.15)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* Search bar */}
+          {                }
           <div style={{ padding: '10px 12px', borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '9px', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}>
               <Search style={{ width: '13px', height: '13px', color: textMuted, flexShrink: 0 }} />
@@ -222,7 +222,7 @@ export function PhoneInput({ value, onChange, disabled, isDark }: PhoneInputProp
             </div>
           </div>
 
-          {/* Country list */}
+          {                  }
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {filtered.length === 0 ? (
               <p style={{ padding: '16px', textAlign: 'center', fontSize: '13px', color: textMuted }}>No results</p>

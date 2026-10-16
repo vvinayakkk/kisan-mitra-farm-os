@@ -5,10 +5,6 @@ POST /webhook/whatsapp/farm-qa
 GET  /webhook/whatsapp
 """
 
-import os
-from datetime import datetime
-
-import requests
 from fastapi import APIRouter, Request
 
 from skyview.agents import supervisor
@@ -23,7 +19,7 @@ settings = get_settings()
 
 
 def _send_whatsapp(to: str, body: str) -> None:
-    sid  = settings.TWILIO_ACCOUNT_SID
+    sid = settings.TWILIO_ACCOUNT_SID
     auth = settings.TWILIO_AUTH_TOKEN
     from_num = settings.TWILIO_WHATSAPP_NUMBER
     if not all([sid, auth, from_num]):
@@ -31,6 +27,7 @@ def _send_whatsapp(to: str, body: str) -> None:
         return
     try:
         from twilio.rest import Client
+
         Client(sid, auth).messages.create(
             from_=f"whatsapp:{from_num}", body=body, to=f"whatsapp:{to}"
         )
@@ -101,8 +98,15 @@ async def farm_qa_webhook(request: Request):
     sensor_data = {}
     if latest:
         sensor_data = {
-            "env": {"t": latest.get("temperature"), "h": latest.get("humidity"), "p": latest.get("pressure")},
-            "soil": {"t": latest.get("soil_temperature"), "m": latest.get("soil_moisture")},
+            "env": {
+                "t": latest.get("temperature"),
+                "h": latest.get("humidity"),
+                "p": latest.get("pressure"),
+            },
+            "soil": {
+                "t": latest.get("soil_temperature"),
+                "m": latest.get("soil_moisture"),
+            },
             "wind": {"s": latest.get("wind_speed"), "d": latest.get("wind_direction")},
             "rain": latest.get("rainfall"),
         }

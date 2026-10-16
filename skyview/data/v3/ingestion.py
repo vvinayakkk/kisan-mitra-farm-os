@@ -107,7 +107,7 @@ def parse_mandi(payload, as_of):
                 or not prices[0] <= prices[1] <= prices[2]
             ):
                 raise ValueError("invalid price band")
-            # This adapter is only for the documented current-daily OGD resource (INR/quintal).
+
             unit = item.get("unit", "quintal").casefold()
             if unit not in ("quintal", "rs/quintal", "inr/quintal"):
                 raise ValueError("unmapped price unit")
@@ -341,7 +341,7 @@ class Ingestor:
             model=model,
         ).scalar_one()
         accepted = 0
-        # Stable issuance identity makes an identical snapshot retry idempotent.
+
         issued = execute(
             self.conn, "SELECT started_at FROM sv3.ingest_runs WHERE id=:id", id=run
         ).scalar_one()
@@ -447,7 +447,7 @@ class Ingestor:
                 + ":"
                 + item["market"]
             )
-            # Market identity must survive snapshot revisions, unlike the payload release.
+
             existing = execute(
                 self.conn,
                 "SELECT id FROM sv3.markets WHERE code_system='OGD-name' AND external_code=:code ORDER BY id LIMIT 1",
@@ -606,7 +606,6 @@ def fetch_mandi(api_key=None, client=None, max_pages=10, offset=0):
                     )
                 except httpx.TransportError:
                     if attempt == 2:
-                        # Even transport exceptions can include the API key URL.
                         raise RuntimeError("OGD transport unavailable") from None
                     time.sleep(0.1 * 2**attempt)
                     continue
@@ -620,7 +619,7 @@ def fetch_mandi(api_key=None, client=None, max_pages=10, offset=0):
                         f"OGD request failed HTTP {response.status_code}"
                     )
                 time.sleep(0.1 * 2**attempt)
-            # Never propagate HTTPStatusError: it embeds credential query strings.
+
             payload = response.json()
             if not isinstance(payload, dict) or "records" not in payload:
                 raise ValueError("Missing OGD records envelope")
@@ -730,7 +729,7 @@ def mock_once(now=None, limit=400):
     if mode() != "v3_demo":
         raise RuntimeError("Mock telemetry is disabled outside v3_demo")
     now = now or datetime.now(UTC)
-    # Partition administration is an allowlisted function, not arbitrary SQL DDL.
+
     with connection(write=True, ingest=True) as conn:
         execute(
             conn,
@@ -750,7 +749,6 @@ def mock_once(now=None, limit=400):
         )
     count = 0
     for station in stations:
-        # Each station is independent; a failure does not hold every station's locks.
         with connection(station["farmer_id"], write=True, ingest=True) as conn:
             count += int(ingest_mock_packet(conn, station, now))
     return {
@@ -793,7 +791,7 @@ def ingest_sensor_envelope(
     observed = observed.astimezone(UTC)
     if observed > now + timedelta(seconds=30) or observed < now - timedelta(days=31):
         raise ValueError("packet outside accepted clock window")
-    # Future clock skew is quarantined by rejection; observed time is never silently changed.
+
     if observed > now:
         raise ValueError("packet timestamp is in the future")
     boot = str(UUID(envelope["boot_id"]))
@@ -822,7 +820,7 @@ def ingest_sensor_envelope(
     values = {key: finite(value, *allowed[key]) for key, value in measurements.items()}
     if all(value is None for value in values.values()):
         raise ValueError("packet has no usable measurement")
-    # One stable device release per UTC receipt day, replay protection spans packets/partitions.
+
     ingest = Ingestor(conn, lane)
     provider, dataset, run, _raw = ingest.release(
         "authenticated_hardware",
@@ -832,7 +830,7 @@ def ingest_sensor_envelope(
         str(station_id),
         now,
     )
-    # Global device replay check is across release days (PK alone is release-scoped).
+
     execute(
         conn,
         "SELECT pg_advisory_xact_lock(hashtextextended(:station,0))",

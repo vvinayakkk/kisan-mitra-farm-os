@@ -47,7 +47,7 @@ def provenance(row, origin=None):
         row.get("observed_at") or row.get("observed_on") or row.get("arrival_date")
     )
     observation_age = age_seconds(observed)
-    # Daily prices and station packets have different freshness windows.
+
     freshness_window = (
         172800 if row.get("arrival_date") or row.get("observed_on") else 300
     )
@@ -69,7 +69,7 @@ def provenance(row, origin=None):
 
 
 def _station(db, station_id):
-    # The stored function executes with invoker rights and owner RLS.
+
     return (
         db.execute(
             text("SELECT * FROM sv3.pick_station(:key,:first_station)"),
@@ -193,7 +193,6 @@ def price_unit(code):
     }.get(code, "INR/" + code)
 
 
-# Follow the canonical hierarchy rather than treating a district as a state.
 _MARKET_REGIONS = """WITH RECURSIVE market_regions AS (
  SELECT id, name AS state, NULL::text AS district FROM sv3.regions WHERE level IN ('state','ut')
  UNION ALL SELECT r.id,p.state,CASE WHEN r.level='district' THEN r.name ELSE p.district END
@@ -274,8 +273,7 @@ def market_history(
 
 
 def market_rates(commodity="", state="", limit=20, market="", observed_only=False):
-    # Index-driven one-point lookup for every matching series. A long history in one
-    # market must never consume the row limit and hide every other market.
+
     with connection() as db:
         records = [
             row["record"]
@@ -354,8 +352,7 @@ def market_catalogue(commodity="", state="", q="", limit=200, observed_only=Fals
 
 
 def schemes(state="", crop="", limit=100, q=""):
-    # Search purpose and requirements before applying the display limit. Farmer
-    # language often uses the benefit rather than the official acronym.
+
     aliases = {
         "insurance": "insurance|pmfby|fasal bima|rwbcis",
         "loan": "credit|loan|kcc|interest",

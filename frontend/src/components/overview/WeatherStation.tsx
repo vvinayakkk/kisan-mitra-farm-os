@@ -260,7 +260,7 @@ function Assembly(props: Props) {
           </group>
         );
       })}
-      {/* Fasteners, circuit traces and insulated sensor leads. */}
+      {                                                           }
       {[-3.3, 3.3].flatMap((x) =>
         [-1.5, 2.5].map((z) => (
           <group key={`${x}-${z}`} position={[x, 0.17, z]}>

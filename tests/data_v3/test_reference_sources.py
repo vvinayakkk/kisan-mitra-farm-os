@@ -37,7 +37,8 @@ def test_essential_solar_credit_soil_irrigation_references_are_actionable_not_en
     from pathlib import Path
 
     path = (
-        Path(__file__).resolve().parents[2] / "data_platform/v3/catalog/reviewed_sources.json"
+        Path(__file__).resolve().parents[2]
+        / "data_platform/v3/catalog/reviewed_sources.json"
     )
     document = json.loads(path.read_text())
     schemes = {
@@ -52,6 +53,6 @@ def test_essential_solar_credit_soil_irrigation_references_are_actionable_not_en
             == "verify_current_state_or_bank_notice"
         )
         assert scheme["application_url"].startswith("https://")
-        assert "valid_to" not in scheme  # No invented current deadline.
+        assert "valid_to" not in scheme
     assert "repayable credit" in schemes["KCC"]["requirements"]["summary"]
     assert "open application window" in schemes["PM-KUSUM"]["requirements"]["summary"]

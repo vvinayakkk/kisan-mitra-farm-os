@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-// ─── STT/TTS helpers ──────────────────────────────────────────────────────────
+
 function getSarvamLanguageCode(lang: string): string {
   const mapping: Record<string, string> = {
     hi: 'hi-IN',
@@ -43,7 +43,7 @@ const PROCESS_LABEL: Record<string, string> = {
   final_response: 'Composing response',
 };
 
-// ─── React Interfaces ────────────────────────────────────────────────────────
+
 interface ChatStep {
   process: string;
   label: string;
@@ -60,7 +60,7 @@ interface ChatMessage {
   error?: string;
 }
 
-// ─── Text Preprocessing for Markdown/JSON Cleanliness ────────────────────────
+
 function preprocessText(text: any): string {
   if (!text) return '';
   if (typeof text !== 'string') {
@@ -68,7 +68,7 @@ function preprocessText(text: any): string {
   }
   let cleaned = text;
 
-  // Clean out raw JSON output code blocks in text replies
+
   if (cleaned.includes('```json')) {
     cleaned = cleaned.split('```json')[0];
   } else if (cleaned.includes('JSON object:')) {
@@ -77,7 +77,7 @@ function preprocessText(text: any): string {
     cleaned = cleaned.split('{"summary":')[0];
   }
 
-  // Inject structural newlines before bold headers
+
   cleaned = cleaned.replace(/\*\*Farm Advisory System\*\*/gi, '\n# Farm Advisory System\n');
   cleaned = cleaned.replace(/\*\*Current Weather Conditions:?\*\*/gi, '\n## Current Weather Conditions\n');
   cleaned = cleaned.replace(/\*\*Farm Advisory:?\*\*/gi, '\n## Farm Advisory\n');
@@ -85,7 +85,7 @@ function preprocessText(text: any): string {
   cleaned = cleaned.replace(/\*\*Summary:?\*\*/gi, '\n### Summary\n');
   cleaned = cleaned.replace(/\*\*Detailed Advisory:?\*\*/gi, '\n### Detailed Advisory\n');
 
-  // Inject newlines before inline lists and bullet items
+
   cleaned = cleaned.replace(/\s+-\s+\*\*/g, '\n- **');
   cleaned = cleaned.replace(/\.\s+\*\*/g, '.\n**');
   cleaned = cleaned.replace(/\s+(\d+)\.\s+\*\*/g, '\n$1. **');
@@ -93,7 +93,7 @@ function preprocessText(text: any): string {
   return cleaned.trim();
 }
 
-// ─── Custom Message Formatter ────────────────────────────────────────────────
+
 function FormattedMessage({ text }: { text: string }) {
   if (!text) return null;
   const lines = text.split(/\n/);
@@ -103,7 +103,7 @@ function FormattedMessage({ text }: { text: string }) {
         let trimmed = line.trim();
         if (!trimmed) return <div key={idx} style={{ height: '4px' }} />;
 
-        // Headings
+
         if (trimmed.startsWith('###')) {
           return <h4 key={idx} style={{ fontSize: '14.5px', fontWeight: 800, color: '#2ECC71', margin: '8px 0 2px' }}>{trimmed.replace(/^###\s*/, '')}</h4>;
         }
@@ -114,14 +114,14 @@ function FormattedMessage({ text }: { text: string }) {
           return <h2 key={idx} style={{ fontSize: '17px', fontWeight: 900, color: '#2ECC71', margin: '16px 0 6px' }}>{trimmed.replace(/^#\s*/, '')}</h2>;
         }
 
-        // Bullet lists
+
         let isList = false;
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           isList = true;
           trimmed = trimmed.replace(/^[-*]\s*/, '');
         }
 
-        // Bold text **word**
+
         const parts = trimmed.split(/(\*\*.*?\*\*)/g);
         const elements = parts.map((part, pIdx) => {
           if (part.startsWith('**') && part.endsWith('**')) {
@@ -145,7 +145,7 @@ function FormattedMessage({ text }: { text: string }) {
   );
 }
 
-// ─── Action Cards Components ────────────────────────────────────────────────
+
 function WeatherActionCard({ data, isDark }: { data: any; isDark: boolean }) {
   if (!data) return null;
   const stats = [
@@ -344,13 +344,13 @@ function ActionCardRenderer({ step, isDark }: { step: ChatStep; isDark: boolean 
   return null;
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+
 export default function Advisor() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { t, language } = useLanguage();
 
-  // ── States for Chat ──
+
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const cached = sessionStorage.getItem("advisorChatHistory");
     return cached ? JSON.parse(cached) : [];
@@ -360,17 +360,17 @@ export default function Advisor() {
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
-  // Sync chat messages to sessionStorage
+
   useEffect(() => {
     sessionStorage.setItem("advisorChatHistory", JSON.stringify(messages));
   }, [messages]);
 
-  // Scroll to bottom on load if messages exist
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, []);
 
-  // Fetch cached sensor parameters
+
   const { data: sensorData = { temperature: NaN, humidity: NaN, wind_speed: NaN, rainfall: NaN, soil_moisture: NaN, light: NaN, uv_index: NaN, pressure: NaN, provenance: undefined as Provenance | undefined, data_origin: "unavailable", timestamp: "" }, dataUpdatedAt: sensorUpdatedAt } = useQuery({
     queryKey: ['latestSensorData', 'WS01'],
     queryFn: async () => {
@@ -405,7 +405,7 @@ export default function Advisor() {
     return () => clearInterval(timer);
   }, [sensorUpdatedAt]);
 
-  // Fetch AI Sowing insights (Gemini Call)
+
   const {
     data: overview = null,
     isFetching: isLoadingInsights,
@@ -432,7 +432,7 @@ export default function Advisor() {
     { icon: <Sprout style={{ width: 18, height: 18 }} />, label: t('soil_moisture'), value: `${formatReading(sensorData.soil_moisture, 0)}%`, color: "#4CAF50" },
   ];
 
-  // ── Send Message Logic ──
+
   const handleSendMessage = async (textToSend: string) => {
     const trimmed = textToSend.trim();
     if (!trimmed) return;
@@ -570,7 +570,7 @@ export default function Advisor() {
     { text: "Government schemes for my farm", label: language === 'hi' ? "सरकारी कृषि योजनाएं" : "Government schemes" }
   ];
 
-  // Client-side parser for AI overview in case it was packed in raw text JSON
+
   let parsedOverview = overview;
   if (typeof overview === 'string') {
     try {
@@ -583,7 +583,7 @@ export default function Advisor() {
     }
   }
 
-  // Colors and Design Primitives
+
   const borderCol = isDark ? 'rgba(46,204,113,0.25)' : 'rgba(30,100,50,0.22)';
   const cardStyle = {
     background: isDark ? 'rgba(20, 20, 25, 0.7)' : 'rgba(255, 255, 255, 0.75)',
@@ -602,8 +602,8 @@ export default function Advisor() {
       </div>
 
       <main style={{ position: "relative", zIndex: 10, maxWidth: "1300px", margin: "0 auto", padding: "24px 20px 60px" }}>
-        
-        {/* Page Title & Subtitle */}
+
+        {                           }
         <div style={{ marginBottom: 28, textAlign: "center" }}>
           <h1 style={{ fontSize: 30, fontWeight: 800, fontFamily: "'Nunito', sans-serif", color: isDark ? '#A8D89A' : '#1B3A20', marginBottom: 6 }}>
             {t('advisor_title')}
@@ -613,10 +613,10 @@ export default function Advisor() {
           </p>
         </div>
 
-        {/* ─── Responsive Grid ─── */}
+        {                             }
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-          {/* ─── LEFT COLUMN: Telemetry + AI Crop advice overview (span 5) ─── */}
+          {                                                                       }
           <div className="lg:col-span-5 flex flex-col gap-4" style={{
             height: "calc(100vh - 120px)",
             maxHeight: "820px",
@@ -625,7 +625,7 @@ export default function Advisor() {
             top: "84px",
           }}>
 
-            {/* Live Weather Stats (Telemetry placed ABOVE advisor advice) */}
+            {                                                                }
             <div style={{ ...cardStyle, padding: "16px 20px", flexShrink: 0 }}>
               <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: '0.06em', color: isDark ? "#A8D89A" : "#1B3A20", marginBottom: 12, textAlign: "left" }}>
                 {sensorData.data_origin === "synthetic" ? "Station telemetry" : sensorOnline ? "Station telemetry" : "Station readings unavailable or older"}
@@ -646,7 +646,7 @@ export default function Advisor() {
               </div>
             </div>
 
-            {/* AI Advisor Overview */}
+            {                         }
             <div style={{
               ...cardStyle,
               padding: "16px 20px",
@@ -687,21 +687,21 @@ export default function Advisor() {
                 <div style={{ textAlign: "left" }}>
                   {parsedOverview && typeof parsedOverview === "object" ? (
                     <>
-                      {/* Summary */}
+                      {             }
                       {parsedOverview.summary && (
                         <div style={{ marginBottom: 16 }}>
                           <FormattedMessage text={preprocessText(parsedOverview.summary)} />
                         </div>
                       )}
 
-                      {/* Details */}
+                      {             }
                       {parsedOverview.details && (
                         <div style={{ marginBottom: 16, borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}`, paddingTop: 14 }}>
                           <FormattedMessage text={preprocessText(parsedOverview.details)} />
                         </div>
                       )}
 
-                      {/* Focus points */}
+                      {                  }
                       {parsedOverview.focus_points && Array.isArray(parsedOverview.focus_points) && (
                         <div style={{ borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}`, paddingTop: 14 }}>
                           <h3 style={{ fontSize: 13, fontWeight: 800, color: "#2ECC71", textTransform: "uppercase", letterSpacing: '0.04em', marginBottom: 10 }}>
@@ -729,7 +729,7 @@ export default function Advisor() {
 
           </div>
 
-          {/* ─── RIGHT COLUMN: Interactive Agentic Chatbot (span 7) ─── */}
+          {                                                                }
           <div className="lg:col-span-7 flex flex-col" style={{
             height: "calc(100vh - 120px)",
             maxHeight: "820px",
@@ -737,7 +737,7 @@ export default function Advisor() {
             position: "sticky",
             top: "84px",
           }}>
-            
+
             <div style={{
               ...cardStyle,
               flex: 1,
@@ -746,8 +746,8 @@ export default function Advisor() {
               height: "100%",
               overflow: "hidden",
             }}>
-              
-              {/* Chat Header (Using customized Bot Icon) */}
+
+              {                                             }
               <div style={{
                 flexShrink: 0,
                 display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -785,7 +785,7 @@ export default function Advisor() {
                 )}
               </div>
 
-              {/* Chat Scroll Feed (Dynamically resizes via flexbox and overflow) */}
+              {                                                                     }
               <div style={{
                 flex: 1,
                 minHeight: 0,
@@ -796,7 +796,7 @@ export default function Advisor() {
                 gap: 14,
                 scrollbarWidth: "thin",
               }}>
-                
+
                 {messages.length === 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "auto 0", textAlign: "center", padding: "20px 20px" }}>
                     <div style={{
@@ -813,7 +813,7 @@ export default function Advisor() {
                       I am an agentic farming companion. Click the microphone or type below to inquire about weather, mandi prices, or soil parameters.
                     </p>
 
-                    {/* Centered chips for initial screen */}
+                    {                                       }
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: "340px" }}>
                       {activeSuggestChips.map((chip, idx) => (
                         <button
@@ -854,7 +854,7 @@ export default function Advisor() {
                             gap: 8,
                             flexDirection: isBot ? "row" : "row-reverse",
                           }}>
-                            {/* Profile avatar (Using Bot Icon) */}
+                            {                                     }
                             <div style={{
                               width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
                               background: "transparent",
@@ -866,7 +866,7 @@ export default function Advisor() {
                               {isBot ? <Bot size={14} /> : <User size={12} />}
                             </div>
 
-                            {/* Bubble body */}
+                            {                 }
                             <div style={{
                               background: "transparent",
                               border: `1.5px solid ${isBot ? "#2ECC71" : "#3B82F6"}`,
@@ -874,19 +874,19 @@ export default function Advisor() {
                               padding: "12px 14px",
                               boxShadow: "none"
                             }}>
-                              
-                              {/* User query */}
+
+                              {                }
                               {!isBot && (
                                 <p style={{ fontSize: 13, color: isDark ? "#D4EDDA" : "#142A1A", fontWeight: 500, margin: 0, lineHeight: 1.5, textAlign: "left" }}>
                                   {msg.text}
                                 </p>
                               )}
 
-                              {/* Bot Agent Flow */}
+                              {                    }
                               {isBot && (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                  
-                                  {/* Steps list container */}
+
+                                  {                          }
                                   {msg.steps && msg.steps.length > 0 && (
                                     <div style={{
                                       background: "transparent",
@@ -936,8 +936,8 @@ export default function Advisor() {
                                                     {PROCESS_LABEL[step.process] || step.label}
                                                   </span>
                                                 </div>
-                                                
-                                                {/* Render Inline Action Card for this step data */}
+
+                                                {                                                  }
                                                 <ActionCardRenderer step={step} isDark={isDark} />
                                               </div>
                                             );
@@ -947,7 +947,7 @@ export default function Advisor() {
                                     </div>
                                   )}
 
-                                  {/* Error panel */}
+                                  {                 }
                                   {msg.status === 'error' && (
                                     <div style={{
                                       display: "flex", gap: 8, alignItems: "flex-start", padding: 10,
@@ -962,7 +962,7 @@ export default function Advisor() {
                                     </div>
                                   )}
 
-                                  {/* Summary output text */}
+                                  {                         }
                                   {msg.status === 'thinking' && !msg.text && (
                                     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
                                       <Loader2 size={14} style={{ color: "#2ECC71", animation: "spin 1s linear infinite" }} />
@@ -990,7 +990,7 @@ export default function Advisor() {
                 )}
               </div>
 
-              {/* Suggestions row above Input Box (only if message log exists) */}
+              {                                                                  }
               {messages.length > 0 && (
                 <div style={{
                   display: "flex", gap: 6, overflowX: "auto", padding: "8px 16px",
@@ -1021,7 +1021,7 @@ export default function Advisor() {
                 </div>
               )}
 
-              {/* Chat Input Box */}
+              {                    }
               <div style={{
                 flexShrink: 0,
                 padding: "12px 16px 16px",
@@ -1037,10 +1037,10 @@ export default function Advisor() {
                 )}
 
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  
+
                   <VoiceInput label="Speak to Kisan Mitra" language={getSarvamLanguageCode(language)} onTranscript={text => setInputText(previous => previous ? `${previous} ${text}` : text)} />
 
-                  {/* Text Input */}
+                  {                }
                   <div style={{
                     flex: 1, display: "flex", alignItems: "center", gap: 8,
                     background: "transparent",
@@ -1063,7 +1063,7 @@ export default function Advisor() {
                       }}
                     />
 
-                    {/* Send Button */}
+                    {                 }
                     <button
                       onClick={() => handleSendMessage(inputText)}
                       disabled={!inputText.trim()}
@@ -1090,7 +1090,7 @@ export default function Advisor() {
 
       </main>
 
-      {/* ─── Page specific animations ─── */}
+      {                                      }
       <style>{`
         @keyframes vaPulse {
           0%, 100% { transform: scale(1); opacity: 1; }

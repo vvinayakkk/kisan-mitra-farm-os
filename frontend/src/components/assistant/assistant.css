@@ -1149,7 +1149,7 @@
   margin-right: auto;
 }
 
-/* Station node stays visually connected to the field instead of a dark panel. */
+
 .mitra-floating {
   background: transparent;
   border: 1.5px solid #647d58;
@@ -1414,7 +1414,7 @@
     animation: none;
   }
 }
-/* One workspace, with small contextual helpers rather than separate page shells. */
+
 .mitra-launcher,
 .mitra-launcher > span:first-child {
   background: transparent;
@@ -1723,7 +1723,7 @@
   margin: 0 0 8px;
 }
 
-/* File excerpts share the same renderer in the full and floating conversations. */
+
 .artifact-preview {
   border: 1px solid #c5d4bc;
   border-radius: 14px;
@@ -1790,7 +1790,7 @@
   font-size: 10px;
   background: #f1f5ed;
 }
-/* One navigation surface, with immediate labels and no native tooltip delay. */
+
 .workspace-nav-tooltip {
   display: none;
   position: absolute;
@@ -2390,7 +2390,7 @@
     left: 72px;
   }
 }
-/* Two small controls, rather than a full navigation rail. */
+
 .workspace-feature-dock,
 .workspace-core-nav {
   display: flex;
@@ -2689,7 +2689,7 @@ button.mitra-helper-heading {
   }
 }
 
-/* Keep persistent files and plans available without pushing the latest reply away. */
+
 .mitra-saved-library { margin:8px 0; border:1px solid var(--m-line); border-radius:12px; padding:0 12px; }
 .mitra-saved-library > summary { display:flex; align-items:center; gap:8px; min-height:38px; list-style:none; cursor:pointer; color:var(--m-accent); font-size:11px; }
 .mitra-saved-library > summary::-webkit-details-marker { display:none; }
@@ -2712,7 +2712,7 @@ button.mitra-helper-heading {
 .workspace-status-row .offline-status>div{top:calc(100% + 8px);bottom:auto;left:0;max-height:calc(100dvh - 140px);overflow:auto}
 .approval-values{margin:0;padding:0;list-style:none;display:grid;gap:8px}.approval-values li{padding:8px;border:1px solid #d9e1d0;border-radius:8px}.approval-values small{display:block;color:#708467;font-size:11px}
 
-/* Voice controls stay with their fields, including assistant follow-up questions. */
+
 .mitra-question .workspace-voice-field {
   margin-top: 6px;
 }
@@ -2803,7 +2803,7 @@ button.mitra-helper-heading {
   }
 }
 
-/* Side panels float independently, preserving the conversation's position. */
+
 .workspace-chat {
   max-width: none;
   padding-left: 0;

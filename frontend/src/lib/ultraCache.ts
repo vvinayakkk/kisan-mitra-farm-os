@@ -6,7 +6,7 @@ import { onWorkspaceCacheInvalidated } from "./workspaceCacheLifecycle";
 const API_URL = import.meta.env.VITE_API_URL || "";
 interface CacheEntry<T> { data: T; expiresAt: number }
 
-/** Bounded owner-scoped snapshots. Expired data is never silently presented as fresh. */
+
 export class UltraCacheEngine {
   private entries = new Map<string, CacheEntry<unknown>>();
   private inFlight = new Map<string, Promise<unknown>>();
@@ -48,7 +48,7 @@ export class UltraCacheEngine {
       this.inFlight.set(scoped, pending);
     }
     if (cached !== null) {
-      // Each caller subscribes independently, even when the network request is shared.
+
       void pending.then(value => {
         if (epoch === this.epoch && owner === getAssistantSessionId()) onBackgroundUpdate?.(structuredClone(value));
       }).catch(error => onBackgroundError?.(error));
@@ -65,16 +65,16 @@ export class UltraCacheEngine {
     if (!this.canWarm()) return;
     await assistantAuthHeaders();
     const owner = getAssistantSessionId(), epoch = this.epoch;
-    // Limit background work so foreground chat and voice retain network capacity.
+
     let cursor = 0;
     const worker = async () => {
       while (cursor < paths.length && epoch === this.epoch && owner === getAssistantSessionId() && this.canWarm()) {
         const path = paths[cursor++];
         try {
-          // This populates the same short-lived response cache actual pages consume.
+
           const response = await apiFetch(`${API_URL}${path}`);
-          if (!response.ok) continue; // A foreground read retries and surfaces its own error.
-        } catch { /* Best-effort speculative read. No error or fabricated value is cached. */ }
+          if (!response.ok) continue;
+        } catch {                                                                             }
       }
     };
     await Promise.all([worker(), worker()]);

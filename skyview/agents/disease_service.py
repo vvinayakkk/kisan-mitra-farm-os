@@ -78,8 +78,7 @@ class DiseaseDetection(BaseModel):
                 if width > 0 and height > 0:
                     clamped.append(BoundingBox(x=x, y=y, width=width, height=height))
             self.bounding_boxes = clamped
-            # Chemical recommendations require an independently reviewed registration
-            # and crop-specific label; free-form vision output cannot establish either.
+
             self.solutions = [
                 item
                 for item in self.solutions
@@ -154,7 +153,7 @@ def normalize_image(image_bytes: bytes, *, max_side: int = FIXED_WIDTH) -> bytes
                 image = ImageOps.exif_transpose(original).convert("RGB")
                 image.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
                 output = io.BytesIO()
-                image.save(output, format="JPEG", quality=85)  # no EXIF/GPS
+                image.save(output, format="JPEG", quality=85)
                 return output.getvalue()
     except (
         UnidentifiedImageError,
@@ -253,9 +252,9 @@ async def _provider_screen(optimized: bytes, crop_hint: str | None) -> dict[str,
                     )
                     if response and response.text:
                         return _result(response.text, "Gemini crop vision", candidate)
-                except Exception:  # noqa: BLE001 - provider SDK exceptions vary; no raw errors are exposed
+                except Exception:
                     logger.info("Crop vision fallback unavailable or invalid")
-        except Exception:  # noqa: BLE001 - provider SDK exceptions vary; no raw errors are exposed
+        except Exception:
             logger.info("Crop vision fallback unavailable")
     raise RuntimeError(
         "Crop vision is unavailable. No diagnosis was made. Please retry or consult a local agronomist."
@@ -316,7 +315,7 @@ def persist_crop_assessment(
             raise PermissionError("That crop cycle does not belong to this farm.")
     else:
         cycle = None
-    # Decode the verified format; never trust the multipart filename suffix.
+
     with Image.open(io.BytesIO(image_bytes)) as image:
         suffix = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}[image.format]
     if attachment is None:
@@ -327,7 +326,6 @@ def persist_crop_assessment(
     aid = str(uuid.UUID(attachment["id"]))
     case_id = str(uuid.uuid4())
     with database.connection(fid, write=True) as db:
-        # Attachment and cycle composite FKs enforce the farmer boundary again.
         db.execute(
             text("""INSERT INTO sv3.disease_cases(id,farmer_id,cycle_id,attachment_id,image_uri,image_hash,assessment,model_version,status)
           VALUES(:id,:f,:cycle,:aid,:uri,:hash,CAST(:assessment AS jsonb),:model,'needs_expert_review')"""),

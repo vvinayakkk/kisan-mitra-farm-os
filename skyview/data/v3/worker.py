@@ -207,11 +207,11 @@ def _telemetry(selected=True, offset=0):
 
 def _reviewed():
     path = (
-        Path(__file__).resolve().parents[3] / "data_platform/v3/catalog/reviewed_sources.json"
+        Path(__file__).resolve().parents[3]
+        / "data_platform/v3/catalog/reviewed_sources.json"
     )
     document = json.loads(path.read_text())
     with connection(ingest=True, write=True) as db:
-        # Source bundle is immutable by reviewed version; avoid daily release proliferation.
         for bundle in document["bundles"]:
             done = execute(
                 db,
@@ -301,8 +301,7 @@ def _companion_sweep():
 
 
 def _sample_roll():
-    # Sample upkeep is local-only; it must never turn illustrative forecasts into
-    # actual observations or write synthetic facts into a real farmer database.
+
     if mode() != "v3_demo" or engine().url.database != "skyview_v3_demo":
         return None
 
@@ -319,8 +318,7 @@ def _sample_roll():
     with connection(ingest=True, write=True) as db:
         db.execute(text("SET LOCAL statement_timeout='60s'"))
         db.execute(text(statements(today)))
-        # A successful retry clears an earlier outage; UI source health must not
-        # remain red forever after a corrected local generator failure.
+
         execute(
             db,
             """INSERT INTO sv3.source_health(provider_id,scope_key,checked_at,last_success_at,source_valid_through,status)
@@ -347,8 +345,7 @@ def _mandi_due(now=None):
 
 
 def _mandi():
-    # Cursor advances in the same transaction as imported rows; failure replays the
-    # page safely instead of skipping it. Do not keep fetching only the first 3000.
+
     with connection(ingest=True) as db:
         saved = (
             execute(
@@ -409,7 +406,7 @@ def _failure(code, scope, exc):
                 scope=scope,
                 error=type(exc).__name__,
             )
-    except Exception:  # noqa: BLE001 -- health persistence must not crash another running source job.
+    except Exception:
         log.error("Unable to persist v3 source health")
     log.warning("V3 source %s failed (%s)", code, type(exc).__name__)
 
@@ -433,7 +430,7 @@ class BackgroundWorker:
     async def job(self, func, *args, source="demo_hardware", scope="worker"):
         try:
             return await asyncio.to_thread(func, *args)
-        except Exception as exc:  # noqa: BLE001 -- source job isolation catches parser, HTTP and database failures; cancellation propagates.
+        except Exception as exc:
             await asyncio.to_thread(_failure, source, scope, exc)
             return None
 
@@ -454,11 +451,11 @@ class BackgroundWorker:
                 for source, history, power, scope in jobs:
                     if self.stop.is_set():
                         break
-                    # Consent is revalidated before each outbound request, including revocations mid-batch.
+
                     await self.job(
                         _weather, location, history, power, source=source, scope=scope
                     )
-            # Keep polling even when there are no farms yet; new onboarding activates this worker.
+
             await self.wait_sources(60)
 
     async def whatsapp(self):
@@ -467,7 +464,7 @@ class BackgroundWorker:
         while not self.stop.is_set():
             try:
                 processed = await process_next()
-            except Exception as exc:  # noqa: BLE001 -- isolate transport channel from weather and UI
+            except Exception as exc:
                 log.warning("WhatsApp worker unavailable (%s)", type(exc).__name__)
                 processed = False
             if not processed:
@@ -486,7 +483,7 @@ class BackgroundWorker:
         while not self.stop.is_set():
             try:
                 processed = await process_next()
-            except Exception as exc:  # noqa: BLE001 -- isolate jobs; leases recover interrupted work
+            except Exception as exc:
                 log.warning(
                     "Companion preparation unavailable (%s)", type(exc).__name__
                 )
@@ -502,8 +499,7 @@ class BackgroundWorker:
             await self.wait(_rollover_delay() if result is not None else 1800)
 
     async def markets(self):
-        # Independent of weather batches: a weather provider outage cannot starve
-        # price imports, and requests never wait for either ingestion loop.
+
         while not self.stop.is_set():
             if any(
                 os.getenv(k)
