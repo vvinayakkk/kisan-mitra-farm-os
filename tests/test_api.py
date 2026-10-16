@@ -184,11 +184,12 @@ class TestFPGA:
         assert r.status_code == 200
 
     def test_fusion(self, client):
+        connected = client.get("/api/fpga/status").json()["physical_hardware_confirmed"]
         r = client.post(
             "/api/fpga/fusion",
             json={"soil_moisture": 52.0, "temperature": 28.5, "humidity": 65.0},
         )
-        assert r.status_code == 200
+        assert r.status_code == (200 if connected else 503)
 
 
 class TestAdmin:
