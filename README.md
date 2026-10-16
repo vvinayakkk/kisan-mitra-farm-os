@@ -12,3 +12,5 @@ Built by **init.io** for the **AI Builder Cup**. Kisan Mitra brings an agentic f
 | --- | --- |
 | **Mitra chat** | Ask in everyday language, including Hinglish; inspect tool progress, answer one question at a time, review a proposed write, and keep the conversation and generated files. |
 | **Saathi** | See context-aware suggested work, inspect a compact preview, edit or approve a plan, and find the saved result in the notebook. |
+| **Crop doctor** | Share a crop photo, get a cautious assessment, and capture observations and follow-ups. |
+| **Markets** | Compare mandi quotes by crop and region and inspect dated price series with variety and unit context. |
