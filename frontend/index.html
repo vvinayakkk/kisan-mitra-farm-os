@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      try { if (sessionStorage.getItem('mitra-language-transition')) document.documentElement.classList.add('language-transitioning'); } catch (_) {}
+    </script>
+    <style>
+      html.language-transitioning body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        background: #f6f8ef;
+      }
+      #language-transition-brand { display: none; }
+      html.language-transitioning #language-transition-brand {
+        display: grid;
+        place-items: center;
+        gap: 26px;
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        pointer-events: auto;
+      }
+      .language-transition-emblem {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 88px;
+        height: 88px;
+        margin-top: auto;
+        border-radius: 29px;
+        color: #477344;
+        background: #e6efd9;
+        box-shadow: 0 15px 40px #36583b1a;
+        animation: language-emblem-breathe 2.6s ease-in-out infinite alternate;
+      }
+      .language-transition-emblem svg { width: 46px; height: 46px; }
+      .language-transition-wordmark {
+        position: relative;
+        width: min(94vw, 700px);
+        height: 92px;
+        margin-bottom: auto;
+        overflow: hidden;
+        text-align: center;
+      }
+      .language-transition-wordmark span {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #355439;
+        font: 650 clamp(31px, 5vw, 56px)/1.2 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: -.035em;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: language-word-roll 8.45s cubic-bezier(.4,0,.2,1) infinite;
+        animation-delay: var(--word-delay);
+        will-change: opacity, transform;
+      }
+      @keyframes language-word-roll {
+        0% { opacity: 0; transform: translateY(10px); }
+        1.4%, 7.2% { opacity: 1; transform: translateY(0); }
+        10.5% { opacity: 0; transform: translateY(-10px); }
+        100% { opacity: 0; transform: translateY(-10px); }
+      }
+      @keyframes language-emblem-breathe {
+        from { transform: scale(.98); }
+        to { transform: scale(1.02); }
+      }
+      @media (max-width: 480px) {
+        .language-transition-wordmark span { font-size: clamp(27px, 8vw, 38px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .language-transition-emblem,
+        .language-transition-wordmark span { animation: none; }
+        .language-transition-wordmark span { display: none; }
+        .language-transition-wordmark span:first-child { display: grid; opacity: 1; transform: none; }
+      }
+    </style>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#476a39" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkyView AI — Smart Agriculture Platform</title>
+    <meta name="description" content="Autonomous Multi-Agent Precision Agriculture & IoT Hardware Platform" />
+    <meta name="author" content="SkyView AI" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/skyview-emblem.png" />
+
+    <meta property="og:title" content="SkyView AI — Smart Agriculture Platform" />
+    <meta property="og:description" content="Real-time IoT Weather & Autonomous Edge AI Agricultural Platform" />
+    <meta property="og:type" content="website" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@SkyViewAI" />
+  </head>
+
+  <body>
+    <div id="language-transition-brand" class="notranslate" translate="no" role="status" aria-label="Kisan Mitra is loading">
+      <div class="language-transition-emblem" aria-hidden="true">
+        <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M29.5 6.5c-11.6 1-20.7 6.5-21 16.1-.2 6.9 5.2 9.9 11.3 8.6C27.4 28.2 32 17.7 29.5 6.5Z"/><path d="M8 30c5.8-8.5 11.1-12.8 19-16"/></svg>
+      </div>
+      <div class="language-transition-wordmark" aria-hidden="true">
+        <span style="--word-delay:-.12s">Kisan Mitra</span>
+        <span style="--word-delay:.53s">किसान मित्र</span>
+        <span style="--word-delay:1.18s">కిసాన్ మిత్ర</span>
+        <span style="--word-delay:1.83s">கிசான் மித்ரா</span>
+        <span style="--word-delay:2.48s">किसान मित्र</span>
+        <span style="--word-delay:3.13s">કિસાન મિત્ર</span>
+        <span style="--word-delay:3.78s">কিষাণ মিত্র</span>
+        <span style="--word-delay:4.43s">ಕಿಸಾನ್ ಮಿತ್ರ</span>
+        <span style="--word-delay:5.08s">കിസാൻ മിത്ര</span>
+        <span style="--word-delay:5.73s">ਕਿਸਾਨ ਮਿੱਤਰ</span>
+        <span style="--word-delay:6.38s">କିସାନ ମିତ୍ର</span>
+        <span style="--word-delay:7.03s">কিষাণ মিত্ৰ</span>
+        <span style="--word-delay:7.68s">کسان مترا</span>
+      </div>
+    </div>
+    <div id="root"></div>
+    <div id="google_translate_element" style="display:none"></div>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
