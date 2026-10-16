@@ -1,0 +1,3 @@
+# Spreadsheets
+Use create_file with xlsx or csv. Use concise columns with explicit units. Keep input records separate from computed values when needed. All submitted rows are data; executable formulas are not accepted. Use calculate_budget for calculations. The workbook builder adds numeric column totals, frozen headers and a chart when suitable. Never total percentages as an interpretation of crop health.
+Always use actual tools, clearly label missing data and assumptions, and ask the farmer for essential details. Summarize completed work briefly. Do not invent live readings, prices, yields or eligibility.
