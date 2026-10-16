@@ -72,6 +72,23 @@ A farmer should be able to describe a problem in their own words without first c
 
 Farmers can type or speak naturally in supported languages, including Hinglish. The assistant keeps the original-language question and uses the farmer's selected language and conversation context when answering. Speech recognition and synthesis depend on configured services.
 
+```mermaid
+flowchart LR
+    Farmer["Farmer"] --> Website["Website"]
+    Farmer --> App["Flutter app"]
+    Farmer --> WhatsApp["Linked WhatsApp"]
+    Farmer --> Phone["Call button"]
+    Website --> Chat["Mitra chat + live voice"]
+    App --> MobileChat["Mobile assistant"]
+    WhatsApp --> WAChat["Signed Twilio webhook"]
+    Chat --> Context["Owned farm context"]
+    MobileChat --> Context
+    WAChat --> Context
+    Phone --> Line["Configured support line"]
+```
+
+The three digital assistant routes reach Mitra through account- or session-bound access. The call button opens the device dialer for a configured support line; it does not imply that a phone conversation is already connected to the agent runtime.
+
 ---
 
 ## 🏗️ System Architecture
@@ -106,6 +123,19 @@ flowchart LR
 Speed matters most when a farmer moves between tasks. The [browser cache](frontend/src/lib/ultraCache.ts) deduplicates owner-scoped reads, warms likely routes after login and invalidates relevant entries after writes or a session switch. Protected server responses remain `no-store`; the cache improves navigation without becoming the record of truth.
 
 The [background worker](skyview/data/v3/worker.py) uses a PostgreSQL advisory lease to coordinate recurring jobs across API processes. Source calls have bounded requests, retries and backoff. Provider payloads retain observation and retrieval metadata; source-health records distinguish a delayed update from a current observation. The [data platform](data_platform/v3/) defines schema evolution, provider catalogs, ingestion and read functions.
+
+```mermaid
+flowchart LR
+    Provider["Weather + market providers"] --> Capture["Capture source and retrieval time"]
+    Capture --> Check["Validate units, dates and quality"]
+    Check --> Store[("Canonical PostgreSQL records")]
+    Store --> API["Owner-scoped API read"]
+    API --> Cache["Bounded browser cache"]
+    Cache --> View["Farm view or Mitra tool"]
+    Worker["Leased refresh worker"] --> Capture
+```
+
+An answer can distinguish a current observation, a historical record and a forecast. A failed refresh stays visible in source health instead of becoming an invented zero reading.
 
 | Layer | Responsibility |
 | :--- | :--- |
@@ -175,6 +205,21 @@ The [setup guide](docs/local-setup.md) gives database preparation and native dev
 
 The farmer does not need to name a skill. “What should I do before the rain?”, “Compare rice prices near me,” or “Make a weekly plan and ask me anything missing” can each involve several tools, a question, a chart, a document or a proposed calendar change.
 
+### What makes the assistant agentic
+
+**Mitra works toward an outcome across several steps.** It restores the farmer's conversation and saved context, chooses relevant skill instructions and typed tools, reads farm and public evidence, then decides whether it has enough information to continue. It can ask for one missing detail, perform more reads, calculate a result, create an artifact, or prepare a change for review. The farmer sees public activity during the run and can revisit the finished work in history.
+
+| Capability | How it appears in a real farm task |
+| :--- | :--- |
+| **Contextual planning** | “Plan my week” starts with the farmer's crops, dated tasks and weather instead of a blank checklist. |
+| **Tool use** | Mitra can read a station snapshot, compare mandi observations, search public guidance and calculate a budget in one request. |
+| **Focused clarification** | If a crop stage or target date is missing, it asks for that detail and resumes the same task. |
+| **Evidence-aware synthesis** | The answer carries relevant dates, units, market or provider context, and uncertainty. |
+| **Real outputs** | A task can return an inline chart, a downloadable document, a spreadsheet, a presentation or a proposed record change. |
+| **Guarded execution** | The exact proposed write pauses for farmer review; approval resumes that saved action with replay and version protection. |
+| **Persistent continuity** | Conversation history, bounded memory and owned files preserve useful facts and unfinished work for a later visit. |
+| **Proactive assistance** | Saathi prepares contextual follow-ups for the farmer to preview, edit, approve or dismiss. |
+
 ```mermaid
 flowchart LR
     Ask["Ask or speak"] --> Gather["Read farm + current context"]
@@ -185,6 +230,29 @@ flowchart LR
     Review -->|No| Finish["Keep result"]
     Approval --> Finish
 ```
+
+For example, “Check this week's work against the rain, make a checklist and move anything risky” is one request with several stages:
+
+```mermaid
+sequenceDiagram
+    actor Farmer
+    participant Mitra
+    participant Farm as Farm records
+    participant Weather as Weather source
+    Farmer->>Mitra: Review my week against the rain
+    par Read current work
+        Mitra->>Farm: Load dated tasks and crop context
+    and Read conditions
+        Mitra->>Weather: Load forecast with issue time
+    end
+    Mitra-->>Farmer: Prioritized checklist and reasons
+    Mitra-->>Farmer: Proposed task changes for review
+    Farmer->>Mitra: Approve exact changes
+    Mitra->>Farm: Apply version-checked writes
+    Mitra-->>Farmer: Confirm saved calendar result
+```
+
+The diagram shows the execution boundary: Mitra may prepare an answer and a proposal on its own, but a farm-changing write waits for explicit review. A public source or uploaded document cannot grant that approval.
 
 | Step | What a farmer sees |
 | :--- | :--- |
@@ -283,13 +351,26 @@ Every feature has a short job description here. The images are clickable for a f
 
 **Let the farm companion prepare useful next moves.** Saathi considers current farm context and offers compact previews for crop follow-ups, notebook upkeep and exchange planning. A farmer can open, edit, approve or dismiss each proposal; saved work appears in the relevant area.
 
-[![Saathi prepared proposal with review actions](docs/media/saathi-review.png)](docs/media/saathi-review.png)
+| **Saathi in the workspace** | **A plan ready for approval** |
+| :--- | :--- |
+| [![Saathi open over the assistant workspace with a prepared farm plan](docs/media/saathi-review.png)](docs/media/saathi-review.png) | [![Saathi plan details with a visible approval action](docs/media/saathi-approval.png)](docs/media/saathi-approval.png) |
+
+```mermaid
+flowchart LR
+    Signals["Saved tasks, crop follow-ups and farm context"] --> Prepare["Saathi prepares a proposal"]
+    Prepare --> Preview["Farmer opens the preview"]
+    Preview --> Choice{"Farmer's choice"}
+    Choice -->|Edit| Preview
+    Choice -->|Dismiss| Stop["Leave records unchanged"]
+    Choice -->|Approve| Save["Save reviewed plan"]
+    Save --> Activity["Show confirmation and recent activity"]
+```
 
 ### 11. 👤 Farmer Profile & Farm Context
 
 **Keep identity, location, language, farms, plots and crop cycles together.** The profile makes advice, weather, tasks and records relevant to the right person and field.
 
-[![Farmer profile and farm details](docs/media/farm-profile.png)](docs/media/farm-profile.png)
+[![Farmer profile showing location, crops, resources and saved fields in the workspace](docs/media/farm-profile.png)](docs/media/farm-profile.png)
 
 ### 12. 🎙️ Voice, WhatsApp & Files
 
