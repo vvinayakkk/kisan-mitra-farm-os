@@ -12,12 +12,11 @@ This directory contains the current PostgreSQL schema and the tooling that build
 | `catalog/enam_market_reference.json` | Partial official directory of market names; not price quotes. |
 | `catalog/agent-catalog.json` | Assistant registry. Runtime skill/tool inventory is in `skyview/assistant/tools.py`. |
 | `build_schema.py` | Regenerates `sql/schema.sql`, `sql/roles.sql` and the schema catalog. |
-| `seed_demo.py` | Generates deterministic local initialization data outside Git. |
 | `bootstrap.py` | Installs a fresh, explicitly named v3 PostgreSQL database or reapplies additive runtime SQL. |
 | `provision.py` / `prepare_test_db.py` | Guarded local Docker provisioning and isolated test preparation. |
 | `local.py` / `run_backend.py` | Existing local database, API and frontend launcher. |
 
-`bootstrap.py` requires `PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` and `V3_APP_PASSWORD`. It only accepts `skyview_v3_demo`, `skyview_v3_live` or `skyview_v3_test`; `--seed-demo` is restricted to the demo database. It never drops or reseeds populated data. `provision.py` remains the convenient first-run local path and writes credentials only to ignored `.v3-data/`.
+`bootstrap.py` requires `PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` and `V3_APP_PASSWORD`. It only accepts the explicitly named v3 databases and never drops or replaces populated data. `provision.py` handles first-run workstation setup and writes credentials only to ignored `.v3-data/`. See the [local operation guide](../../docs/local-setup.md) for commands.
 
 The ordered SQL inventory is checked by `layout.py`. The market and station read functions are invoker-rights contracts with explicit grants. Other application code still uses parameterized SQL under scoped roles; full SP-only conversion remains a separate security-reviewed change, not an implied property of this package.
 

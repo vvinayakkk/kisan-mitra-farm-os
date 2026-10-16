@@ -215,7 +215,6 @@ flowchart LR
 | [`catalog/`](data_platform/v3/catalog/) | Machine-readable schema, source inventory, reviewed references and market directory. |
 | [`bootstrap.py`](data_platform/v3/bootstrap.py) | Fresh install or additive migration against an explicitly named PostgreSQL database. |
 | [`provision.py`](data_platform/v3/provision.py) | Guarded local Docker database creation with private generated credentials. |
-| [`seed_demo.py`](data_platform/v3/seed_demo.py) | Deterministic local database initialization. |
 | [`CONNECTORS.md`](data_platform/v3/CONNECTORS.md) / [`OPERATIONS.md`](data_platform/v3/OPERATIONS.md) | Source contracts, worker cadence, isolation rules and operations. |
 
 SQL is deliberately bounded. `sv3_app` reads owner-scoped data; `sv3_writer` receives narrow mutation grants; `sv3_ingest` is reserved for trusted ingestion. The canonical market and station read paths call stored functions rather than embedding their long join/filter queries in the API. Existing feature repositories also contain parameterized SQL, so **the full application is not yet stored-procedure-only**. Replacing every remaining direct query requires explicit function signatures, privilege review and endpoint parity tests; a generic “execute arbitrary SQL” function would erase the security benefit. This is a concrete deployment gate if a strict SP-only policy is required.
@@ -260,36 +259,23 @@ The [worker](skyview/data/v3/worker.py) acquires a PostgreSQL advisory lease so 
 - **Evidence:** Source, origin, observation time and retrieval time travel with a result. Forecasts, reported prices, farmer entries and planning projections retain distinct provenance.
 - **Actions:** Read tools can answer; write tools prepare exact approval intent. Idempotency/replay receipts protect retries. Publishing an offer, sending WhatsApp media, submitting a form or controlling hardware requires its own explicit path and acknowledgment.
 - **Files:** Uploads are type/size bounded. Generated files have owner-scoped metadata and private bytes; chat shows an excerpt, not unrestricted object storage.
-- **Operational boundaries:** Local and live environments use separate named databases. The example Docker stack is intended for local development; hosted deployment requires external persistence, secrets and worker scheduling.
+- **Operational boundaries:** Workstation and hosted environments use separate databases. Hosted deployment requires external persistence, secrets and worker scheduling.
 
 ## Run locally
 
-Requires Python **3.12**, Node.js **20+**, npm and Docker with a PostgreSQL 16 image. Existing local v3 data is preserved on subsequent starts. Optional AI, speech, weather and messaging providers need their own server-side credentials.
-
-```bash
-python3.12 -m venv .venv
-.venv/bin/pip install -r infra/requirements.txt
-(cd frontend && npm ci)
-
-# First setup only: initialize and provision the local v3 database.
-.venv/bin/python data_platform/v3/seed_demo.py --output /absolute/path/to/seed
-.venv/bin/python data_platform/v3/provision.py --seed-dir /absolute/path/to/seed
-
-# Later: reuse the database, API and UI without reseeding.
-.venv/bin/python data_platform/v3/local.py
-```
-
-Open [Farm OS](http://127.0.0.1:5173/workspace), [Classic SkyView](http://127.0.0.1:5173/overview) or the [API health endpoint](http://127.0.0.1:8001/health). Local settings live in ignored, owner-only `.v3-data/runtime.env`. The launcher checks the expected local database name and port before starting.
-
-## Run with Docker
-
-The root [Compose file](docker-compose.yml) describes the v3 application: PostgreSQL 16, one-time database initialization, FastAPI on the internal network, and an Nginx-served frontend with same-origin API proxying.
+The Docker stack runs PostgreSQL 16, the API, background worker and web client together. Optional AI, speech, weather and messaging providers need their own server-side credentials. For a native Python/Node setup, see the [local operation guide](docs/local-setup.md).
 
 ```bash
 cp .env.docker.example .env.docker
-# Fill POSTGRES_PASSWORD and V3_APP_PASSWORD with distinct random URL-safe secrets.
+# Set POSTGRES_PASSWORD and V3_APP_PASSWORD in .env.docker.
 docker compose --env-file .env.docker up --build
 ```
+
+Open [Farm OS](http://127.0.0.1:5173/workspace) or [Classic SkyView](http://127.0.0.1:5173/overview). The container stack keeps database and application files in named volumes. The native launcher also preserves existing records across restarts.
+
+## Run with Docker
+
+The root [Compose file](docker-compose.yml) describes the v3 application: PostgreSQL 16, one-time database initialization, FastAPI on the internal network, and an Nginx-served frontend with same-origin API proxying. Set `POSTGRES_PASSWORD` and `V3_APP_PASSWORD` to distinct random URL-safe values.
 
 Visit `http://127.0.0.1:5173/workspace`. The first run installs the guarded schema and initializes the database; later starts apply additive runtime SQL without replacing records. The database and app-file directories are named volumes. `docker compose --env-file .env.docker down` stops containers without deleting volumes. `down --volumes` deletes local data and must be a deliberate reset.
 
@@ -298,13 +284,11 @@ The [backend image](infra/Dockerfile.backend) uses Python 3.12, caches dependenc
 ## Verification
 
 ```bash
-# Prepare an isolated v3 test database first.
-.venv/bin/python data_platform/v3/prepare_test_db.py --seed-dir /absolute/path/to/seed
 .venv/bin/python data_platform/v3/test_backend.py
 (cd frontend && npx tsc --noEmit -p tsconfig.app.json && npx vitest run && npm run build)
 ```
 
-The backend wrapper targets `skyview_v3_test`; it does not point tests at a local working or live database. Test coverage includes owner isolation, agent actions and memory, source ingestion, weather, market joins/filtering, artifact boundaries, voice, exchange and worker behavior. Market function tests exercise the PostgreSQL read paths. Build checks should pass before a deployment image is tagged.
+Prepare the isolated test database using the [local operation guide](docs/local-setup.md) before running backend checks. The backend wrapper targets its dedicated test database. Test coverage includes owner isolation, agent actions and memory, source ingestion, weather, market joins/filtering, artifact boundaries, voice, exchange and worker behavior. Market function tests exercise the PostgreSQL read paths. Build checks should pass before a deployment image is tagged.
 
 ## GCP deployment handoff
 

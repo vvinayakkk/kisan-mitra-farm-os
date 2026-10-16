@@ -1,16 +1,5 @@
-# skyview_app
+# Kisan Mitra mobile client
 
-A new Flutter project.
+This Flutter source tree contains the companion mobile client for Kisan Mitra. The web Farm OS and API are documented in the [project README](../../README.md). Mobile architecture and build notes are in the [mobile documentation](../../docs/mobile/).
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The mobile client is a separate build target; it is not required to run the web workspace.
