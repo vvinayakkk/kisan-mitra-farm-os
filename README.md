@@ -1,74 +1,154 @@
-# Kisan Mitra Farm OS
+<div align="center">
 
-**One place to understand a farm, decide what to do next, and get the work done.**
+# 🌱 Kisan Mitra Farm OS
 
-Built by **init.io** for the **AI Builder Cup**. Kisan Mitra brings an agentic farm assistant, field records, crop care, weather, market intelligence, resource exchange and a visual farm station into one farmer-first workspace. The classic SkyView screens remain available; the new workspace makes the assistant a companion across every feature.
+### **An agentic workspace for the whole farm**
 
-> This repository is the application and reproducible local data platform. Its seeded farmer and market histories are illustrative. Current weather is sourced from a regional model when available; it is not a measurement at a farmer's field. Real sensor readings, market observations and outbound WhatsApp or phone delivery depend on configured integrations and verified source data.
+*One conversation. Every field, forecast, record, market and next step in reach.*
 
-## The experience
+**Built by init.io for the AI Builder Cup**
 
-| Place | What a farmer can do |
-| --- | --- |
-| **Mitra chat** | Ask in everyday language, including Hinglish; inspect tool progress, answer one question at a time, review a proposed write, and keep the conversation and generated files. |
-| **Saathi** | See context-aware suggested work, inspect a compact preview, edit or approve a plan, and find the saved result in the notebook. |
-| **Crop doctor** | Share a crop photo, get a cautious assessment, and capture observations and follow-ups. |
-| **Markets** | Compare mandi quotes by crop and region and inspect dated price series with variety and unit context. |
-| **Farm station** | Explore a Three.js station and sensor scene with live-status context, readings and a movable assistant. |
-| **Weather** | View current regional conditions, hourly and ten-day outlooks, rainfall, wind and air quality in a time-aware scene. |
-| **Exchange** | Discover resources, compare matches, discuss an exchange privately and follow the handover trail. |
-| **Farm notebook & calendar** | Keep fields, crop seasons, work, expenses, reports and plans in a notebook-style workspace and a dated task view. |
-| **Farm support** | Explore cited programme information and assemble a checklist for an application or visit. |
+[![React](https://img.shields.io/badge/React%20%2B%20TypeScript-Farmer%20workspace-31573a?style=for-the-badge&logo=react&logoColor=white)](frontend/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Agent%20%2B%20API-31573a?style=for-the-badge&logo=fastapi&logoColor=white)](skyview/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Farm%20memory-31573a?style=for-the-badge&logo=postgresql&logoColor=white)](data_platform/v3/)
+[![Three.js](https://img.shields.io/badge/Three.js-Visual%20station-31573a?style=for-the-badge&logo=threedotjs&logoColor=white)](frontend/src/components/)
 
+</div>
 
-The assistant can use typed farm tools to read relevant records, compare prices, research a question, prepare plans and create DOCX, PDF, XLSX, CSV and PPTX files with previews in chat. Actions that change farm records pause for review. Approval is bound to the proposed action and replay-safe execution; a draft alone does not publish an exchange, send a message, claim a subsidy or operate hardware.
+---
 
-Voice input and read-aloud are available across the workspace when speech providers and browser microphone permissions are configured. The live conversation flow records a turn, transcribes it, runs the same agent tools, then speaks the reply. It is turn-based speech rather than a full-duplex call. Language preference follows the farmer across chat and workspace; translation and speech quality depend on their configured providers.
+Kisan Mitra joins two ways of working. **Classic SkyView** keeps focused dashboards and specialist screens. The **new Farm OS workspace** brings chat, Saathi, weather, the 3D farm station, crop care, markets, an exchange, calendar and a notebook into one coherent flow. A farmer can start with a question, inspect what the assistant checked, provide a missing detail, review a proposed change and find the finished record or file where it belongs.
 
-## How it fits together
+> [!NOTE]
+> This private competition repository includes a reproducible local farm dataset. Seeded people, observations and price scenarios are fictional. External weather is regional model data, not a sensor reading from a field. Source and date context prevent a useful prototype from implying a verified market trade, diagnosis or hardware action.
+
+## 🗺️ Explore
+
+- [The experience](#-the-experience)
+- [Two interfaces, one farm](#-two-interfaces-one-farm)
+- [How the agent gets work done](#-how-the-agent-gets-work-done)
+- [Farm features](#-farm-features)
+- [System architecture](#-system-architecture)
+- [Data, freshness and trust](#-data-freshness-and-trust)
+- [Run locally](#-run-locally)
+- [Verify the build](#-verify-the-build)
+- [Repository map](#-repository-map)
+
+## 🌾 The experience
 
 ```text
-React + TypeScript + Vite
-    ├── classic SkyView screens
-    └── Kisan Mitra workspace (chat, Saathi, notebook, calendar,
-        crop doctor, markets, exchange, weather, Three.js station)
+Ask naturally ──► Mitra understands the farm ──► Tools gather dated evidence
+      ▲                                           │
+      │                                           ▼
+Answer a question ◄── Missing detail?      A plan, chart or file appears in chat
+      │                                           │
+      └──────────── Review a change ◄───────────┘
                          │
                          ▼
-FastAPI: authenticated routes, assistant runs, reviewed actions,
-        artifact previews, media and voice adapters
-                         │
-                         ▼
-PostgreSQL v3: farmer-scoped records, conversations, tasks,
-               market series, source provenance and worker state
-                         │
-                         ▼
-Bounded background workers and optional external data/services
+              Notebook · Calendar · Farm records
 ```
 
-The backend keeps observed data, modeled weather and future planning scenarios separate. Market charts require dated series and preserve the source, market, variety and unit. Assistant tool calls use validated arguments; private farmer records are owner-scoped. Background jobs use leases, retries and freshness metadata. Files live in private local artifact storage, with metadata and ownership in the database.
+The assistant is a working surface. It can read owned farm context, use a named skill and typed tool, show concise progress, ask one relevant question at a time, and create a downloadable document or spreadsheet. Changes to farm records require review. The same records then appear in the notebook, calendar and relevant feature screens.
 
-The local data foundation includes 400 fictional farmer profiles across India's states and union territories, crop and disease reference material, named market references, expanded crop/market coverage, synthetic price history and separate future planning rows. It supports realistic interaction and testing; it does **not** turn illustrative prices or cases into reported mandi trades or confirmed diagnoses. The source catalog documents which public feeds are integrated, researched or still awaiting access.
+**Saathi** adds a lighter, proactive layer. It prepares contextual suggestions for crop follow-up, exchange and farm records; each opens to a preview and can be edited or approved before it is saved. Saathi can surface useful work, but cannot silently publish a listing, message another farmer, file an application or operate a device.
 
-## Run locally
+## 🪟 Two interfaces, one farm
 
-Prerequisites: Python 3.12, Node.js, npm, Docker and PostgreSQL 16 through the project provisioner. The local provisioner creates an isolated v3 database and ignored runtime credentials. Provider keys are optional for exploring the UI but required for their corresponding AI, voice, image or messaging flows. Keep keys in ignored local environment files; never commit them.
+| | Farm OS workspace | Classic SkyView |
+| --- | --- | --- |
+| **Entry** | Unified `/workspace` with icon navigation and page-aware help | Focused routes including `/overview`, `/advisor`, `/mandi`, `/crop-doctor`, `/marketplace` and `/reports` |
+| **Farm view** | Interactive Three.js station and movable helper | Telemetry and digital-twin dashboards |
+| **Decisions** | Conversational work with reviewable actions, Saathi suggestions and files in chat | Specialist advisor, crop, market and reporting flows |
+| **Records** | Spiral notebook, calendar, profile and exchange trail | Familiar dashboard and dedicated feature pages |
+
+Both interfaces use the same API and farmer-scoped PostgreSQL records. Switching views changes presentation, not the farm or its data.
+
+## 🤖 How the agent gets work done
+
+The skill catalogue covers crop scouting, seasonal planning, weather, mandi prices, field checks, irrigation, budgets, sale planning, programme checklists, soil-report review, shared work, service plans and farm records. Document, spreadsheet and presentation skills generate local artifacts. A research skill can retrieve public information for questions needing current evidence.
+
+| Step | What the farmer sees | What the system does |
+| --- | --- | --- |
+| **Understand** | The original question stays in chat, in the language used | Infer the task and carry owner-scoped farm context into the run |
+| **Investigate** | Brief tool progress and results | Read dated records, references, weather or market series through typed tools |
+| **Clarify** | A compact, one-question-at-a-time card | Ask only for inputs missing from the request and saved context |
+| **Produce** | An answer, chart or previewable DOCX, PDF, XLSX, CSV or PPTX | Render an owned artifact and retain it for later access |
+| **Act** | A concrete approval card | Execute a validated, replay-safe farm-record change after review |
+| **Remember** | Previous conversations and saved work | Compact older context without losing the work trail |
+
+Text and voice share the assistant workflow. Live voice uses turn-based transcription, an agent response and spoken playback; microphone and provider configuration are required. Replies can follow Indian-language scripts or Hinglish used in a question, with the selected interface language as fallback. Provider coverage and pronunciation vary by language.
+
+## 🧭 Farm features
+
+### 🌿 Crop care and seasonal decisions
+
+Crop Doctor accepts an image for a cautious assessment and turns observations into follow-up work. Seasonal planning combines crop and location with available reference context; missing local data need not prevent a clearly conditional plan. The notebook keeps fields, crop cycles, observations, costs and work together as a usable farm journal.
+
+### ☀️ Weather and the visual station
+
+The weather workspace brings current conditions, hourly and longer outlooks, rain, wind and air quality into a time-aware scene. City selection lets a farmer compare places; a city forecast is never treated as a measurement on the farm. The interactive Three.js station shows readings and device context, with a page-aware assistant close to the model. Live sensor values require connected hardware and ingestion.
+
+### 📈 Markets and exchange
+
+Mandi exploration filters by crop and place, compares dated series and renders price history with market, variety, unit and source in view. The exchange follows a resource from discovery and fit to discussion and handover. It supports private coordination and reviewable offers; a match is not a booking or payment.
+
+### 📔 Calendar, files and profile
+
+Plans become dated tasks the farmer can inspect and edit. The spiral notebook makes records feel like a single farm story. Generated reports and sheets appear as preview cards in chat and can be downloaded. Profile details connect location, crops and preferences to the tools that need them.
+
+### 📞 Channels beyond the browser
+
+The codebase includes voice and WhatsApp adapters for text, audio and media, plus a Flutter companion and hardware experiments. External delivery, device operation and provider-backed AI require configuration; the local web experience is the primary demo path.
+
+## 🏗️ System architecture
+
+```mermaid
+flowchart LR
+    F[Farmer] --> W[Farm OS workspace]
+    F --> C[Classic SkyView]
+    W --> API[FastAPI]
+    C --> API
+    API --> A[Agent engine]
+    A --> S[Skills and typed tools]
+    S --> DB[(PostgreSQL v3)]
+    API --> DB
+    A --> ART[Private artifact store]
+    API --> VOICE[Voice and messaging adapters]
+    WORK[Bounded background workers] --> DB
+    EXT[Optional public data sources] --> WORK
+    HW[Optional station hardware] --> API
+```
+
+React, TypeScript and Vite serve both interfaces. FastAPI handles authenticated farm routes, assistant runs, media and adapters. PostgreSQL holds farmer-scoped records, conversations, market series and source metadata. Background workers refresh external context with leases, retries and freshness checks. Client caches warm useful reads and invalidate after writes without treating stale data as current.
+
+## 🧬 Data, freshness and trust
+
+The local platform provisions 400 fictional farmer profiles across India, crop and disease references, named market directories, crop cycles, field records, exchange resources and dated planning series. Historical observations, generated practice records and future scenarios have separate meanings. A future scenario is never shown as a historical mandi quote. The source catalog records integration status, provenance and refresh expectations.
+
+Tools keep farmer ownership at API and storage layers. Uploaded files and generated artifacts are private to their owner. A proposed write is inspectable. Source-backed answers should carry date and origin; unavailable live data remains unavailable instead of being silently fabricated.
+
+Read [data-platform operations](data_platform/v3/OPERATIONS.md), [source connectors](data_platform/v3/CONNECTORS.md) and [architecture notes](docs/architecture.md) for implementation details.
+
+## 🚀 Run locally
+
+Use Python 3.12, Node.js, npm and Docker. First setup creates local PostgreSQL and ignored runtime credentials. Keep API keys in local environment files. Keys are needed for corresponding AI, voice and outbound messaging flows.
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r infra/requirements.txt
 cd frontend && npm ci && cd ..
 
-# Fresh local data installation only; choose a writable location for generated seed files.
+# Fresh installation: generate and provision local data once.
 .venv/bin/python data_platform/v3/seed_demo.py --output /absolute/path/to/seed
 .venv/bin/python data_platform/v3/provision.py --seed-dir /absolute/path/to/seed
 
-# Start the retained database, API and frontend.
+# Later runs reuse the retained database and start both services.
 .venv/bin/python data_platform/v3/local.py
 ```
 
-Open **http://127.0.0.1:5173**. The unified API listens on **http://127.0.0.1:8001**. In an ignored `frontend/.env.local`, point `VITE_API_URL` and `VITE_ASSISTANT_API_URL` at that API when your local setup needs explicit origins. `data_platform/v3/local.py` reuses an existing installation and does not reseed it. For the provisioner's exact contracts and operational checks, see [local operation](data_platform/v3/OPERATIONS.md).
+Open [Farm OS](http://127.0.0.1:5173/workspace) or [Classic SkyView](http://127.0.0.1:5173/overview). The unified API listens on `http://127.0.0.1:8001`; `/health` reports database status. `local.py` does not reseed on every start. The [operations guide](data_platform/v3/OPERATIONS.md) covers provider setup and a dedicated test database.
 
-Useful local checks:
+## 🧪 Verify the build
 
 ```bash
 .venv/bin/python data_platform/v3/check_local.py
@@ -79,32 +159,30 @@ npx vitest run
 npm run build
 ```
 
-The backend test wrapper expects a separately prepared test database for database-backed tests; [local operation](data_platform/v3/OPERATIONS.md) describes that preparation. Never point it at a populated farmer database.
+Database-backed tests use a separately prepared test database; never aim the test wrapper at populated farm storage. This repository does not include a deployment pipeline yet.
 
-## Repository map
+## 📁 Repository map
 
-| Path | Purpose |
+| Path | Responsibility |
 | --- | --- |
-| [`frontend/`](frontend/) | Classic app and the new responsive farmer workspace. |
-| [`skyview/assistant/`](skyview/assistant/) | Agent engine, skills, typed tools, memory, research and artifact creation. |
-| [`skyview/api/`](skyview/api/) | FastAPI routes for farm, assistant, voice, weather and integrations. |
-| [`skyview/data/v3/`](skyview/data/v3/) | Canonical repositories, ingestion and background worker. |
-| [`data_platform/v3/`](data_platform/v3/) | PostgreSQL schema, provisioning, local checks and source catalogs. |
-| [`tests/`](tests/) | Backend behavior and integration tests. |
-| [`hardware/`](hardware/) | Device, firmware and acceleration experiments. |
-| [`skyview_flutter_app/`](skyview_flutter_app/) | Companion mobile application source. |
-| [`docs/`](docs/) | Architecture, API and feature details. |
+| [`frontend/`](frontend/) | Classic screens, Farm OS workspace, visual station and client state |
+| [`skyview/assistant/`](skyview/assistant/) | Agent loop, skills, memory, tools, research and artifacts |
+| [`skyview/api/`](skyview/api/) | Farm, assistant, weather, voice and integration routes |
+| [`skyview/data/v3/`](skyview/data/v3/) | Repositories, ingestion and background workers |
+| [`data_platform/v3/`](data_platform/v3/) | Schema, source catalog, provisioning and local checks |
+| [`tests/`](tests/) | Backend behavior and integration coverage |
+| [`hardware/`](hardware/) | Device and acceleration experiments |
+| [`skyview_flutter_app/`](skyview_flutter_app/) | Companion mobile application source |
+| [`docs/`](docs/) | Architecture and feature notes |
 
-## Principles
+## 🤝 Contributing
 
-- **A farmer stays in control.** The assistant explains its proposed work and waits for review before changing records.
-- **Evidence stays attached.** Weather models, observed readings, synthetic fixtures and scenario projections have different meanings and storage paths.
-- **Graceful gaps beat invented certainty.** Missing sensor packets, unverified crop photos or unavailable mandi observations remain explicit.
-- **Speed comes from bounded work.** Shared caches, incremental reads and leased background jobs keep the interface responsive without hiding freshness.
-- **One journey, many surfaces.** Chat, voice, station, notebook, exchange and calendar share the same owner-scoped farm context.
+This repository stays private until the AI Builder Cup submission. The intended open-source workflow is focused issues, small reviewable changes, accessible design and meaningful tests. Source connectors should document licensing, refresh cadence and provenance. Keep credentials, generated databases and private farm files out of Git. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Contributing
+<div align="center">
 
-We welcome focused fixes, accessible design work, regional crop and language testing, and source connectors with clear licensing and provenance. Start with [CONTRIBUTING.md](CONTRIBUTING.md), add tests for meaningful behavior, and keep credentials, generated databases and private farmer data out of commits. A public release license will be selected before this private competition repository is opened for external contributions.
+**Built for a farmer to leave with something done.**
 
-**Team init.io · AI Builder Cup**
+**init.io · AI Builder Cup**
+
+</div>
