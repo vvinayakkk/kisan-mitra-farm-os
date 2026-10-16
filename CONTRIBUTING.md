@@ -19,3 +19,7 @@ npm run build
 ## Source evidence
 
 Do not commit keys, local databases, generated artifacts, private farmer data or recordings. Keep illustrative prices and field cases separate from verified observations. A provider URL alone is not proof of a working integration: include source, license, units, time and failure behavior when adding one.
+
+## Review standard
+
+Preserve explicit review before assistant writes, owner scoping for private records, accessible controls and clear provenance. State what changed for a farmer, what external service it needs, how it was verified and what remains uncertain. The maintainers will choose an open-source license before public release.
