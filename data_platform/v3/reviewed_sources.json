@@ -1,0 +1,876 @@
+{
+  "reviewed_on": "2026-10-15",
+  "bundles": [
+    {
+      "source_url": "https://pmkisan.gov.in/",
+      "title": "PM-KISAN official scheme overview",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source metadata review 2026-10-14",
+      "evidence_text": "PM-KISAN is a Central Sector scheme. The official portal describes annual income support of INR 6,000, paid in three equal installments, to eligible landholding farmer families. Exclusion criteria and beneficiary verification apply. The portal provides registration, e-KYC and beneficiary-status services. This reference does not establish the eligibility or payment status of any farmer.",
+      "schemes": [
+        {
+          "scheme_code": "PM-KISAN",
+          "version": "official-overview-2026-10-14",
+          "name": "PM-KISAN income support",
+          "requirements": {
+            "summary": "Eligible landholding farmer families, subject to official exclusions and verification. Confirm details on the official portal.",
+            "questions": [
+              "Do you have eligible landholding records?",
+              "Have you completed the required verification and e-KYC?",
+              "Do any official exclusion criteria apply?"
+            ],
+            "decision": "official_authority_only"
+          },
+          "benefits": {
+            "description": "Eligible families receive INR 6,000 annually in three equal installments, subject to official conditions.",
+            "annual_support_inr": 6000
+          },
+          "application_url": "https://pmkisan.gov.in/"
+        }
+      ]
+    },
+    {
+      "source_url": "https://www.pmfby.gov.in/faq",
+      "title": "PMFBY official frequently asked questions",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source metadata review 2026-10-14",
+      "evidence_text": "PMFBY supports farmers against crop loss or damage from covered unforeseen events and seeks to stabilize farming income. Insurance depends on notified crops and areas, applicable season, enrollment requirements and policy terms. The official FAQ explains the scheme. A farmer's actual premium, coverage or claim cannot be inferred from this overview.",
+      "schemes": [
+        {
+          "scheme_code": "PMFBY",
+          "version": "official-faq-2026-10-14",
+          "name": "PMFBY crop insurance",
+          "requirements": {
+            "summary": "Check that your crop and area are notified for the applicable season, and confirm enrollment deadlines and policy terms.",
+            "questions": [
+              "Which crop and season do you want to insure?",
+              "What is your district and notified crop area?",
+              "Have you checked the official enrollment deadline?"
+            ],
+            "decision": "official_authority_only"
+          },
+          "benefits": {
+            "description": "Crop insurance support for covered losses under applicable notified policy terms; actual coverage and claims require official verification."
+          },
+          "application_url": "https://www.pmfby.gov.in/"
+        }
+      ]
+    },
+    {
+      "source_url": "https://www.icar.gov.in/en/weather-based-crop-advisory",
+      "title": "ICAR weather-based crop advisory index",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source metadata review 2026-10-14",
+      "evidence_text": "ICAR publishes weather-based crop advisories. Use the current advisory for the relevant region, crop and stage, and seek local KVK or extension support when interpreting advice. This index is a referral source, not a current plot-specific irrigation schedule or chemical dosage recommendation.",
+      "crop_guides": [
+        {
+          "crop_code": "rice",
+          "season": "all",
+          "growth_stage": "all",
+          "guidance": {
+            "type": "official_advisory_referral",
+            "summary": "Consult the current ICAR weather-based advisory for your region and crop stage. Confirm local field conditions with your KVK before acting.",
+            "source_url": "https://www.icar.gov.in/en/weather-based-crop-advisory",
+            "not_a_treatment_prescription": true
+          }
+        }
+      ]
+    },
+    {
+      "source_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3",
+      "title": "India agricultural support programme index",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "The Ministry of Agriculture and Farmers Welfare listed major programmes in its 12 August 2025 parliamentary reply. This index documents programme names, not current application openings or individual eligibility. Pradhan Mantri Kisan Maan Dhan Yojana; Restructured Weather Based Crop Insurance Scheme; Modified Interest Subvention Scheme; Agriculture Infrastructure Fund; Formation and Promotion of 10,000 Farmer Producer Organizations; National Beekeeping and Honey Mission; Namo Drone Didi; National Mission on Natural Farming; Pradhan Mantri Annadata Aay Sanrakshan Abhiyan; Agri Fund for Start-Ups and Rural Enterprises; Per Drop More Crop; Sub-Mission on Agriculture Mechanization; Paramparagat Krishi Vikas Yojana; Soil Health and Fertility; Rainfed Area Development; Agroforestry; Crop Diversification Programme; Sub-Mission on Agriculture Extension; Sub-Mission on Seed and Planting Material; National Food Security and Nutrition Mission; Integrated Scheme for Agriculture Marketing; Mission for Integrated Development of Horticulture; National Mission on Edible Oils - Oil Palm; National Mission on Edible Oils - Oilseeds; Mission Organic Value Chain Development for North Eastern Region; Digital Agriculture Mission; National Bamboo Mission",
+      "schemes": [
+        {
+          "scheme_code": "PM-KMY",
+          "version": "official-index-2026-10-15",
+          "name": "Pradhan Mantri Kisan Maan Dhan Yojana",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for pension planning. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "RWBCIS",
+          "version": "official-index-2026-10-15",
+          "name": "Restructured Weather Based Crop Insurance Scheme",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for weather-linked crop insurance. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "MISS",
+          "version": "official-index-2026-10-15",
+          "name": "Modified Interest Subvention Scheme",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for agricultural credit interest support. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "AIF",
+          "version": "official-index-2026-10-15",
+          "name": "Agriculture Infrastructure Fund",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for farm and post-harvest infrastructure finance. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "FPO-10000",
+          "version": "official-index-2026-10-15",
+          "name": "Formation and Promotion of 10,000 Farmer Producer Organizations",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for farmer producer organization formation. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "NBHM",
+          "version": "official-index-2026-10-15",
+          "name": "National Beekeeping and Honey Mission",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for beekeeping and honey development. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "DRONE-DIDI",
+          "version": "official-index-2026-10-15",
+          "name": "Namo Drone Didi",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for women-led agricultural drone services. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "NMNF",
+          "version": "official-index-2026-10-15",
+          "name": "National Mission on Natural Farming",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for natural farming. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "PM-AASHA",
+          "version": "official-index-2026-10-15",
+          "name": "Pradhan Mantri Annadata Aay Sanrakshan Abhiyan",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for agricultural price support. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "AGRISURE",
+          "version": "official-index-2026-10-15",
+          "name": "Agri Fund for Start-Ups and Rural Enterprises",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for agricultural enterprise investment. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "PDMC",
+          "version": "official-index-2026-10-15",
+          "name": "Per Drop More Crop",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for water-efficient irrigation. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "SMAM",
+          "version": "official-index-2026-10-15",
+          "name": "Sub-Mission on Agriculture Mechanization",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for farm mechanization. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "PKVY",
+          "version": "official-index-2026-10-15",
+          "name": "Paramparagat Krishi Vikas Yojana",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for organic farming. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "SHF",
+          "version": "official-index-2026-10-15",
+          "name": "Soil Health and Fertility",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for soil health and fertility management. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "RAD",
+          "version": "official-index-2026-10-15",
+          "name": "Rainfed Area Development",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for rainfed farming development. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "AGROFORESTRY",
+          "version": "official-index-2026-10-15",
+          "name": "Agroforestry",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for integrated trees and farming. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "CDP",
+          "version": "official-index-2026-10-15",
+          "name": "Crop Diversification Programme",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for crop diversification. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "SMAE",
+          "version": "official-index-2026-10-15",
+          "name": "Sub-Mission on Agriculture Extension",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for agricultural extension. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "SMSP",
+          "version": "official-index-2026-10-15",
+          "name": "Sub-Mission on Seed and Planting Material",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for seeds and planting material. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "NFSNM",
+          "version": "official-index-2026-10-15",
+          "name": "National Food Security and Nutrition Mission",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for food security and nutrition crops. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "ISAM",
+          "version": "official-index-2026-10-15",
+          "name": "Integrated Scheme for Agriculture Marketing",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for agricultural marketing. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "MIDH",
+          "version": "official-index-2026-10-15",
+          "name": "Mission for Integrated Development of Horticulture",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for horticulture development. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "NMEO-OP",
+          "version": "official-index-2026-10-15",
+          "name": "National Mission on Edible Oils - Oil Palm",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for oil palm development. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "NMEO-OS",
+          "version": "official-index-2026-10-15",
+          "name": "National Mission on Edible Oils - Oilseeds",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for oilseed development. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "MOVCDNER",
+          "version": "official-index-2026-10-15",
+          "name": "Mission Organic Value Chain Development for North Eastern Region",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for organic value chains in northeast India. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "DAM",
+          "version": "official-index-2026-10-15",
+          "name": "Digital Agriculture Mission",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for agricultural digital services. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        },
+        {
+          "scheme_code": "NBM",
+          "version": "official-index-2026-10-15",
+          "name": "National Bamboo Mission",
+          "requirements": {
+            "summary": "Programme reference for India. Eligibility, state implementation, application windows and funding must be checked with the administering authority.",
+            "country": "India",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Which support do you need and what is your crop or enterprise?"
+            ],
+            "decision": "official_authority_only",
+            "coverage": "official programme index; detailed eligibility not imported"
+          },
+          "benefits": {
+            "description": "Official programme reference for bamboo value chains. Check programme guidance for the applicable support, conditions and delivery route; this record does not establish an entitlement."
+          },
+          "application_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2155531&lang=2&reg=3"
+        }
+      ],
+      "published_on": "2025-08-12"
+    },
+    {
+      "source_url": "https://www.myscheme.gov.in/",
+      "title": "India myScheme discovery portal",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "myScheme is an official government scheme-discovery portal with agriculture and other categories. For a state-specific or unlisted scheme, direct the farmer to the official portal and ask their state, district and support need. This local catalogue is not exhaustive; dates and eligibility need the official administering authority."
+    },
+    {
+      "source_url": "https://www.fao.org/faolex/en",
+      "title": "Global agriculture policy discovery - FAOLEX",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "FAOLEX is a global legal and policy reference database covering agriculture, food and natural resources, including agricultural finance and social protection. Its country profiles and open-data collections help locate national frameworks. Policy records are not proof of a current farmer grant or eligibility. Ask country and region before looking up support."
+    },
+    {
+      "source_url": "https://www.farmers.gov/working-with-us",
+      "title": "United States - USDA farmer support discovery",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "United States USDA farmer support covers farm and commodity loans, disaster assistance, conservation, price support and crop insurance. Official discovery tools include farm loan assistance, disaster assistance and conservation concerns. US programmes are not Indian schemes; ask jurisdiction and use the linked official programme pages."
+    },
+    {
+      "source_url": "https://www.farmers.gov/protection-recovery",
+      "title": "United States - disaster and conservation programme references",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "United States programme references include Emergency Conservation Program, Emergency Forest Restoration Program, Environmental Quality Incentives Program and emergency farm loans. They address eligible restoration, conservation improvements or disaster recovery. Available support depends on the programme, disaster designation, county, application period and official decision; do not infer an award."
+    },
+    {
+      "source_url": "https://agriculture.ec.europa.eu/common-agricultural-policy/income-support_en",
+      "title": "European Union - CAP income support and eco-schemes",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "European Union CAP includes income support and eco-schemes supporting environmental and climate farming practices. Implementation and applications are national; ask EU member state and farm circumstances, then check the paying agency. A CAP overview is not an individual entitlement."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/collections/sustainable-farming-incentive-guidance-for-applicants-and-agreement-holders",
+      "title": "England - Sustainable Farming Incentive official guidance",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "England Sustainable Farming Incentive has official guidance including 2026 scheme information. Application windows, actions, farm registration and agreement rules are version-specific. Ask which UK nation and region before advising; England guidance must not be presented as applying across all UK nations."
+    },
+    {
+      "source_url": "https://agriculture.canada.ca/en/programs/agristability/resources",
+      "title": "Canada - AgriStability official programme resources",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "Canada official resources cover AgriStability. Related business-risk-management references include AgriInvest and AgriInsurance. The province, producer type, programme year and applicable administration determine participation and deadlines. Use current official guides rather than inventing payment estimates."
+    },
+    {
+      "source_url": "https://www.agriculture.gov.au/agriculture-land/farm-food-drought/drought/farm-household-allowance",
+      "title": "Australia - Farm Household Allowance",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "Australia Farm Household Allowance assists commercial-scale farmers and partners experiencing financial hardship. The official page links financial counselling support. Eligibility and current benefit rules require official assessment; ask location and circumstances without promising payment."
+    },
+    {
+      "source_url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_brinjal_season.html",
+      "title": "Tamil Nadu brinjal seasonal sowing reference",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "TNAU lists December-January and May-June sowing windows for brinjal. This is a regional reference, not a universal calendar for India. For January-March planning distinguish sowing from growing and harvest; ask district, water, soil and previous crop, then compare locally suitable options. Do not infer future weather, prices, yields or profit."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/pdf/pre_kharif.pdf",
+      "title": "Regional January-March pulse sowing references",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official-source index review 2026-10-15 (programme existence and broad purpose; not individual eligibility)",
+      "evidence_text": "TNAU pre-kharif guidance gives regional sowing windows for mungbean and urdbean: October-December and January-March in Tamil Nadu; February-March among listed West Bengal windows. These older agronomic references require local extension confirmation. They demonstrate that January-March crop planning is possible without future observations; suitability depends on district, irrigation, drainage, temperature, duration and rotation."
+    },
+    {
+      "source_url": "https://agritech.tnau.ac.in/crop_protection/tomato_diseases_2.html",
+      "title": "Tomato early blight: TNAU symptom reference",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "Tomato early blight is associated with Alternaria solani. TNAU describes brown lesions with ring patterns and yellow margins; fruit infection can occur near the calyx or stem. Warm, humid, wet conditions favour disease. Crop debris sanitation and rotation are nonchemical integrated-management considerations. Similar-looking nutrient or disease symptoms require differentiation using clear leaf, stem and whole-plant images and field history. This reference is not a confirmed diagnosis or a current pesticide prescription."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/expert_system/paddy/cpdisblast.html",
+      "title": "Rice blast: TNAU expert-system reference",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "Rice blast can affect leaves and other crop parts. TNAU identifies resistant varieties as an important economical management approach. Severe infection may give fields a burnt appearance. Ask the farmer for clear lesion images, affected plant parts, variety, growth stage, recent wet weather and spread across the field. Distinguish blast from nutrient deficiency, insect injury and other rice diseases. Confirm locally before treatment; resistance varies by cultivar and pathogen population."
+    },
+    {
+      "source_url": "https://agritech.tnau.ac.in/crop_protection/crop_prot_crop%20diseases_cereals_wheat.html",
+      "title": "Wheat leaf and stem rust: TNAU diagnostic reference",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "TNAU describes wheat leaf rust as orange to orange-brown small pustules mainly on upper leaf surfaces and sheaths. Stem rust produces darker reddish-brown pustules on leaves, stems and spikes. These are symptom references, not image-confirmed diagnoses. Request close leaf and stem photographs, whether material rubs off, crop stage, variety, district and symptom distribution. Resistant cultivars and locally approved integrated management require current extension guidance."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/expert_system/sugar/faq.html",
+      "title": "Sugarcane red rot and smut: TNAU expert-system overview",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "TNAU identifies red rot and smut as important sugarcane diseases. Red rot may show leaf yellowing or drying and internal cane reddening interrupted by white patches. Infected planting setts and retained infected cane can spread disease; wet conditions can favour spread. Ask for whole-clump, cane exterior and safely cut interior images, variety, planting source and ratoon history. Clean planting material, surveillance, water management and resistant varieties are relevant principles. No automated diagnosis or chemical dosage is established by this summary."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/crop_protection/crop_prot_biocontrol%20control_agents.html",
+      "title": "Crop disease and biological-control reference index",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "TNAU lists root rot and wilt in groundnut, sesame, sunflower, pigeon pea, green gram, black gram and cotton; damping off in vegetable nurseries; club root in cabbage and cauliflower; anthracnose in mango; and wilt and anthracnose in banana. Biological management is crop, organism, formulation and storage dependent. These conditions must not be diagnosed solely from a crop name. Ask for symptoms, field pattern, roots and stem condition and clear photographs. Consult current local recommendations before applying any product."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/horticulture/horti_Vegetables.html",
+      "title": "TNAU vegetable crop knowledge directory",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "The TNAU horticulture directory covers tomato, okra, brinjal, chilli, capsicum, gourds, cucumber, melons, beans, peas, moringa, root and tuber vegetables, leafy vegetables, cabbage, cauliflower and onion. It is a route to crop-specific production guidance, not evidence that every crop suits every Indian state. For crop selection, establish district, elevation, intended planting month, irrigation reliability, drainage, crop duration, market access and local variety. Tamil Nadu recommendations require regional adaptation elsewhere."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_index.html",
+      "title": "TNAU tomato production knowledge directory",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "TNAU tomato guidance includes varieties and hybrids, season and field preparation, seed and nursery production, irrigation, manuring, cultural practices, fertigation, pests, diseases, protected cultivation, physiological disorders, nematodes and post-harvest handling. These are distinct decisions: ask whether the farmer needs sowing advice, diagnosis or a full cultivation plan. District, season, soil drainage, irrigation and intended production system are needed before choosing a cultivar or schedule. Do not infer future weather from this reference."
+    },
+    {
+      "source_url": "https://www.agritech.tnau.ac.in/agriculture/agri_agrometeorology_croppingpatern_northeasternzone.html",
+      "title": "Tamil Nadu north-eastern-zone cropping-pattern reference",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView primary-source summary review 2026-10-15; no clinical or pesticide certification",
+      "evidence_text": "TNAU publishes zone-specific seasonal cropping patterns. Its Tamil Nadu north-eastern-zone examples include June–September groundnut and October–January vegetable or cluster beans under stated soil conditions. These dates belong to the referenced Tamil Nadu zone, not all north-eastern Indian states. Calendar advice must distinguish a regional zone name from the north-eastern India region and adapt to the actual district, rainfall, irrigation and cultivar. Future planning can use seasonal patterns conditionally without pretending that future observations exist."
+    },
+    {
+      "source_url": "https://pmkusum.mnre.gov.in/Publicity.html",
+      "title": "PM-KUSUM solar agriculture pumps and solarisation official overview",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official primary-source existence and purpose review 2026-10-15; current eligibility and application windows require authority verification",
+      "evidence_text": "PM-KUSUM supports decentralised solar plants, standalone solar irrigation pumps and solarisation of grid-connected agricultural pumps through designated state implementing agencies. Rajasthan and other states have state-specific allocations and processes; this national reference does not establish an open application window. Official MNRE material contains programme-period dates and subsequent implementation information, so confirm the current state notification before applying. No subsidy percentage, installation booking, vendor approval or eligibility is guaranteed here.",
+      "schemes": [
+        {
+          "scheme_code": "PM-KUSUM",
+          "version": "official-purpose-2026-10-15",
+          "name": "PM-KUSUM solar agriculture pumps and solarisation",
+          "requirements": {
+            "summary": "PM-KUSUM supports decentralised solar plants, standalone solar irrigation pumps and solarisation of grid-connected agricultural pumps through designated state implementing agencies. Rajasthan and other states have state-specific allocations and processes; this national reference does not establish an open application window. Official MNRE material contains programme-period dates and subsequent implementation information, so confirm the current state notification before applying. No subsidy percentage, installation booking, vendor approval or eligibility is guaranteed here.",
+            "questions": [
+              "Which state and district is your farm in?",
+              "Do you need a standalone solar pump or solarisation of an existing grid-connected pump?",
+              "What is the pump capacity, water source and current grid connection?",
+              "Has the designated state agency published an active application notice?"
+            ],
+            "decision": "official_authority_only",
+            "application_status": "verify_current_state_or_bank_notice",
+            "coverage": "National reference; local implementation and applicant eligibility must be verified"
+          },
+          "benefits": {
+            "description": "Potential support for solar irrigation equipment or agricultural-pump solarisation under the applicable component and state-approved allocation. Current availability, farmer contribution, sanctioned capacity and approved vendors require official verification."
+          },
+          "application_url": "https://pmkusum.mnre.gov.in/"
+        }
+      ]
+    },
+    {
+      "source_url": "https://www.myscheme.gov.in/schemes/kcc",
+      "title": "Kisan Credit Card agricultural credit official overview",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official primary-source existence and purpose review 2026-10-15; current eligibility and application windows require authority verification",
+      "evidence_text": "The Kisan Credit Card is a bank-assessed agricultural credit facility for eligible farmers. It can support crop-production inputs and other permitted farm or allied-activity needs; this is repayable credit rather than a guaranteed grant. Farmers in Punjab and other states should approach their participating bank and confirm the current application requirements, lending limit, interest conditions and repayment schedule. Do not infer bank sanction, collateral waiver, interest subsidy or a fixed interest rate from this overview.",
+      "schemes": [
+        {
+          "scheme_code": "KCC",
+          "version": "official-purpose-2026-10-15",
+          "name": "Kisan Credit Card agricultural credit",
+          "requirements": {
+            "summary": "The Kisan Credit Card is a bank-assessed agricultural credit facility for eligible farmers. It can support crop-production inputs and other permitted farm or allied-activity needs; this is repayable credit rather than a guaranteed grant. Farmers in Punjab and other states should approach their participating bank and confirm the current application requirements, lending limit, interest conditions and repayment schedule. Do not infer bank sanction, collateral waiver, interest subsidy or a fixed interest rate from this overview.",
+            "questions": [
+              "Which bank do you use and do you already have a KCC?",
+              "What crop, cultivated area and seasonal working-capital amount do you need?",
+              "Are you an owner cultivator, tenant or member of an eligible group?",
+              "Can the bank verify your current land/cultivation and identity documents?"
+            ],
+            "decision": "official_authority_only",
+            "application_status": "verify_current_state_or_bank_notice",
+            "coverage": "National reference; local implementation and applicant eligibility must be verified"
+          },
+          "benefits": {
+            "description": "Access to agricultural working-capital credit, subject to bank appraisal, current programme rules, permitted uses and repayment obligations."
+          },
+          "application_url": "https://www.myscheme.gov.in/schemes/kcc"
+        }
+      ]
+    },
+    {
+      "source_url": "https://www.myscheme.gov.in/schemes/rkvyshfshc",
+      "title": "Soil Health Card soil testing and nutrient advice official overview",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official primary-source existence and purpose review 2026-10-15; current eligibility and application windows require authority verification",
+      "evidence_text": "The Soil Health Card programme supports soil testing and a farmer-facing report of soil health with nutrient and soil-amendment advice based on the tested sample. Farmers in Tamil Nadu and other states should contact the local agriculture department or authorised soil-testing facility for sampling and report procedures. A Soil Health Card is not proof of a cash entitlement, an actual lab result for this farmer, or evidence that an untested field has a nutrient deficiency. Confirm sampling depth, crop, test method and local recommendations before acting.",
+      "schemes": [
+        {
+          "scheme_code": "SOIL-HEALTH-CARD",
+          "version": "official-purpose-2026-10-15",
+          "name": "Soil Health Card soil testing and nutrient advice",
+          "requirements": {
+            "summary": "The Soil Health Card programme supports soil testing and a farmer-facing report of soil health with nutrient and soil-amendment advice based on the tested sample. Farmers in Tamil Nadu and other states should contact the local agriculture department or authorised soil-testing facility for sampling and report procedures. A Soil Health Card is not proof of a cash entitlement, an actual lab result for this farmer, or evidence that an untested field has a nutrient deficiency. Confirm sampling depth, crop, test method and local recommendations before acting.",
+            "questions": [
+              "Which district and crop or field do you want tested?",
+              "Do you already have a dated soil laboratory report or Soil Health Card?",
+              "When and how was the sample collected?",
+              "Which local agriculture office or authorised laboratory can confirm the sampling process?"
+            ],
+            "decision": "official_authority_only",
+            "application_status": "verify_current_state_or_bank_notice",
+            "coverage": "National reference; local implementation and applicant eligibility must be verified"
+          },
+          "benefits": {
+            "description": "Soil-health assessment and crop nutrient guidance based on actual sampling and testing; no fabricated measurement, fertiliser dose or cash benefit is inferred."
+          },
+          "application_url": "https://soilhealth.dac.gov.in/"
+        }
+      ]
+    },
+    {
+      "source_url": "https://pmksy.mowr.gov.in/smi.aspx",
+      "title": "PMKSY Har Khet Ko Pani irrigation access official overview",
+      "language": "en",
+      "review_status": "reviewed",
+      "reviewed_by": "SkyView official primary-source existence and purpose review 2026-10-15; current eligibility and application windows require authority verification",
+      "evidence_text": "Har Khet Ko Pani is an irrigation component of Pradhan Mantri Krishi Sinchayee Yojana. Its programmes include irrigation infrastructure and water-access measures implemented through approved projects and responsible agencies. This national reference is distinct from Per Drop More Crop micro-irrigation assistance and from PM-KUSUM solar pumps. State and district project coverage, current programme continuation, beneficiary selection and application channels must be verified with the responsible department. An irrigation need alone does not establish entitlement to a borewell, pump or grant.",
+      "schemes": [
+        {
+          "scheme_code": "PMKSY-HKKP",
+          "version": "official-purpose-2026-10-15",
+          "name": "PMKSY Har Khet Ko Pani irrigation access",
+          "requirements": {
+            "summary": "Har Khet Ko Pani is an irrigation component of Pradhan Mantri Krishi Sinchayee Yojana. Its programmes include irrigation infrastructure and water-access measures implemented through approved projects and responsible agencies. This national reference is distinct from Per Drop More Crop micro-irrigation assistance and from PM-KUSUM solar pumps. State and district project coverage, current programme continuation, beneficiary selection and application channels must be verified with the responsible department. An irrigation need alone does not establish entitlement to a borewell, pump or grant.",
+            "questions": [
+              "What is your state, district and present water source?",
+              "Do you need water access, restoration of an irrigation asset, or efficient drip/sprinkler application?",
+              "Is your location covered by a currently approved project?",
+              "Which irrigation or agriculture department is implementing the local project?"
+            ],
+            "decision": "official_authority_only",
+            "application_status": "verify_current_state_or_bank_notice",
+            "coverage": "National reference; local implementation and applicant eligibility must be verified"
+          },
+          "benefits": {
+            "description": "Potential improvement of irrigation access through covered approved infrastructure and water-resource projects; local coverage and current sanction require official confirmation."
+          },
+          "application_url": "https://pmksy.mowr.gov.in/"
+        }
+      ]
+    }
+  ],
+  "coverage_note": "India programme index plus official discovery references for United States, European Union, England, Canada and Australia, and FAOLEX global lookup. Not all schemes worldwide; eligibility and application windows require official verification."
+}
