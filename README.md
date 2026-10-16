@@ -32,6 +32,9 @@ This is a complete local application, with a React/Three.js frontend, FastAPI se
 <tr><td><img src="docs/media/farm-crop-doctor.png" alt="Farm OS Crop Doctor with photo upload, careful crop assessment and contextual Mitra help" width="690"></td><td><img src="docs/media/farm-support.png" alt="Farm OS support folder with official programme references, preparation checklist and Mitra help" width="690"></td></tr>
 </table>
 
+<p align="center"><img src="docs/media/farm-markets.png" alt="Farm OS market search for rice in Maharashtra, with a source-linked mandi directory and explicit missing-price status" width="1000"></p>
+<p align="center"><sub>Market search names the mandi and links its source; unavailable reported quotes stay visibly unavailable.</sub></p>
+
 ### Inside the assistant
 
 <table>
