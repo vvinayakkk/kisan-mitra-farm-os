@@ -14,3 +14,5 @@ Built by **init.io** for the **AI Builder Cup**. Kisan Mitra brings an agentic f
 | **Saathi** | See context-aware suggested work, inspect a compact preview, edit or approve a plan, and find the saved result in the notebook. |
 | **Crop doctor** | Share a crop photo, get a cautious assessment, and capture observations and follow-ups. |
 | **Markets** | Compare mandi quotes by crop and region and inspect dated price series with variety and unit context. |
+| **Farm station** | Explore a Three.js station and sensor scene with live-status context, readings and a movable assistant. |
+| **Weather** | View current regional conditions, hourly and ten-day outlooks, rainfall, wind and air quality in a time-aware scene. |
