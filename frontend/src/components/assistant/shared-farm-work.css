@@ -1,0 +1,155 @@
+.shared-farm-work {
+  margin-top: 28px;
+}
+.shared-farm-work details > summary {
+  list-style: none;
+}
+.shared-farm-work .farm-season-section > summary::after {
+  content: "+";
+  font-size: 18px;
+  font-weight: 400;
+}
+.shared-farm-work .farm-season-section[open] > summary::after {
+  content: "−";
+}
+.shared-notebook-heading {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.shared-notebook-heading p {
+  margin: 0;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #718263;
+}
+.shared-entry {
+  border: 1px solid #d9e1cd;
+  border-radius: 15px;
+  padding: 17px;
+  margin: 12px 0;
+  color: #4c633c;
+}
+.shared-entry header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.shared-entry h3 {
+  margin: 3px 0 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.shared-entry p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 8px 0;
+  color: #728065;
+}
+.shared-entry header button {
+  background: none;
+  border: 0;
+  color: #738665;
+  padding: 7px;
+}
+.shared-entry small {
+  font-size: 11px;
+  color: #80906f;
+}
+.shared-quote {
+  font-size: 19px;
+  color: #435d30;
+  margin-top: 10px;
+}
+.shared-group-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.shared-group-controls button {
+  background: none;
+  border: 1px solid #d4dec5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: #657b4d;
+  font-size: 12px;
+}
+.shared-members {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0;
+  font-size: 12px;
+  color: #7a8869;
+}
+.shared-invite-code {
+  background: #edf3e3;
+  border: 1px solid #bccdab;
+  border-radius: 10px;
+  padding: 14px;
+  word-break: break-all;
+  color: #496337;
+  font-family: monospace;
+  font-size: 15px;
+}
+.shared-invite-review {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #6b7b5b;
+  margin: 12px 0;
+}
+.shared-invite-review input {
+  margin-top: 4px;
+  accent-color: #718c52;
+}
+.shared-form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+.shared-form-actions button:not(.feature-primary) {
+  border: 0;
+  background: none;
+  color: #6b7e57;
+}
+.shared-task {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  padding: 9px 0;
+  color: #687f51;
+}
+.shared-task input {
+  accent-color: #778f56;
+}
+.shared-task span {
+  flex: 1;
+}
+.shared-task small {
+  font-size: 10px;
+}
+.shared-farm-work .farm-form-field > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.shared-farm-work .farm-form-field > .voice-input-trigger {
+  align-self: flex-end;
+}
+.shared-editor .farm-form-field {
+  position: relative;
+}
+.shared-farm-work .farm-form-field input {
+  padding-right: 12px;
+}
+@media(max-width:700px){.shared-notebook-heading{flex-direction:column;gap:12px}.shared-group-controls{margin-top:4px}.shared-group-controls button{min-height:34px}.shared-entry{padding:14px}.shared-task{align-items:flex-start}}
