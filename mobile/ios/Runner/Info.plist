@@ -26,11 +26,13 @@
 
 
     <key>NSMicrophoneUsageDescription</key>
-    <string>SkyView AI needs microphone access to understand your spoken farming questions.</string>
+    <string>Kisan Mitra records your voice only while you speak, to turn your farm questions into text.</string>
 
 
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>SkyView AI needs location access to fetch hyper-local sensor telemetry and market mandi prices.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Kisan Mitra uses the camera to photograph crops and documents you choose to check.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Kisan Mitra opens photos you choose for crop checks and documents.</string>
 
 
     <key>NSAppTransportSecurity</key>

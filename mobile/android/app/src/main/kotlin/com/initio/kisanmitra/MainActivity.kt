@@ -1,4 +1,4 @@
-package com.example.skyview_app
+package com.initio.kisanmitra
 
 import io.flutter.embedding.android.FlutterActivity
 
