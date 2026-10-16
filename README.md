@@ -28,6 +28,8 @@ This is a complete local application, with a React/Three.js frontend, FastAPI se
 <tr><td><img src="docs/media/farm-calendar.png" alt="Farm OS calendar with dated tasks, a selected day's actions and contextual Mitra help" width="690"></td><td><img src="docs/media/farm-notebook.png" alt="Farm OS spiral notebook with today's work, field follow-ups and Mitra input" width="690"></td></tr>
 <tr><th>Farmer exchange</th><th>Farmer profile</th></tr>
 <tr><td><img src="docs/media/farm-exchange.png" alt="Farm OS farmer exchange with guided offer input, exchange stages and resource trail" width="690"></td><td><img src="docs/media/farm-profile.png" alt="Farm OS farmer profile showing land, crops, location, preferences and resources" width="690"></td></tr>
+<tr><th>Crop Doctor</th><th>Farm support</th></tr>
+<tr><td><img src="docs/media/farm-crop-doctor.png" alt="Farm OS Crop Doctor with photo upload, careful crop assessment and contextual Mitra help" width="690"></td><td><img src="docs/media/farm-support.png" alt="Farm OS support folder with official programme references, preparation checklist and Mitra help" width="690"></td></tr>
 </table>
 
 ### Inside the assistant
