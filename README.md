@@ -6,13 +6,13 @@
 
 Built by **init.io** for the **AI Builder Cup** · [MIT licensed](LICENSE)
 
-[Explore the workspace](#the-farm-os-experience) · [Follow an agent run](#how-mitra-gets-work-done) · [Understand the architecture](#architecture) · [Run it locally](#run-locally)
+[Explore the workspace](#the-farm-os-experience) · [Follow an agent run](#how-mitra-gets-work-done) · [Understand the architecture](#architecture) · [See the deployment model](#deployment-model)
 
 ![Mitra showing its skill and tool activity, a prioritized farm work plan, and the conversation composer](docs/media/assistant-tool-activity.png)
 
 Kisan Mitra brings farm records, crop care, weather, markets, planning, and farmer exchange into one conversational workspace. A farmer can ask a natural question, speak it, attach evidence, or start from a page-specific helper. Mitra gathers relevant context, shows its work as it runs, asks for the one detail it needs, and prepares a useful result. Plans and record changes can be reviewed before they are saved. **Saathi** prepares contextual follow-ups for the farmer to inspect, edit, approve, or dismiss.
 
-The project includes a React and Three.js web app, a FastAPI agent and farm API, a PostgreSQL data platform, background source ingestion, private generated files, voice and WhatsApp adapters, and optional device and FPGA integration. The original SkyView screens remain available alongside the new Farm OS interface.
+The platform combines a React and Three.js web app, a FastAPI agent and farm API, a PostgreSQL data platform, background source ingestion, private generated files, voice and WhatsApp adapters, and optional device and FPGA integration. Its containerized services are built for a GCP deployment path. The original SkyView screens remain available alongside the new Farm OS interface.
 
 | 22 farm skills | 52 typed tools | 2 connected web experiences | One farmer-owned record |
 | :--- | :--- | :--- | :--- |
@@ -226,9 +226,24 @@ The [worker](skyview/data/v3/worker.py) uses a PostgreSQL advisory lease to prev
 - **Device integrity:** Enrolled stations use hashed credentials, timestamp and unit checks, and packet replay protection. The [hardware guide](docs/hardware/README.md) covers commissioning and the optional FPGA register bridge.
 - **Secrets:** API keys, database passwords, and channel credentials belong in ignored environment files or a secret store.
 
-## Run locally
+## Deployment model
 
-**Requirements:** Docker and Docker Compose. The stack starts PostgreSQL 16, initializes the v3 schema, runs the FastAPI service and worker, and serves the web client through Nginx.
+Kisan Mitra is a web-first platform with a GCP deployment target. The container images and runtime contracts in this repository provide the application layer; cloud infrastructure and release automation are the next deployment milestone.
+
+| Component | GCP deployment target | Application responsibility |
+| --- | --- | --- |
+| Web experience | HTTPS frontend hosting with an API route to the service | Serve Farm OS and Classic SkyView from one origin. |
+| Agent and farm API | Cloud Run service | Handle authenticated requests, tool execution, and channel webhooks. |
+| Farm records | Cloud SQL for PostgreSQL | Apply schema migrations, ownership policies, stored reads, and backups. |
+| Generated files and source payloads | Private Cloud Storage buckets | Preserve owner-scoped artifacts and raw data beyond container lifetimes. |
+| Background work | Scheduled worker service | Run ingestion, source checks, Saathi preparation, and delivery independently of web traffic. |
+| Secrets and identity | Secret Manager and HTTPS identity configuration | Supply credentials at runtime and verify farmer sessions and webhooks. |
+
+The [operations guide](docs/operations.md#hosted-deployment-handoff) tracks the requirements for that cutover, including persistent storage, scheduled work, and callback URLs. The [configuration guide](docs/configuration.md) identifies server-side settings and client-safe values.
+
+### Development quickstart
+
+**Requirements:** Docker and Docker Compose. The development stack starts PostgreSQL 16, initializes the v3 schema, runs the FastAPI service and worker, and serves the web client through Nginx.
 
 ```bash
 cp .env.docker.example .env.docker
