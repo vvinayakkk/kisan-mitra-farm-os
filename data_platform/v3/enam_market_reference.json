@@ -1,0 +1,955 @@
+{
+  "source_url": "https://enam.gov.in/aspirational-districts",
+  "retrieved_on": "2026-10-15",
+  "coverage": "Published aspirational-district mapping only; not all Indian mandis; no current trading status, contacts or quotes asserted.",
+  "markets": [
+    {
+      "state": "Andhra Pradesh",
+      "district": "Ysr Kadapa",
+      "name": "Ysr Kadapa",
+      "source_row": 1
+    },
+    {
+      "state": "Assam",
+      "district": "Darrang",
+      "name": "Kharupetia",
+      "source_row": 2
+    },
+    {
+      "state": "Assam",
+      "district": "Dhubri",
+      "name": "Gauripur",
+      "source_row": 3
+    },
+    {
+      "state": "Bihar",
+      "district": "Araria",
+      "name": "Forbesganj",
+      "source_row": 4
+    },
+    {
+      "state": "Bihar",
+      "district": "Aurangabad",
+      "name": "Daudnagar",
+      "source_row": 5
+    },
+    {
+      "state": "Bihar",
+      "district": "Begusarai",
+      "name": "Begusarai",
+      "source_row": 6
+    },
+    {
+      "state": "Bihar",
+      "district": "Gaya",
+      "name": "Gaya",
+      "source_row": 7
+    },
+    {
+      "state": "Bihar",
+      "district": "Katihar",
+      "name": "Katihar",
+      "source_row": 8
+    },
+    {
+      "state": "Bihar",
+      "district": "Muzaffarpur",
+      "name": "Muzaffarpur",
+      "source_row": 9
+    },
+    {
+      "state": "Bihar",
+      "district": "Purnia",
+      "name": "Gulabbagh",
+      "source_row": 10
+    },
+    {
+      "state": "Bihar",
+      "district": "Sitamarhi",
+      "name": "Sitamarhi",
+      "source_row": 11
+    },
+    {
+      "state": "Chhattisgarh",
+      "district": "Bastar",
+      "name": "Jagdalpur",
+      "source_row": 12
+    },
+    {
+      "state": "Chhattisgarh",
+      "district": "Kanker",
+      "name": "Kanker",
+      "source_row": 13
+    },
+    {
+      "state": "Chhattisgarh",
+      "district": "Korba",
+      "name": "Katghora",
+      "source_row": 14
+    },
+    {
+      "state": "Chhattisgarh",
+      "district": "Mahasamund",
+      "name": "Saraipali",
+      "source_row": 15
+    },
+    {
+      "state": "Chhattisgarh",
+      "district": "Rajnandgaon",
+      "name": "Rajnandgaon",
+      "source_row": 16
+    },
+    {
+      "state": "Gujarat",
+      "district": "Dahod",
+      "name": "Dahod",
+      "source_row": 17
+    },
+    {
+      "state": "Gujarat",
+      "district": "Dahod",
+      "name": "Devgadhbaria Apmc",
+      "source_row": 18
+    },
+    {
+      "state": "Gujarat",
+      "district": "Dahod",
+      "name": "Fatehpura Apmc",
+      "source_row": 19
+    },
+    {
+      "state": "Gujarat",
+      "district": "Dahod",
+      "name": "Jhalod",
+      "source_row": 20
+    },
+    {
+      "state": "Gujarat",
+      "district": "Dahod",
+      "name": "Limkheda Apmc",
+      "source_row": 21
+    },
+    {
+      "state": "Gujarat",
+      "district": "Dahod",
+      "name": "Sanjeli Apmc",
+      "source_row": 22
+    },
+    {
+      "state": "Gujarat",
+      "district": "Narmada",
+      "name": "Dediyapada Apmc",
+      "source_row": 23
+    },
+    {
+      "state": "Gujarat",
+      "district": "Narmada",
+      "name": "Rajpipla Apmc",
+      "source_row": 24
+    },
+    {
+      "state": "Gujarat",
+      "district": "Narmada",
+      "name": "Selemba Apmc",
+      "source_row": 25
+    },
+    {
+      "state": "Gujarat",
+      "district": "Narmada",
+      "name": "Tilakwada Apmc",
+      "source_row": 26
+    },
+    {
+      "state": "Haryana",
+      "district": "Mewat (Nuh)",
+      "name": "Ferozpur Jhirka Apmc",
+      "source_row": 27
+    },
+    {
+      "state": "Haryana",
+      "district": "Mewat (Nuh)",
+      "name": "Nuh Apmc",
+      "source_row": 28
+    },
+    {
+      "state": "Haryana",
+      "district": "Mewat (Nuh)",
+      "name": "Punhana Apmc",
+      "source_row": 29
+    },
+    {
+      "state": "Haryana",
+      "district": "Mewat (Nuh)",
+      "name": "Tauru Apmc",
+      "source_row": 30
+    },
+    {
+      "state": "Himachal Pradesh",
+      "district": "Chamba",
+      "name": "Chamba",
+      "source_row": 31
+    },
+    {
+      "state": "Jammu And Kashmir",
+      "district": "Kupwara",
+      "name": "Bumhama",
+      "source_row": 32
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Bokaro",
+      "name": "Bokaro",
+      "source_row": 33
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Dumka",
+      "name": "Dumka",
+      "source_row": 34
+    },
+    {
+      "state": "Jharkhand",
+      "district": "East Singhbhum",
+      "name": "Chakulia",
+      "source_row": 35
+    },
+    {
+      "state": "Jharkhand",
+      "district": "East Singhbhum",
+      "name": "Jamshedpur",
+      "source_row": 36
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Garhwa",
+      "name": "Garhwa",
+      "source_row": 37
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Giridih",
+      "name": "Giridih",
+      "source_row": 38
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Gumla",
+      "name": "Gumla",
+      "source_row": 39
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Hazaribagh",
+      "name": "Hazaribagh",
+      "source_row": 40
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Lohardaga",
+      "name": "Lohardaga",
+      "source_row": 41
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Pakur",
+      "name": "Pakur",
+      "source_row": 42
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Palamu",
+      "name": "Daltenganj",
+      "source_row": 43
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Ramgarh",
+      "name": "Ramgarh",
+      "source_row": 44
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Ranchi",
+      "name": "Pandra Ranchi",
+      "source_row": 45
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Sahebganj",
+      "name": "Sahebganj",
+      "source_row": 46
+    },
+    {
+      "state": "Jharkhand",
+      "district": "Simdega",
+      "name": "Simdega",
+      "source_row": 47
+    },
+    {
+      "state": "Jharkhand",
+      "district": "West Singhbhum",
+      "name": "Chaibasa",
+      "source_row": 48
+    },
+    {
+      "state": "Kerala",
+      "district": "Wayanad",
+      "name": "Rural Agricultural Wholesale Market, Sulthan Bathery",
+      "source_row": 49
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Barwani",
+      "name": "Barwani",
+      "source_row": 50
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Barwani",
+      "name": "Krishi Upaj Mandi Samiti-Anjad",
+      "source_row": 51
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Barwani",
+      "name": "Sendhwa",
+      "source_row": 52
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Chhatarpur",
+      "name": "Bada Malhera",
+      "source_row": 53
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Chhatarpur",
+      "name": "Chhatarpur",
+      "source_row": 54
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Chhatarpur",
+      "name": "Harpalpur",
+      "source_row": 55
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Chhatarpur",
+      "name": "Lavkushnagar",
+      "source_row": 56
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Chhatarpur",
+      "name": "Rajnagar",
+      "source_row": 57
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Damoh",
+      "name": "Damoh",
+      "source_row": 58
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Damoh",
+      "name": "Jabera",
+      "source_row": 59
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Damoh",
+      "name": "Patharia",
+      "source_row": 60
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Guna",
+      "name": "Aron",
+      "source_row": 61
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Guna",
+      "name": "Guna",
+      "source_row": 62
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Guna",
+      "name": "Krishi Upaj Mandi Samiti-Kumbhraj",
+      "source_row": 63
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Khandwa",
+      "name": "Harsud",
+      "source_row": 64
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Khandwa",
+      "name": "Khandwa",
+      "source_row": 65
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Rajgarh",
+      "name": "Biaora",
+      "source_row": 66
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Rajgarh",
+      "name": "Kurawar",
+      "source_row": 67
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Rajgarh",
+      "name": "Narsinghgarh",
+      "source_row": 68
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Rajgarh",
+      "name": "Pachore",
+      "source_row": 69
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Singrauli",
+      "name": "Krishi Upaj Mandi Samiti-Singrauli",
+      "source_row": 70
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Vidisha",
+      "name": "Ganj Basoda",
+      "source_row": 71
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Vidisha",
+      "name": "Sironj",
+      "source_row": 72
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Vidisha",
+      "name": "Vidisha",
+      "source_row": 73
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Gadchiroli",
+      "name": "Aheri",
+      "source_row": 74
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Gadchiroli",
+      "name": "Chamorshi",
+      "source_row": 75
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Nandurbar",
+      "name": "Nandurbar",
+      "source_row": 76
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Nandurbar",
+      "name": "Shahada",
+      "source_row": 77
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Osmanabad",
+      "name": "Kalamb",
+      "source_row": 78
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Osmanabad",
+      "name": "Murum",
+      "source_row": 79
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Washim",
+      "name": "Karanja",
+      "source_row": 80
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Washim",
+      "name": "Mangrulpeer",
+      "source_row": 81
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Washim",
+      "name": "Manora",
+      "source_row": 82
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Washim",
+      "name": "Risod",
+      "source_row": 83
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Washim",
+      "name": "Washim",
+      "source_row": 84
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Washim",
+      "name": "Malegaon Washim",
+      "source_row": 85
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Gadchiroli",
+      "name": "Armori Desaiganj",
+      "source_row": 86
+    },
+    {
+      "state": "Nagaland",
+      "district": "Kiphire",
+      "name": "Kiphire",
+      "source_row": 87
+    },
+    {
+      "state": "Odisha",
+      "district": "Balangir",
+      "name": "Balangir",
+      "source_row": 88
+    },
+    {
+      "state": "Odisha",
+      "district": "Balangir",
+      "name": "Kantabanji",
+      "source_row": 89
+    },
+    {
+      "state": "Odisha",
+      "district": "Balangir",
+      "name": "Patnagarh",
+      "source_row": 90
+    },
+    {
+      "state": "Odisha",
+      "district": "Dhenkanal",
+      "name": "Dhenkanal",
+      "source_row": 91
+    },
+    {
+      "state": "Odisha",
+      "district": "Dhenkanal",
+      "name": "Hindol",
+      "source_row": 92
+    },
+    {
+      "state": "Odisha",
+      "district": "Dhenkanal",
+      "name": "Kamakhyanagar",
+      "source_row": 93
+    },
+    {
+      "state": "Odisha",
+      "district": "Gajapati",
+      "name": "Paralakhemundi",
+      "source_row": 94
+    },
+    {
+      "state": "Odisha",
+      "district": "Kalahandi",
+      "name": "Bhawanipatna",
+      "source_row": 95
+    },
+    {
+      "state": "Odisha",
+      "district": "Kalahandi",
+      "name": "Junagarh",
+      "source_row": 96
+    },
+    {
+      "state": "Odisha",
+      "district": "Kalahandi",
+      "name": "Kesinga",
+      "source_row": 97
+    },
+    {
+      "state": "Odisha",
+      "district": "Kalahandi",
+      "name": "Mukhiguda",
+      "source_row": 98
+    },
+    {
+      "state": "Odisha",
+      "district": "Kandhamal",
+      "name": "Kandhamal",
+      "source_row": 99
+    },
+    {
+      "state": "Odisha",
+      "district": "Kandhamal",
+      "name": "Tikabali",
+      "source_row": 100
+    },
+    {
+      "state": "Odisha",
+      "district": "Koraput",
+      "name": "Jeypore",
+      "source_row": 101
+    },
+    {
+      "state": "Odisha",
+      "district": "Koraput",
+      "name": "Koraput",
+      "source_row": 102
+    },
+    {
+      "state": "Odisha",
+      "district": "Malkangiri",
+      "name": "Malkangiri",
+      "source_row": 103
+    },
+    {
+      "state": "Odisha",
+      "district": "Nabarangapur",
+      "name": "Nabarangapur",
+      "source_row": 104
+    },
+    {
+      "state": "Odisha",
+      "district": "Nuapada",
+      "name": "Khariar Road",
+      "source_row": 105
+    },
+    {
+      "state": "Odisha",
+      "district": "Rayagada",
+      "name": "Gunupur",
+      "source_row": 106
+    },
+    {
+      "state": "Odisha",
+      "district": "Rayagada",
+      "name": "Rayagada",
+      "source_row": 107
+    },
+    {
+      "state": "Punjab",
+      "district": "Ferozepur",
+      "name": "Ferozepur City Apmc",
+      "source_row": 108
+    },
+    {
+      "state": "Punjab",
+      "district": "Ferozepur",
+      "name": "Ferozepur Cantt",
+      "source_row": 109
+    },
+    {
+      "state": "Punjab",
+      "district": "Ferozepur",
+      "name": "Guruharsahai",
+      "source_row": 110
+    },
+    {
+      "state": "Punjab",
+      "district": "Ferozepur",
+      "name": "Makhu",
+      "source_row": 111
+    },
+    {
+      "state": "Punjab",
+      "district": "Ferozepur",
+      "name": "Talwandi Bhai",
+      "source_row": 112
+    },
+    {
+      "state": "Punjab",
+      "district": "Moga",
+      "name": "Moga Apmc",
+      "source_row": 113
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Baran",
+      "name": "Anta",
+      "source_row": 114
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Baran",
+      "name": "Atru",
+      "source_row": 115
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Baran",
+      "name": "Baran",
+      "source_row": 116
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Baran",
+      "name": "Chabra",
+      "source_row": 117
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Dholpur",
+      "name": "Dholpur",
+      "source_row": 118
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Jaisalmer",
+      "name": "Jaisalmer",
+      "source_row": 119
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Karauli",
+      "name": "Hindoun",
+      "source_row": 120
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Baran",
+      "name": "Nahargarh",
+      "source_row": 121
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Sirohi",
+      "name": "Aabu Road",
+      "source_row": 124
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Ramanathapuram",
+      "name": "Kamuthi",
+      "source_row": 125
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Ramanathapuram",
+      "name": "Mudhukalathur",
+      "source_row": 126
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Ramanathapuram",
+      "name": "Paramakudi",
+      "source_row": 127
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Ramanathapuram",
+      "name": "Rajasingamangalam",
+      "source_row": 128
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Ramanathapuram",
+      "name": "Ramanathapuram",
+      "source_row": 129
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Ramanathapuram",
+      "name": "Thiruvadanai",
+      "source_row": 130
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Virudhunagar",
+      "name": "Aruppukottai",
+      "source_row": 131
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Virudhunagar",
+      "name": "Rajapalayam",
+      "source_row": 132
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Virudhunagar",
+      "name": "Sattur",
+      "source_row": 133
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Virudhunagar",
+      "name": "Virudhunagar",
+      "source_row": 134
+    },
+    {
+      "state": "Tripura",
+      "district": "Dhalai",
+      "name": "Kulai",
+      "source_row": 135
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Bahraich",
+      "name": "Bahraich",
+      "source_row": 136
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Bahraich",
+      "name": "Nanpara",
+      "source_row": 137
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Balrampur",
+      "name": "Balrampur Apmc",
+      "source_row": 138
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Balrampur",
+      "name": "Tulsipur Apmc",
+      "source_row": 139
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Chandauli",
+      "name": "Chandauli",
+      "source_row": 140
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Chitrakoot",
+      "name": "Karwi Apmc",
+      "source_row": 141
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Fatehpur",
+      "name": "Bindki",
+      "source_row": 142
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Fatehpur",
+      "name": "Fatehpur Apmc",
+      "source_row": 143
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Siddharth Nagar",
+      "name": "Naugarh Apmc",
+      "source_row": 144
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Siddharth Nagar",
+      "name": "Sahiyapur",
+      "source_row": 145
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Sonbhadra",
+      "name": "Robertsganj",
+      "source_row": 146
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Haridwar",
+      "name": "Haridwar",
+      "source_row": 147
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Haridwar",
+      "name": "Roorkee",
+      "source_row": 148
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Bazpur",
+      "source_row": 149
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Gadarpur",
+      "source_row": 150
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Jaspur",
+      "source_row": 151
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Kashipur",
+      "source_row": 152
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Khatima",
+      "source_row": 153
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Kichha",
+      "source_row": 154
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Nanakmatta",
+      "source_row": 155
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Rudrapur",
+      "source_row": 156
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Udham Singh Nagar",
+      "name": "Sitarganj",
+      "source_row": 157
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Haridwar",
+      "name": "Bhagwanpur",
+      "source_row": 158
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Haridwar",
+      "name": "Manglour",
+      "source_row": 159
+    },
+    {
+      "state": "Uttarakhand",
+      "district": "Haridwar",
+      "name": "Laksar",
+      "source_row": 160
+    }
+  ]
+}
