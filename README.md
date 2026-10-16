@@ -49,3 +49,35 @@ The backend keeps observed data, modeled weather and future planning scenarios s
 
 The local data foundation includes 400 fictional farmer profiles across India's states and union territories, crop and disease reference material, named market references, expanded crop/market coverage, synthetic price history and separate future planning rows. It supports realistic interaction and testing; it does **not** turn illustrative prices or cases into reported mandi trades or confirmed diagnoses. The source catalog documents which public feeds are integrated, researched or still awaiting access.
 
+## Run locally
+
+Prerequisites: Python 3.12, Node.js, npm, Docker and PostgreSQL 16 through the project provisioner. The local provisioner creates an isolated v3 database and ignored runtime credentials. Provider keys are optional for exploring the UI but required for their corresponding AI, voice, image or messaging flows. Keep keys in ignored local environment files; never commit them.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r infra/requirements.txt
+cd frontend && npm ci && cd ..
+
+# Fresh local data installation only; choose a writable location for generated seed files.
+.venv/bin/python data_platform/v3/seed_demo.py --output /absolute/path/to/seed
+.venv/bin/python data_platform/v3/provision.py --seed-dir /absolute/path/to/seed
+
+# Start the retained database, API and frontend.
+.venv/bin/python data_platform/v3/local.py
+```
+
+Open **http://127.0.0.1:5173**. The unified API listens on **http://127.0.0.1:8001**. In an ignored `frontend/.env.local`, point `VITE_API_URL` and `VITE_ASSISTANT_API_URL` at that API when your local setup needs explicit origins. `data_platform/v3/local.py` reuses an existing installation and does not reseed it. For the provisioner's exact contracts and operational checks, see [local operation](data_platform/v3/OPERATIONS.md).
+
+Useful local checks:
+
+```bash
+.venv/bin/python data_platform/v3/check_local.py
+.venv/bin/python data_platform/v3/test_backend.py
+cd frontend
+npx tsc --noEmit -p tsconfig.app.json
+npx vitest run
+npm run build
+```
+
+The backend test wrapper expects a separately prepared test database for database-backed tests; [local operation](data_platform/v3/OPERATIONS.md) describes that preparation. Never point it at a populated farmer database.
+
