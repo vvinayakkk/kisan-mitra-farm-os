@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Kisan Mitra</title>
+  <desc id="desc">Farm intelligence that gets work done, by init.io for the AI Builder Cup</desc>
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10291f"/>
+      <stop offset="1" stop-color="#173a2d"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d6e9a5"/>
+      <stop offset="1" stop-color="#90be75"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1200" height="360" rx="28"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="360" fill="url(#field)"/>
+    <circle cx="1010" cy="82" r="212" fill="#ffffff" opacity=".025"/>
+    <circle cx="1010" cy="82" r="163" fill="none" stroke="#b6d49b" opacity=".12"/>
+    <circle cx="1010" cy="82" r="113" fill="none" stroke="#b6d49b" opacity=".14"/>
+    <path d="M642 365c86-145 229-198 410-170 75 12 128 38 194 75M689 368c87-117 216-155 359-133 80 12 144 43 199 86M756 371c68-78 162-107 278-91 78 11 140 41 203 80" fill="none" stroke="#a8cf8d" stroke-width="2" opacity=".19"/>
+    <path d="M658 388c96-159 241-223 434-190M712 390c78-125 213-177 381-149M774 391c74-94 186-132 312-117" fill="none" stroke="#e4edcb" stroke-width="1.5" opacity=".11"/>
+    <g transform="translate(765 54)">
+      <rect width="350" height="54" rx="15" fill="#f7f8ed" opacity=".09" stroke="#d4e4bd" stroke-opacity=".26"/>
+      <circle cx="26" cy="27" r="8" fill="#bddb9e"/>
+      <text x="49" y="33" fill="#e9f1db" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="600">ASK IN YOUR LANGUAGE</text>
+    </g>
+    <g transform="translate(799 125)">
+      <rect width="350" height="54" rx="15" fill="#f7f8ed" opacity=".09" stroke="#d4e4bd" stroke-opacity=".26"/>
+      <circle cx="26" cy="27" r="8" fill="#bddb9e"/>
+      <text x="49" y="33" fill="#e9f1db" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="600">SEE THE WORK UNFOLD</text>
+    </g>
+    <g transform="translate(833 196)">
+      <rect width="350" height="54" rx="15" fill="#f7f8ed" opacity=".09" stroke="#d4e4bd" stroke-opacity=".26"/>
+      <circle cx="26" cy="27" r="8" fill="#bddb9e"/>
+      <text x="49" y="33" fill="#e9f1db" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="600">APPROVE THE RESULT</text>
+    </g>
+    <g transform="translate(56 48)">
+      <rect width="43" height="43" rx="13" fill="url(#glow)"/>
+      <path d="M27 11C14 13 8 21 10 33c12 0 22-8 22-21-3 8-9 15-19 18" fill="none" stroke="#204734" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="56" y="9" fill="#b6d5a0" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="700" letter-spacing="3">INIT.IO  /  AI BUILDER CUP</text>
+    </g>
+    <text x="56" y="187" fill="#f7f8ef" font-family="Arial,Helvetica,sans-serif" font-size="75" font-weight="700" letter-spacing="-2">Kisan Mitra</text>
+    <text x="59" y="230" fill="#d1e2bf" font-family="Arial,Helvetica,sans-serif" font-size="24">Farm intelligence that gets work done.</text>
+    <path d="M58 271h535" stroke="#afc99c" stroke-opacity=".36"/>
+    <text x="59" y="310" fill="#aac4a2" font-family="Arial,Helvetica,sans-serif" font-size="17" letter-spacing="1.8">ONE FARM. ONE CONTEXT. EVERY CHANNEL.</text>
+  </g>
+</svg>
