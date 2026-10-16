@@ -1,0 +1,6 @@
+{
+  "name": "kisan-mitra-farm-os",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {"build": "cd frontend && npm ci && npm run build"}
+}
