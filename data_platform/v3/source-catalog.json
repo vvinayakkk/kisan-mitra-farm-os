@@ -1,0 +1,556 @@
+{
+  "researched_on": "2026-10-14",
+  "sources": [
+    {
+      "code": "ogd-mandi",
+      "name": "OGD / DMI AGMARKNET mandi prices",
+      "priority": "P0",
+      "access": "API key + verified historical exports",
+      "real_data": "Published market min/modal/max prices, variety, grade, arrivals when provided",
+      "format": "JSON API / CSV export",
+      "tables": [
+        "markets",
+        "market_series",
+        "price_observations",
+        "raw_objects"
+      ],
+      "refresh": "Daily; retain every source snapshot",
+      "limits": "Current daily resource does not guarantee a 365-day historical API. Preserve missing trading days. Validate original units; INR/quintal, INR/tonne and INR/100 nuts are different. Track source license and attribution.",
+      "official_links": [
+        "https://data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi",
+        "https://data.gov.in/Godl",
+        "https://agmarknet.gov.in/"
+      ],
+      "mock_policy": "365-day synthetic history permitted in demo DB. Future year only labeled scenarios; never actual mandi prices.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "enam",
+      "name": "eNAM trade dashboards",
+      "priority": "P1",
+      "access": "Permitted export or approved access; no documented stable public API verified",
+      "real_data": "APMC trade prices, arrivals and quantities where published",
+      "format": "Dashboard/export",
+      "tables": [
+        "markets",
+        "market_series",
+        "price_observations"
+      ],
+      "refresh": "Daily if approved; otherwise documented manual snapshots",
+      "limits": "Do not build dependencies on undocumented private endpoints or bypass access controls. Compare the same crop, grade, variety and unit.",
+      "official_links": [
+        "https://www.enam.gov.in/web/dashboard/trade-data",
+        "https://www.enam.gov.in/web/trading-details",
+        "https://www.enam.gov.in/web/commodity/commodity-quality"
+      ],
+      "mock_policy": "Fictional demo trades; not completed real transactions.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "msp",
+      "name": "Official MSP notifications",
+      "priority": "P0",
+      "access": "Reviewed public notifications",
+      "real_data": "Crop/grade MSP for announced marketing seasons",
+      "format": "PDF / HTML → reviewed rows",
+      "tables": [
+        "msp_announcements",
+        "documents"
+      ],
+      "refresh": "On new notification; periodic review",
+      "limits": "MSP is a policy reference, not every farmer’s guaranteed sale price. Future effective rates can be real when officially announced. Keep announcement/effective dates.",
+      "official_links": [
+        "https://desagri.gov.in/notification-type/msp-notifications/",
+        "https://dfpd.gov.in/msp-for-wheat-and-rice/en"
+      ],
+      "mock_policy": "Demo values must be synthetic policy fixtures, never presented as official MSP. Current seed leaves this empty.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "open-meteo",
+      "name": "Open-Meteo weather and reanalysis",
+      "priority": "P0",
+      "access": "Anonymous hosted API for qualifying free use; commercial plan or self-hosting as applicable",
+      "real_data": "Daily/hourly model weather, historical reanalysis, short-range forecasts and ET0",
+      "format": "JSON time arrays with explicit units",
+      "tables": [
+        "weather_series",
+        "weather_daily",
+        "weather_forecasts"
+      ],
+      "refresh": "Forecast every 6 hours per distinct grid; historical updates daily",
+      "limits": "Forecast API up to 16 days. Reanalysis is modeled history, not a farm sensor. Free hosted service is for noncommercial use under its limits; data license and hosted-service terms differ.",
+      "official_links": [
+        "https://open-meteo.com/en/docs",
+        "https://open-meteo.com/en/docs/historical-weather-api",
+        "https://open-meteo.com/"
+      ],
+      "mock_policy": "One future year may be seasonal/climate scenarios, not precise daily forecasts. Cache by grid, model and issuance.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "nasa-power",
+      "name": "NASA POWER",
+      "priority": "P0",
+      "access": "Public documented API",
+      "real_data": "Historical agroclimate, solar radiation, temperature, humidity, rainfall",
+      "format": "JSON/CSV temporal series",
+      "tables": [
+        "weather_series",
+        "weather_daily"
+      ],
+      "refresh": "Daily cached shared grid; bounded historical jobs",
+      "limits": "Coarse grid context, not local soil sensor. Keep UTC versus local solar time explicit. Batch parameters and reuse grid data.",
+      "official_links": [
+        "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+        "https://power.larc.nasa.gov/docs/tutorials/service-data-request/api/"
+      ],
+      "mock_policy": "Synthetic radiation/ET0 allowed demo only; derived irrigation advice states assumptions.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "imd",
+      "name": "IMD weather, warnings and agromet",
+      "priority": "P1",
+      "access": "Registered/approved API access where required",
+      "real_data": "City forecasts, station weather, district warnings, nowcasts and advisories",
+      "format": "Documented JSON endpoints / advisory documents",
+      "tables": [
+        "weather_series",
+        "weather_daily",
+        "weather_forecasts",
+        "documents",
+        "notifications"
+      ],
+      "refresh": "Endpoint-dependent; warnings prioritized",
+      "limits": "Sample probe returned 401. Do not promise anonymous access. Respect endpoint issuance, validity and authentication conditions.",
+      "official_links": [
+        "https://api.imd.gov.in/public/api_reference.html",
+        "https://api.imd.gov.in/public/index.php",
+        "https://imdgeospatial.imd.gov.in/agromet.html"
+      ],
+      "mock_policy": "Mock warnings exercise UI in demo; never issue simulated official alerts to real farmers.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "soilgrids",
+      "name": "ISRIC SoilGrids",
+      "priority": "P1",
+      "access": "Downloaded maps/cache; REST optional",
+      "real_data": "Modeled soil pH, organic carbon, texture and related properties at multiple depths",
+      "format": "COG/GeoTIFF/WebDAV; REST JSON",
+      "tables": [
+        "soil_indicators",
+        "raw_objects"
+      ],
+      "refresh": "Versioned map releases; cache per grid/depth",
+      "limits": "250 m predictions include uncertainty; not plot lab NPK. Official docs warn REST temporarily paused although this sample returned 200. License depends on release; retain version.",
+      "official_links": [
+        "https://docs.isric.org/globaldata/soilgrids/index.html",
+        "https://rest.isric.org/",
+        "https://files.isric.org/soilgrids/latest/docs/"
+      ],
+      "mock_policy": "Synthetic lab-looking numbers remain synthetic. Do not fabricate Soil Health Card or precision fertilizer requirements.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "lab-uploads",
+      "name": "Farmer-uploaded soil lab / Soil Health Card",
+      "priority": "P0",
+      "access": "Consent-based upload; no verified public personal-record bulk API",
+      "real_data": "Consented reports covering N/P/K, S, Zn/Fe/Cu/Mn/B, pH/EC/organic carbon; extraction method, original units and nutrient basis",
+      "format": "PDF/image → OCR + farmer/reviewer confirmation",
+      "tables": [
+        "soil_samples",
+        "soil_indicators",
+        "artifacts"
+      ],
+      "refresh": "When farmer submits new report",
+      "limits": "OCR can misread decimals/units. Preserve original evidence; never automatically call a grid prediction a laboratory result.",
+      "official_links": [
+        "https://soilhealth.dac.gov.in/",
+        "https://support.soilhealth.dac.gov.in/kb/faq.php?id=38%3Fid%3D38&lang=en-US"
+      ],
+      "mock_policy": "Demo synthetic samples have no lab name, report URI or verified result.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "copernicus",
+      "name": "Copernicus Sentinel-2 / STAC",
+      "priority": "P1",
+      "access": "Public catalog; asset/processing access and quotas may require account",
+      "real_data": "Scene metadata, surface-reflectance imagery, cloud masks; derived field indices",
+      "format": "STAC JSON + imagery assets",
+      "tables": [
+        "satellite_assets",
+        "plot_indices"
+      ],
+      "refresh": "Discover new scenes; process only selected fields",
+      "limits": "Catalog success does not prove processing entitlement. Cloud gaps stay missing. NDVI is not disease ground truth or guaranteed yield. Keep pixel coverage and cloud masking.",
+      "official_links": [
+        "https://documentation.dataspace.copernicus.eu/APIs/STAC.html",
+        "https://dataspace.copernicus.eu/analyse/apis/catalogue-apis"
+      ],
+      "mock_policy": "Mock index curves only with synthetic method; no invented real scene IDs. Seed does not fabricate satellite assets.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "lgd",
+      "name": "Local Government Directory",
+      "priority": "P0",
+      "access": "Official versioned directory downloads",
+      "real_data": "State/UT/district/block/village identity and hierarchy",
+      "format": "CSV/XLS or official export",
+      "tables": [
+        "regions",
+        "locations"
+      ],
+      "refresh": "Monthly and on reorganization",
+      "limits": "Use actual downloaded LGD codes and validity ranges. Demo IDs use a distinct DEMO code system.",
+      "official_links": [
+        "https://lgdirectory.gov.in/demo/downloadDirectory.do"
+      ],
+      "mock_policy": "Approximate public anchors and fictional plots are allowed; not real cadastre or official village identifiers.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "osm",
+      "name": "OpenStreetMap maps and place context",
+      "priority": "P1",
+      "access": "Licensed extracts/self-hosting for bulk; public service policies apply",
+      "real_data": "Public roads, places and map features",
+      "format": "OSM/PBF/tiles/GeoJSON",
+      "tables": [
+        "locations",
+        "markets"
+      ],
+      "refresh": "Versioned extracts; avoid repeated geocoding",
+      "limits": "Nominatim public API max 1 request/sec, attribution, identifying client and caching; no bulk systematic harvesting or private farmer data submission. Public tiles are best effort, not production/offline infrastructure.",
+      "official_links": [
+        "https://operations.osmfoundation.org/policies/nominatim/",
+        "https://operations.osmfoundation.org/policies/tiles/"
+      ],
+      "mock_policy": "Fictional locations separate from actual geocoded real farms.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "icar",
+      "name": "ICAR / KVK agricultural guidance",
+      "priority": "P0",
+      "access": "Reviewed public documents with rights/attribution retained",
+      "real_data": "Crop, region, season and growth-stage advisories",
+      "format": "PDF/HTML; section-level citations",
+      "tables": [
+        "documents",
+        "document_chunks",
+        "crop_guides",
+        "diseases"
+      ],
+      "refresh": "On publication; seasonal review",
+      "limits": "Review regional fit, language and chemical advice. Store publication/review dates. Do not invent universal sowing dates or harvest yields.",
+      "official_links": [
+        "https://icar.gov.in/en/icar-kharif-agro-advisories-farmers-2025",
+        "https://www.icar.gov.in/en/weather-based-crop-advisory",
+        "https://www.icar.gov.in/en/all-publications"
+      ],
+      "mock_policy": "Demo calendar templates allowed but must be localized and labeled examples.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "schemes",
+      "name": "myScheme + originating departments",
+      "priority": "P0",
+      "access": "Curated imports / approved integration; no public API verified",
+      "real_data": "Benefits, eligibility questions, application steps and official links",
+      "format": "HTML/PDF → versioned reviewed rules",
+      "tables": [
+        "documents",
+        "scheme_versions",
+        "scheme_checks"
+      ],
+      "refresh": "Monthly and whenever rules change",
+      "limits": "Recommend potential matches with missing questions; only an official decision proves acceptance. Keep state, season and effective dates.",
+      "official_links": [
+        "https://www.myscheme.gov.in/faqs"
+      ],
+      "mock_policy": "Mock application workflow only; never mock successful government approval or disbursement.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "pmfby",
+      "name": "PMFBY notifications / insurance guidance",
+      "priority": "P1",
+      "access": "Public current guidelines; personal claim access requires permission",
+      "real_data": "Scheme guidance, notified crop/area/season requirements",
+      "format": "PDF/HTML",
+      "tables": [
+        "documents",
+        "scheme_versions",
+        "scheme_checks"
+      ],
+      "refresh": "Seasonal notification updates",
+      "limits": "Personal claim/payment status is not public data. Crop loss cases need actual evidence and official processes.",
+      "official_links": [
+        "https://www.pmfby.gov.in/faq",
+        "https://pmfby.gov.in/compendium-files"
+      ],
+      "mock_policy": "Fictional claims stay demonstration examples; no real claim submission or payouts.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "des-statistics",
+      "name": "DES / OGD crop area-production-yield",
+      "priority": "P1",
+      "access": "Published aggregate downloads",
+      "real_data": "District/state crop area, production, yield by year/season",
+      "format": "CSV/XLS/PDF",
+      "tables": [
+        "regional_statistics",
+        "documents"
+      ],
+      "refresh": "On annual/seasonal release",
+      "limits": "Keep estimate versus final status. District averages are not an individual field’s measured yield.",
+      "official_links": [
+        "https://desagri.gov.in/divisions-cell/agricultural-statistics-division/",
+        "https://www.data.gov.in/catalog/district-wise-season-wise-crop-production-statistics-0"
+      ],
+      "mock_policy": "Mock aggregate baselines for demos; not survey evidence or forecast model evaluation.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "ppqs",
+      "name": "PPQS / CIBRC current labels and notices",
+      "priority": "P1",
+      "access": "Reviewed current official releases",
+      "real_data": "Registered crop/pest uses and restrictions",
+      "format": "Official PDF/HTML",
+      "tables": [
+        "documents",
+        "document_chunks",
+        "diseases"
+      ],
+      "refresh": "On every relevant revision; review before recommendation",
+      "limits": "An old 2024 document is not proof of current permitted use. Obtain latest labels/notices. Human review before pesticide dosage guidance.",
+      "official_links": [
+        "https://ppqs.gov.in/"
+      ],
+      "mock_policy": "Never fabricate legal registrations, doses or bans; leave uncertain recommendations unresolved.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "plant-datasets",
+      "name": "PlantVillage / PlantDoc evaluation images",
+      "priority": "P2",
+      "access": "Dataset repository; verify release rights and image provenance",
+      "real_data": "Labeled benchmark crop images for evaluation research",
+      "format": "Images + annotations",
+      "tables": [
+        "diseases",
+        "disease_cases",
+        "model_versions"
+      ],
+      "refresh": "Versioned dataset releases",
+      "limits": "Controlled images are not real field performance. Group by leaf/source/farm to avoid train/test leakage. Verify license, avoid invented labels and diagnose with uncertainty.",
+      "official_links": [
+        "https://github.com/spMohanty/PlantVillage-Dataset",
+        "https://github.com/pratikkayal/PlantDoc-Dataset",
+        "https://arxiv.org/abs/1911.10317"
+      ],
+      "mock_policy": "Synthetic pictures cannot replace disease ground truth or validate diagnosis accuracy.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "fao-et0",
+      "name": "FAO irrigation / ET0 methodology",
+      "priority": "P1",
+      "access": "Public method references",
+      "real_data": "Derived ET0 and crop-water planning methodology",
+      "format": "Reviewed formula/method version + source inputs",
+      "tables": [
+        "crop_guides",
+        "farm_operations",
+        "documents"
+      ],
+      "refresh": "Recompute on validated weather/crop inputs",
+      "limits": "Output depends on units, crop coefficients and site assumptions. A recommendation does not prove a pump ran.",
+      "official_links": [
+        "https://www.fao.org/4/X0490E/X0490E00.htm"
+      ],
+      "mock_policy": "Mock recommendations in demo; never execute hardware without real integration and acknowledgment.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "consented-profiles",
+      "name": "Farmer onboarding / authorized AgriStack",
+      "priority": "P0",
+      "access": "Direct consent; AgriStack only with authorized access",
+      "real_data": "Farmer’s own profile, fields, contacts, crop plans and records",
+      "format": "Validated app forms / authorized interface",
+      "tables": [
+        "farmers",
+        "consents",
+        "farms",
+        "plots",
+        "crop_cycles"
+      ],
+      "refresh": "At onboarding and confirmed changes",
+      "limits": "No public 400-person profile feed assumed. Do not harvest contact details or government identities. Deletion, revocation and access control required.",
+      "official_links": [
+        "https://agristack.gov.in/"
+      ],
+      "mock_policy": "Generate 400 fictional profiles spanning India; use reserved example.invalid emails and null phones.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "hardware",
+      "name": "Real hardware protocol / mock adapter",
+      "priority": "P0",
+      "access": "Authenticated device registration; same validated envelope for mock",
+      "real_data": "Timestamped calibrated telemetry and actual action acknowledgments",
+      "format": "MQTT or HTTPS JSON, device/boot/sequence IDs",
+      "tables": [
+        "stations",
+        "station_sensors",
+        "packet_receipts",
+        "sensor_packets",
+        "sensor_daily"
+      ],
+      "refresh": "Based on actual firmware interval; mock fixture hourly",
+      "limits": "Separate observed time/received time, units, quality, drift and connectivity. Authenticate device; derive farmer ownership server-side; duplicate boot+sequence rejected. Current CSV seed is not a running MQTT connector.",
+      "official_links": [
+        "https://www.postgresql.org/docs/16/ddl-partitioning.html",
+        "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html"
+      ],
+      "mock_policy": "Mock readings, outages, low battery, drought and rain safely in demo; no real actuator commands or delivery.",
+      "implementation_status": "researched; connector not implemented"
+    },
+    {
+      "code": "bhashini",
+      "name": "BHASHINI language / voice services",
+      "priority": "P1",
+      "access": "Organization registration, authorization and pipeline access",
+      "real_data": "ASR, translation and TTS through authorized pipelines",
+      "format": "Pipeline search/config/compute JSON; audio",
+      "tables": [
+        "attachments",
+        "messages",
+        "tool_versions"
+      ],
+      "refresh": "Resolve approved language/model pipeline; cache nonprivate terminology",
+      "limits": "Published API docs describe PoC use; production/charging users requires contacting BHASHINI for paid access. Do not promise free commercial voice. Preserve original utterance and ask confirmation for uncertain crop names/numbers.",
+      "official_links": [
+        "https://bhashini.gov.in/",
+        "https://dibd-bhashini.gitbook.io/bhashini-apis"
+      ],
+      "mock_policy": "Mock transcript/translation fixtures explicitly; no claim of speech accuracy from mocked text.",
+      "implementation_status": "researched in final review; connector not implemented"
+    },
+    {
+      "code": "kvk-directory",
+      "name": "ICAR KVK / expert referral directory",
+      "priority": "P0",
+      "access": "Reviewed official directory, dated per record",
+      "real_data": "Regional agricultural extension institutions and official contact/location details",
+      "format": "HTML/PDF → curated records/chunks",
+      "tables": [
+        "documents",
+        "document_chunks",
+        "crop_guides"
+      ],
+      "refresh": "Quarterly review and before showing contact",
+      "limits": "Referral does not prove an appointment or consultation. Verify contacts; do not harvest private expert numbers. Current platform has no expert-booking integration.",
+      "official_links": [
+        "https://www.icar.gov.in/en/krishi-vigyan-kendras",
+        "https://www.icar.gov.in/en/node/15049"
+      ],
+      "mock_policy": "Use Demo expert referral only; never invent actual expert availability or contact.",
+      "implementation_status": "researched in final review; connector not implemented"
+    },
+    {
+      "code": "npss",
+      "name": "National Pest Surveillance System",
+      "priority": "P1",
+      "access": "Official farmer portal/app or approved integration; public API not verified",
+      "real_data": "Official pest/disease identification and surveillance guidance",
+      "format": "Portal/app, reviewed source documents",
+      "tables": [
+        "documents",
+        "diseases",
+        "disease_cases"
+      ],
+      "refresh": "On approved published update or farmer referral",
+      "limits": "Useful crop-doctor referral, not an assumed free diagnosis API or downloadable ground-truth photo database. Keep uploaded photos consented and escalation explicit.",
+      "official_links": [
+        "https://npss.dac.gov.in/",
+        "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2289031&lang=2&reg=48"
+      ],
+      "mock_policy": "Mock symptom/question flow without inventing a diagnosis, expert review or chemical treatment approval.",
+      "implementation_status": "researched in final review; connector not implemented"
+    },
+    {
+      "code": "disaster-cap",
+      "name": "NDMA SACHET / official disaster alerts",
+      "priority": "P1",
+      "access": "Official portal RSS subscription; verify current endpoint, terms and attribution",
+      "real_data": "Geo-targeted authorized warnings, severity, affected area, expiry and actions; sources include IMD/CWC",
+      "format": "CAP/RSS or permitted official feed",
+      "tables": [
+        "alert_events",
+        "notifications",
+        "raw_objects"
+      ],
+      "refresh": "Poll within published feed policy; preserve expiry/update/cancel references",
+      "limits": "Official portal advertises RSS; feed parser/endpoints were not integration-tested. No private API scraping. Match affected area and validity, handle duplicate updates/cancellations. Missing alerts do not prove safety.",
+      "official_links": [
+        "https://sachet.ndma.gov.in/About",
+        "https://sachet.ndma.gov.in/WebsitePolicy",
+        "https://cwc.gov.in/sites/default/files/ffwnappraisal-report-2023.pdf"
+      ],
+      "mock_policy": "Demo alerts stay labeled and cannot trigger real external delivery. Do not fabricate official disaster warnings.",
+      "implementation_status": "researched in final review; connector not implemented"
+    },
+    {
+      "code": "nabard-models",
+      "name": "NABARD model project economics",
+      "priority": "P1",
+      "access": "Reviewed public model project documents",
+      "real_data": "Indicative cost categories/project budgeting structures",
+      "format": "PDF → cited regional templates",
+      "tables": [
+        "documents",
+        "document_chunks",
+        "crop_guides"
+      ],
+      "refresh": "Version/date review; update actual input costs from farmer/local quotes",
+      "limits": "Model bankable projects are templates, not current input prices, farmer income guarantees or loan approvals. Show assumptions, location, publication year and sensitivity. No automated financial commitment.",
+      "official_links": [
+        "https://www.nabard.org/info-centre-model-bankable-projects.aspx",
+        "https://www.nabard.org/auth/writereaddata/ModelBankProject/1205174211Revised_Moringa_Model_Bankable_Scheme.pdf"
+      ],
+      "mock_policy": "Mock quantities and costs for demo budgets; clearly distinguish estimates from recorded expenses and proceeds.",
+      "implementation_status": "researched in final review; connector not implemented"
+    },
+    {
+      "code": "ai4bharat-models",
+      "name": "AI4Bharat self-hosted language models",
+      "priority": "P2",
+      "access": "Download/self-host release with verified model and dataset licenses",
+      "real_data": "Language model and evaluation resources, not real farm records",
+      "format": "Model weights/code; translated text",
+      "tables": [
+        "model_versions",
+        "tool_versions",
+        "messages"
+      ],
+      "refresh": "Pin release and evaluate before update",
+      "limits": "IndicTrans2 supports scheduled Indian languages. Code licensing is not a blanket license for every weight/dataset. Hosting and inference require compute; rural dialect, crop-name and numeric accuracy need evaluation.",
+      "official_links": [
+        "https://github.com/AI4Bharat/IndicTrans2"
+      ],
+      "mock_policy": "Mock language fixtures exercise rendering, not speech or translation accuracy.",
+      "implementation_status": "researched; optional self-hosted path, not installed"
+    }
+  ],
+  "status": "Primary-source research and access probes; adapters are planned, not deployed",
+  "review_status": "Reviewed 26-category baseline; production access and acceptance gates explicit"
+}
