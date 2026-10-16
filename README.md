@@ -45,3 +45,7 @@ PostgreSQL v3: farmer-scoped records, conversations, tasks,
 Bounded background workers and optional external data/services
 ```
 
+The backend keeps observed data, modeled weather and future planning scenarios separate. Market charts require dated series and preserve the source, market, variety and unit. Assistant tool calls use validated arguments; private farmer records are owner-scoped. Background jobs use leases, retries and freshness metadata. Files live in private local artifact storage, with metadata and ownership in the database.
+
+The local data foundation includes 400 fictional farmer profiles across India's states and union territories, crop and disease reference material, named market references, expanded crop/market coverage, synthetic price history and separate future planning rows. It supports realistic interaction and testing; it does **not** turn illustrative prices or cases into reported mandi trades or confirmed diagnoses. The source catalog documents which public feeds are integrated, researched or still awaiting access.
+
