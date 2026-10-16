@@ -1,0 +1,95 @@
+.saathi-avatar{display:inline-flex;position:relative;align-items:center;justify-content:center;width:58px;height:58px;border-radius:45% 48% 43% 48%;background:radial-gradient(circle at 30% 20%,#eef5d9,#bad095);box-shadow:inset 0 -5px 9px #90ad6533;flex-shrink:0}.saathi-avatar>svg{position:absolute;width:25px;height:25px;top:-8px;left:20px;transform:rotate(16deg);color:#4a713a}.saathi-eyes{display:flex;gap:9px;margin-top:5px}.saathi-eyes i{width:5px;height:8px;border-radius:50%;background:#345038}.saathi-avatar.small{width:25px;height:25px}.saathi-avatar.small>svg{width:14px;height:14px;top:-6px;left:8px}.saathi-avatar.small .saathi-eyes{gap:4px;margin-top:3px}.saathi-avatar.small .saathi-eyes i{width:3px;height:4px}.saathi-trigger{display:flex!important;gap:7px!important;align-items:center;border:1px solid #d4e0c7!important;border-radius:20px!important;padding:6px 11px!important;font-size:12px!important;color:#3d5835!important;background:#eef4e5!important;flex-shrink:0}.saathi-panel{position:fixed;z-index:51;right:20px;top:146px;bottom:20px;width:310px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:25px 20px;background:#f0f4eaf5;backdrop-filter:blur(20px);border:1px solid #d3dec8;border-radius:24px;box-shadow:0 16px 52px #2d462013;color:#34503b;font-family:inherit}.saathi-panel button,.saathi-panel a{cursor:pointer}.saathi-close{position:absolute;right:14px;top:12px;color:#607453;padding:4px}.saathi-identity{display:flex;align-items:center;gap:14px;margin:10px 0 18px}.saathi-identity h2{font-size:20px;letter-spacing:-.4px;font-weight:600;margin:0 0 4px}.saathi-identity p{font-size:11px;color:#728364;display:flex;align-items:center;gap:5px;margin:0}.saathi-status{height:5px;width:5px;border-radius:50%;background:#b3bea6}.saathi-status.active{background:#638a46;box-shadow:0 0 0 3px #dce9d0}.saathi-intro{font-size:13px;line-height:1.6;color:#607452;margin:0 0 16px}.saathi-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.saathi-actions button{border:1px solid #d3dec8;background:#e6eddc;display:flex;justify-content:center;align-items:center;gap:7px;border-radius:12px;padding:10px;font-size:12px}.saathi-panel section{margin-top:24px}.saathi-panel h3{font-size:12px;font-weight:600;color:#5f7452;margin:0 0 12px}.saathi-section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.saathi-section-title button{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#557c3f}.saathi-muted{font-size:12px;color:#829174;line-height:1.6;margin:0}.saathi-channel{display:flex;gap:8px;align-items:center;padding:9px 0;font-size:12px}.saathi-channel small{margin-left:auto;color:#829174;font-size:10px}.saathi-activity article{border-left:2px solid #d3dfc7;padding:0 0 16px 11px;margin:0 0 8px}.saathi-activity small{display:block;font-size:10px;color:#8a987e}.saathi-activity strong{display:block;font-size:12px;margin:5px 0}.saathi-activity p{font-size:12px;line-height:1.6;color:#6b7e5d;margin:0}.saathi-activity a{display:inline-flex;align-items:center;gap:3px;font-size:11px;margin-top:6px}.saathi-output{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 0;font-size:12px}.saathi-output span{flex:1;min-width:0;overflow-wrap:anywhere}.saathi-output small{display:block;font-size:9px;color:#829174;margin-top:3px}.saathi-settings{display:grid;gap:11px;padding:16px 0;border-bottom:1px solid #d5dfcc}.saathi-settings label{font-size:11px;display:grid;gap:5px}.saathi-settings input,.saathi-settings select{min-width:0;max-width:100%;border:1px solid #ccd9c0;border-radius:8px;background:#f9fbf5;color:#35503a;padding:7px;font-size:12px}.saathi-quiet{display:flex;align-items:center;gap:5px;font-size:10px}.saathi-quiet select{padding:6px 2px}.saathi-settings>small{font-size:10px;color:#829174}.saathi-save{display:flex;justify-content:center;align-items:center;gap:6px;padding:9px;background:#49643a;color:white;border-radius:10px;font-size:12px}.saathi-error{color:#9a4e34;font-size:12px;line-height:1.5;margin-top:12px}.saathi-panel button:focus-visible,.saathi-panel a:focus-visible{outline:2px solid #8dab6e;outline-offset:3px}.saathi-panel button:disabled{opacity:.5;cursor:wait}@media(max-width:1100px){.saathi-panel{top:134px;right:12px;width:min(310px,calc(100vw - 24px));bottom:12px;box-shadow:0 16px 60px #2d462029}}@media(max-width:600px){.saathi-trigger>span:last-child{display:none}.saathi-trigger{padding:6px!important}.saathi-panel{top:130px}}@media(prefers-reduced-motion:reduce){.saathi-panel{backdrop-filter:none}}
+
+.saathi-channel-action{font-size:11px;color:#456a34;padding:7px 0;margin-bottom:6px}.saathi-link{border:1px solid #d3dec8;border-radius:12px;padding:12px;margin:8px 0;font-size:12px;line-height:1.6}.saathi-link code{display:block;letter-spacing:1px;margin:8px 0;color:#314d2b}.saathi-link a{display:flex;gap:4px;align-items:center;color:#456a34}
+
+/* A light header signature, with a compact companion card. */
+.mitra-page-header { position: relative; }
+.mitra-page-header > .workspace-companion-anchor {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  justify-content: center;
+}
+.saathi-trigger {
+  border: 0 !important;
+  border-radius: 8px !important;
+  padding: 10px 8px !important;
+  gap: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 15px !important;
+  font-weight: 600;
+  letter-spacing: -.25px;
+  min-height: 44px;
+  transition: color 150ms ease;
+}
+.saathi-trigger:hover { color: #648d42 !important; }
+.saathi-trigger:focus-visible { outline: 2px solid #8dab6e; outline-offset: 3px; }
+.saathi-trigger .saathi-avatar.small { width: 30px; height: 30px; }
+.saathi-trigger .saathi-avatar.small > svg { left: 10px; }
+.saathi-panel {
+  top: 112px;
+  bottom: auto;
+  right: 24px;
+  width: 320px;
+  max-height: min(490px, calc(100dvh - 132px));
+  padding: 20px;
+  border-radius: 20px;
+}
+.saathi-identity { margin: 4px 0 16px; gap: 12px; }
+.saathi-identity .saathi-avatar { width: 48px; height: 48px; }
+.saathi-identity .saathi-avatar > svg { left: 15px; }
+.saathi-identity h2 { font-size: 18px; }
+.saathi-actions button { padding: 9px; border-radius: 10px; }
+.saathi-panel section { margin-top: 16px; }
+.saathi-panel h3 { margin-bottom: 7px; }
+.saathi-panel .saathi-muted { font-size: 11px; line-height: 1.5; }
+.saathi-channel { padding: 6px 0; }
+.saathi-activity { max-height: 94px; overflow-y: auto; scrollbar-width: thin; }
+.saathi-activity article { padding-bottom: 8px; }
+.saathi-outputs { max-height: 88px; overflow-y: auto; scrollbar-width: thin; }
+.saathi-output { padding: 7px 0; }
+.saathi-output span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media(max-width:600px) {
+  .mitra-page-header > div:first-child > strong { display: none; }
+  .mitra-page-header > .workspace-companion-anchor { left: 39%; }
+  .saathi-trigger > span:last-child { display: inline; }
+  .saathi-trigger { font-size: 13px !important; gap: 7px !important; }
+  .saathi-panel { right: 12px; top: 112px; width: min(320px, calc(100vw - 24px)); max-height: min(490px, calc(100dvh - 132px)); }
+}
+@media(prefers-reduced-motion:reduce) { .saathi-trigger { transition: none; } }
+@media(max-width:360px) {
+  .mitra-page-header > .workspace-companion-anchor { left: 29%; }
+}
+
+/* Portalled to the document so every workspace view shares the same overlay. */
+.saathi-panel { z-index: 80; }
+
+/* Companion previews deliberately have their own styles, separate from page plans. */
+.saathi-review-list h3{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.saathi-review-item{padding:10px 0;border-bottom:1px solid #dce5d2;min-width:0}
+.saathi-review-item:last-child{border-bottom:0;padding-bottom:0}
+.saathi-review-toggle{display:flex;align-items:center;gap:10px;width:100%;text-align:left;color:#34503b;background:transparent;border:0;padding:0}
+.saathi-review-toggle>span{flex:1;min-width:0}
+.saathi-review-toggle small{display:block;font-size:10px;color:#7a8c6e;margin-bottom:3px}
+.saathi-review-toggle strong{display:block;font-size:12px;line-height:1.45;font-weight:500;overflow-wrap:anywhere}
+.saathi-review-toggle>svg{flex-shrink:0;color:#6c855b;transition:transform 160ms ease}
+.saathi-review-preview{font-size:12px;line-height:1.65;padding-top:10px;color:#5c7054;overflow-wrap:anywhere}
+.saathi-review-preview>p{margin:0 0 10px}
+.saathi-review-preview ol{list-style:decimal;margin:0 0 12px;padding-left:19px}
+.saathi-review-preview li{padding:3px 0}
+.saathi-review-preview details{border-top:1px solid #e1e8da;padding-top:9px;margin:10px 0}
+.saathi-review-preview summary{cursor:pointer;font-size:11px;color:#526d43}
+.saathi-review-preview details p{margin:8px 0;font-size:11px}
+.saathi-review-preview details p>span{display:block}
+.saathi-review-area,.saathi-review-actions a{display:inline-flex;align-items:center;gap:5px;color:#466736;font-size:11px;text-decoration:none}
+.saathi-review-area:hover,.saathi-review-actions a:hover{text-decoration:underline}
+.saathi-review-actions{display:flex;align-items:flex-start;flex-direction:column;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid #e1e8da}
+.saathi-review-actions>small{font-size:10px;line-height:1.5;color:#7a8c6e}
+.saathi-review-actions>button{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:8px;border:0;background:#405f32;color:#fff;font-size:11px;min-height:32px;width:auto}
+.saathi-review-actions>button:hover:not(:disabled){background:#324c27}
+.saathi-review-actions>span{display:flex;align-items:center;gap:5px;font-size:11px;color:#486a36}
+.saathi-review-item.is-saved .saathi-review-toggle{color:#486a36}
+.saathi-review-item.is-saved .saathi-review-actions{flex-direction:row;justify-content:space-between;flex-wrap:wrap}
+.saathi-review-error{font-size:11px;line-height:1.5;color:#9a4e34;margin:8px 0 0}
+@media(prefers-reduced-motion:reduce){.saathi-review-toggle>svg{transition:none}}

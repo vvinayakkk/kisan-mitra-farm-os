@@ -1,0 +1,240 @@
+.exchange-mitra {
+  max-width: 900px;
+  margin: 0 auto 30px;
+  padding: 24px 0 12px;
+  color: #304b36;
+}
+.exchange-mitra header {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+}
+.exchange-mitra-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #bfd0aa;
+  border-radius: 15px;
+  color: #6a874b;
+  background: #e7efdb;
+  flex-shrink: 0;
+}
+.exchange-mitra header small {
+  font-size: 9px;
+  letter-spacing: 1.7px;
+  color: #728760;
+}
+.exchange-mitra h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 6px 0 0;
+  letter-spacing: -0.65px;
+}
+.exchange-mitra-intro {
+  font-size: 12px;
+  color: #6e8165;
+  margin: 15px 0 20px;
+  line-height: 1.7;
+}
+.exchange-mitra form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  border: 1px solid #afc299;
+  border-radius: 20px;
+  padding: 12px 13px;
+  background: linear-gradient(130deg, #f8fbf2, #f0f5e6);
+  box-shadow: 0 12px 40px #304b3606;
+}
+.exchange-mitra .workspace-voice-field {
+  flex: 1;
+  min-width: 0;
+}
+.exchange-mitra textarea {
+  background: transparent;
+  border: 0;
+  outline: none;
+  resize: vertical;
+  min-height: 57px;
+  max-height: 150px;
+  padding: 4px 38px 4px 5px;
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #304b36;
+}
+.exchange-mitra textarea::placeholder {
+  color: #839374;
+}
+.exchange-mitra form > button {
+  border-radius: 50%;
+  background: #36543d;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+  margin-bottom: 3px;
+}
+.exchange-mitra form > button:hover {
+  background: #4a6946;
+}
+.exchange-mitra footer {
+  font-size: 9px;
+  color: #7e8f72;
+  padding: 10px 4px;
+  line-height: 1.5;
+}
+.exchange-mitra-status {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 11px;
+  color: #647c51;
+}
+.exchange-mitra-spinner {
+  animation: exchange-mitra-spin 1s linear infinite;
+}
+.exchange-mitra-error {
+  color: #965540;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.exchange-mitra-answer {
+  border-left: 2px solid #b1c895;
+  margin-top: 17px;
+  padding: 0 0 0 17px;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.exchange-mitra-answer > p {
+  margin: 0 0 12px;
+}
+.exchange-mitra-draft {
+  padding: 13px 0;
+  border-top: 1px solid #d4dfc8;
+}
+.exchange-mitra-draft > small {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #70845e;
+}
+.exchange-mitra-draft dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.exchange-mitra-draft dt {
+  font-size: 9px;
+  text-transform: capitalize;
+  color: #7a8f67;
+}
+.exchange-mitra-draft dd {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+.exchange-mitra-draft button {
+  background: #e4edd6;
+}
+.exchange-mitra.compact {
+  padding: 13px 0;
+  margin: 0;
+}
+.exchange-mitra.compact h2 {
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+.exchange-mitra.compact header {
+  margin-bottom: 10px;
+  gap: 9px;
+}
+.exchange-mitra.compact .exchange-mitra-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+.exchange-mitra.compact header small {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+}
+.exchange-mitra.compact form {
+  border-radius: 13px;
+  padding: 7px;
+}
+.exchange-mitra.compact textarea {
+  font-size: 11px;
+  min-height: 50px;
+}
+.exchange-mitra.compact .exchange-mitra-answer {
+  font-size: 11px;
+  padding-left: 10px;
+}
+.exchange-mitra.compact footer {
+  font-size: 8px;
+}
+.exchange-mitra.compact .exchange-mitra-draft dl {
+  grid-template-columns: 1fr;
+}
+.exchange-mitra .workspace-field-mic {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.exchange-mitra .workspace-field-mic svg {
+  width: 18px;
+  height: 18px;
+}
+@keyframes exchange-mitra-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 600px) {
+  .exchange-mitra {
+    padding: 16px 0;
+    margin-bottom: 20px;
+  }
+  .exchange-mitra h2 {
+    font-size: 23px;
+  }
+  .exchange-mitra-intro {
+    font-size: 11px;
+    margin: 12px 0;
+  }
+  .exchange-mitra-draft dl {
+    grid-template-columns: 1fr;
+  }
+  .exchange-mitra textarea {
+    font-size: 12px;
+  }
+  .exchange-mitra header small {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exchange-mitra-spinner {
+    animation: none;
+  }
+}
+
+.exchange-mitra header > div {
+  flex: 1;
+  min-width: 0;
+}
+.exchange-mitra .exchange-mitra-close {
+  align-self: flex-start;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  flex-shrink: 0;
+}

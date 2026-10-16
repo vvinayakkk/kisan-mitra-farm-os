@@ -1,0 +1,13 @@
+/* A quiet, shared explanation of the data lane and freshness. */
+.farm-data-status { position:relative; align-self:flex-start; color:#46633d; font-size:11px; margin:0 32px 12px; z-index:260; flex-shrink:0; isolation:isolate; overflow:visible; }
+.farm-data-status summary { display:flex; align-items:center; gap:6px; cursor:pointer; list-style:none; }
+.farm-data-status summary::-webkit-details-marker { display:none; }
+.data-status-dot { width:6px; height:6px; border-radius:50%; background:#64884c; }
+.data-status-offline { background:#b88b40; }
+.data-status-detail { position:absolute; top:24px; left:0; width:min(340px,calc(100vw - 80px)); padding:17px; background:#f5f8ed; border:1px solid #b3c69f; border-radius:16px; box-shadow:0 14px 36px #3850221a; font-size:12px; line-height:1.6; max-height:min(440px,60vh); overflow:auto; }
+.data-status-detail p { margin:8px 0; }
+.data-status-detail ul { list-style:none; padding:0; margin:10px 0 0; }
+.data-status-detail li { display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-top:1px solid #b3c69f50; }
+.data-status-detail small { color:#63715d; }
+.data-provenance { display:inline-flex; font-size:10px; letter-spacing:.02em; border:1px solid #a6ba92; border-radius:20px; padding:3px 8px; color:#46633d; vertical-align:middle; }
+.data-provenance.data-stale { color:#89652b; border-color:#c8ae75; }
