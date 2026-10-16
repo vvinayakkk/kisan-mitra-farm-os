@@ -25,7 +25,9 @@ This inventory identifies common configuration entry points from literal `os.get
 | `ENABLE_FPGA` | `skyview/utils/config.py` | `False` |
 | `ENABLE_LLM_WORKFLOW` | `skyview/utils/config.py` | `True` |
 | `ENABLE_MQTT` | `skyview/utils/config.py` | `True` |
-| `FPGA_PORT` | `skyview/utils/config.py` | `COM4` |
+| `FPGA_MMIO_PATH` | `skyview/utils/config.py` | `` |
+| `FPGA_FUSION_BASE` | `skyview/utils/config.py` | `` |
+| `FPGA_TIMEOUT_MS` | `skyview/utils/config.py` | `100` |
 | `FRONTEND_URL` | `skyview/utils/config.py` | `http://localhost:5173` |
 | `GEMINI_API_KEY` | `skyview/agents/disease_service.py` | `` |
 | `GEMINI_MODEL` | `skyview/utils/config.py` | `gemini-2.5-flash` |

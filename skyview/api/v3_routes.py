@@ -806,9 +806,19 @@ def signup(owner: Owner):
 
 @router.get("/api/fpga/status")
 def fpga_status(owner: Owner):
+    from skyview.agents.fpga_agent import get_fpga_bridge
+
+    hardware = get_fpga_bridge().get_status()
+    if hardware["connected"]:
+        return {
+            "status": "ok",
+            "hardware_mode": "real_hardware",
+            "fpga_status": hardware,
+            "physical_hardware_confirmed": True,
+        }
     return {
         "status": "ok",
         "hardware_mode": "mock" if db.mode() == "v3_demo" else "not_connected",
-        "fpga_status": {"connected": False, "simulation": db.mode() == "v3_demo"},
+        "fpga_status": {**hardware, "simulation": db.mode() == "v3_demo"},
         "physical_hardware_confirmed": False,
     }

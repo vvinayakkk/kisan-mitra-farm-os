@@ -168,9 +168,6 @@ module sensor_fusion (
                 status <= STATUS_DONE;
             end
 
-            if (status == STATUS_DONE && !start) begin
-                status <= STATUS_IDLE;
-            end
         end
     end
 

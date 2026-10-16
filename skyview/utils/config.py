@@ -105,7 +105,12 @@ class Settings:
 
         self.ENABLE_MQTT: bool = os.getenv("ENABLE_MQTT", "True").lower() == "true"
         self.ENABLE_FPGA: bool = os.getenv("ENABLE_FPGA", "False").lower() == "true"
-        self.FPGA_PORT: str = os.getenv("FPGA_PORT", "COM4")
+        self.FPGA_MMIO_PATH: str = os.getenv("FPGA_MMIO_PATH", "")
+        _fusion_base = os.getenv("FPGA_FUSION_BASE", "")
+        self.FPGA_FUSION_BASE: int | None = (
+            int(_fusion_base, 0) if _fusion_base else None
+        )
+        self.FPGA_TIMEOUT_MS: int = int(os.getenv("FPGA_TIMEOUT_MS", "100"))
         self.ENABLE_LLM_WORKFLOW: bool = (
             os.getenv("ENABLE_LLM_WORKFLOW", "True").lower() == "true"
         )

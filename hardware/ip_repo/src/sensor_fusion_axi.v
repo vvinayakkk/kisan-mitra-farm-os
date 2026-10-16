@@ -37,8 +37,10 @@ module sensor_fusion_axi #(
 );
 
     reg [C_S_AXI_ADDR_WIDTH-1:0] axi_awaddr;
-    reg                         axi_awready;
-    reg                         axi_wready;
+    reg                         aw_pending;
+    reg                         w_pending;
+    reg [C_S_AXI_DATA_WIDTH-1:0] axi_wdata;
+    reg [C_S_AXI_DATA_WIDTH/8-1:0] axi_wstrb;
     reg [1:0]                   axi_bresp;
     reg                         axi_bvalid;
     reg [C_S_AXI_ADDR_WIDTH-1:0] axi_araddr;
@@ -64,8 +66,8 @@ module sensor_fusion_axi #(
     reg [31:0] timestamp_counter;
     reg [31:0] last_timestamp;
 
-    assign S_AXI_AWREADY = axi_awready;
-    assign S_AXI_WREADY  = axi_wready;
+    assign S_AXI_AWREADY = !aw_pending && !axi_bvalid;
+    assign S_AXI_WREADY  = !w_pending && !axi_bvalid;
     assign S_AXI_BRESP   = axi_bresp;
     assign S_AXI_BVALID  = axi_bvalid;
     assign S_AXI_ARREADY = axi_arready;
@@ -75,33 +77,31 @@ module sensor_fusion_axi #(
 
     assign interrupt = accel_done;
 
-    always @(posedge S_AXI_ACLK) begin
-        if (!S_AXI_ARESETN) begin
-            axi_awready <= 1'b0;
-            axi_awaddr  <= 0;
-        end else begin
-            if (~axi_awready && S_AXI_AWVALID && S_AXI_WVALID) begin
-                axi_awready <= 1'b1;
-                axi_awaddr  <= S_AXI_AWADDR;
-            end else begin
-                axi_awready <= 1'b0;
-            end
-        end
-    end
+    wire slv_reg_wren = aw_pending && w_pending && !axi_bvalid;
 
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
-            axi_wready <= 1'b0;
+            aw_pending <= 1'b0;
+            w_pending <= 1'b0;
+            axi_awaddr <= 0;
+            axi_wdata <= 0;
+            axi_wstrb <= 0;
         end else begin
-            if (~axi_wready && S_AXI_WVALID && S_AXI_AWVALID) begin
-                axi_wready <= 1'b1;
-            end else begin
-                axi_wready <= 1'b0;
+            if (S_AXI_AWVALID && S_AXI_AWREADY) begin
+                axi_awaddr <= S_AXI_AWADDR;
+                aw_pending <= 1'b1;
+            end
+            if (S_AXI_WVALID && S_AXI_WREADY) begin
+                axi_wdata <= S_AXI_WDATA;
+                axi_wstrb <= S_AXI_WSTRB;
+                w_pending <= 1'b1;
+            end
+            if (slv_reg_wren) begin
+                aw_pending <= 1'b0;
+                w_pending <= 1'b0;
             end
         end
     end
-
-    wire slv_reg_wren = axi_wready && S_AXI_WVALID && axi_awready && S_AXI_AWVALID;
 
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
@@ -118,26 +118,26 @@ module sensor_fusion_axi #(
             if (slv_reg_wren) begin
                 case (axi_awaddr[7:2])
                     ADDR_CONTROL[7:2]: begin
-                        if (S_AXI_WSTRB[0]) begin
-                            reg_start  <= S_AXI_WDATA[0];
-                            soft_reset <= S_AXI_WDATA[1];
+                        if (axi_wstrb[0]) begin
+                            reg_start  <= axi_wdata[0];
+                            soft_reset <= axi_wdata[1];
                         end
                     end
                     ADDR_SOIL_IN[7:2]: begin
-                        if (S_AXI_WSTRB[0]) reg_soil_in[7:0]  <= S_AXI_WDATA[7:0];
-                        if (S_AXI_WSTRB[1]) reg_soil_in[15:8] <= S_AXI_WDATA[15:8];
+                        if (axi_wstrb[0]) reg_soil_in[7:0]  <= axi_wdata[7:0];
+                        if (axi_wstrb[1]) reg_soil_in[15:8] <= axi_wdata[15:8];
                     end
                     ADDR_TEMP_IN[7:2]: begin
-                        if (S_AXI_WSTRB[0]) reg_temp_in[7:0]  <= S_AXI_WDATA[7:0];
-                        if (S_AXI_WSTRB[1]) reg_temp_in[15:8] <= S_AXI_WDATA[15:8];
+                        if (axi_wstrb[0]) reg_temp_in[7:0]  <= axi_wdata[7:0];
+                        if (axi_wstrb[1]) reg_temp_in[15:8] <= axi_wdata[15:8];
                     end
                     ADDR_HUMID_IN[7:2]: begin
-                        if (S_AXI_WSTRB[0]) reg_humid_in[7:0]  <= S_AXI_WDATA[7:0];
-                        if (S_AXI_WSTRB[1]) reg_humid_in[15:8] <= S_AXI_WDATA[15:8];
+                        if (axi_wstrb[0]) reg_humid_in[7:0]  <= axi_wdata[7:0];
+                        if (axi_wstrb[1]) reg_humid_in[15:8] <= axi_wdata[15:8];
                     end
                     ADDR_LIGHT_IN[7:2]: begin
-                        if (S_AXI_WSTRB[0]) reg_light_in[7:0]  <= S_AXI_WDATA[7:0];
-                        if (S_AXI_WSTRB[1]) reg_light_in[15:8] <= S_AXI_WDATA[15:8];
+                        if (axi_wstrb[0]) reg_light_in[7:0]  <= axi_wdata[7:0];
+                        if (axi_wstrb[1]) reg_light_in[15:8] <= axi_wdata[15:8];
                     end
                 endcase
             end
@@ -149,7 +149,7 @@ module sensor_fusion_axi #(
             axi_bvalid <= 1'b0;
             axi_bresp  <= 2'b00;
         end else begin
-            if (axi_awready && S_AXI_AWVALID && ~axi_bvalid && axi_wready && S_AXI_WVALID) begin
+            if (slv_reg_wren) begin
                 axi_bvalid <= 1'b1;
                 axi_bresp  <= 2'b00;
             end else if (S_AXI_BREADY && axi_bvalid) begin

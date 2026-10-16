@@ -451,7 +451,7 @@ function ResultCard({ title, modeLabel, children, isDark }: { title: string; mod
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.1rem 1.4rem 0.8rem" }}>
         <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: isDark ? "#F0F0F0" : "#111" }}>{title}</h3>
         <span style={{ fontSize: "0.65rem", fontWeight: 600, padding: "0.2rem 0.65rem", borderRadius: 9999, background: "transparent", color: "#2ECC71", border: "1.5px solid #2ECC71", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Hardware
+          {modeLabel === "real_hardware" ? "FPGA result" : "Local analysis"}
         </span>
       </div>
       <div style={{ padding: "0 1.4rem 1.4rem" }}>{children}</div>
@@ -511,6 +511,7 @@ export default function AIHardwareAccelerator() {
   const setHwMode = (mode: string) => setHwModeState(mode);
 
   const { data: sensor = {
+    available: false, timestamp: null as string | null,
     temperature: 25, humidity: 60, pressure: 1013, wind_speed: 5,
     rainfall: 0, soil_moisture: 50, soil_temperature: 26,
     light_level: 70, pm25: 60, pm10: 120, uv_index: 2, battery_voltage: 12.5,
@@ -521,6 +522,8 @@ export default function AIHardwareAccelerator() {
       if (!r.ok) throw new Error('Sensor fetch failed');
       const d = await r.json();
       return {
+        available: d.available === true || (d.available !== false && typeof d.timestamp === "string"),
+        timestamp: typeof d.timestamp === "string" ? d.timestamp : null,
         temperature:      d.temperature       ?? 25,
         humidity:         d.humidity          ?? 60,
         pressure:         d.pressure          ?? 1013,
@@ -538,19 +541,26 @@ export default function AIHardwareAccelerator() {
     refetchInterval: 10000,
   });
 
-  const connectionStatus = !!sensor;
+  const observedAt = sensor.timestamp
+    ? Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/i.test(sensor.timestamp) ? sensor.timestamp : `${sensor.timestamp}Z`)
+    : NaN;
+  const connectionStatus = sensor.available && Number.isFinite(observedAt) && Date.now() - observedAt < 60_000;
 
   const [lastUpdateSeconds, setLastUpdateSeconds] = useState(0);
   useEffect(() => {
-    if (!sensorUpdatedAt) return;
+    if (!sensorUpdatedAt || !Number.isFinite(observedAt)) return;
     setLastUpdateSeconds(0);
     const timer = setInterval(() => {
-      setLastUpdateSeconds(Math.floor((Date.now() - sensorUpdatedAt) / 1000));
+      setLastUpdateSeconds(Math.max(0, Math.floor((Date.now() - observedAt) / 1000)));
     }, 1000);
     return () => clearInterval(timer);
-  }, [sensorUpdatedAt]);
+  }, [sensorUpdatedAt, observedAt]);
 
   const predictRain = async () => {
+    if (hwMode === "real_hardware" && !connectionStatus) {
+      toast({ title: "Waiting for a recent station reading", variant: "destructive" });
+      return;
+    }
     setLoadingRain(true);
     setActivePipeline(["temp","pressure","wind","fpga","rain","gemini"]);
     try {
@@ -562,6 +572,10 @@ export default function AIHardwareAccelerator() {
   };
 
   const runFusion = async () => {
+    if (hwMode === "real_hardware" && !connectionStatus) {
+      toast({ title: "Waiting for a recent station reading", variant: "destructive" });
+      return;
+    }
     setLoadingFusion(true);
     setActivePipeline(["temp","soil","light","fpga","fusion","gemini"]);
     try {
@@ -573,6 +587,10 @@ export default function AIHardwareAccelerator() {
   };
 
   const runCombined = async () => {
+    if (hwMode === "real_hardware" && !connectionStatus) {
+      toast({ title: "Waiting for a recent station reading", variant: "destructive" });
+      return;
+    }
     setLoadingCombined(true);
     setActivePipeline(["temp","pressure","soil","light","wind","fpga","fusion","rain","irrig","gemini"]);
     try {
@@ -583,8 +601,8 @@ export default function AIHardwareAccelerator() {
     finally { setLoadingCombined(false); setActivePipeline([]); }
   };
 
-  const hwLabel = hwMode === "hardware" || hwMode === "live" ? "Hardware connected" : hwMode === "demo" || hwMode === "simulation" || hwMode === "mock" ? "Local hardware" : "Hardware status unverified";
-  const hwColor = hwMode === "hardware" || hwMode === "live" ? "#2ECC71" : "#C99D52";
+  const hwLabel = hwMode === "real_hardware" ? "FPGA connected" : "FPGA not connected";
+  const hwColor = hwMode === "real_hardware" ? "#2ECC71" : "#C99D52";
 
   const handleHover = (node: NodeDef | null, cx: number, cy: number) => {
     setHoveredNode(node);

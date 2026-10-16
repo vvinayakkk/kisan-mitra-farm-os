@@ -8,13 +8,12 @@ GET  /api/fpga/status
 """
 
 import json
-from datetime import datetime
-from typing import Optional
+from datetime import UTC, datetime
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 
-from skyview.agents.fpga_agent import get_fpga_bridge
+from skyview.agents.fpga_agent import HardwareUnavailable, get_fpga_bridge
 from skyview.utils.llm_pool import invoke_llm
 from skyview.utils.logger import get_logger
 
@@ -23,18 +22,27 @@ logger = get_logger(__name__)
 
 
 def _HW_MODE():
-    return "real_hardware"
+    return "real_hardware" if get_fpga_bridge().get_status()["connected"] else "not_connected"
+
+
+def _connected_bridge():
+    bridge = get_fpga_bridge()
+    if not bridge.get_status()["connected"]:
+        raise HTTPException(503, "FPGA is not connected or has not passed its version probe")
+    return bridge
 
 
 class FusionInput(BaseModel):
-    soil_moisture: float = 50.0
-    temperature: float = 25.0
-    humidity: float = 60.0
-    light_level: float = 70.0
-    user_id: Optional[str] = None
+    model_config = ConfigDict(allow_inf_nan=False)
+    soil_moisture: float = Field(50.0, ge=0, le=100)
+    temperature: float = Field(25.0, ge=0, le=100)
+    humidity: float = Field(60.0, ge=0, le=100)
+    light_level: float = Field(70.0, ge=0, le=100)
+    user_id: str | None = None
 
 
 class RainInput(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
     temperature: float = 25.0
     humidity: float = 60.0
     pressure: float = 1013.0
@@ -43,12 +51,27 @@ class RainInput(BaseModel):
 
 
 class CombinedInput(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
     soil_moisture: float = 50.0
     temperature: float = 25.0
     humidity: float = 60.0
     light_level: float = 70.0
     station_id: str = "WS01"
-    user_id: Optional[str] = None
+    user_id: str | None = None
+
+
+def _json_object(content: str | None) -> dict:
+    if not content:
+        return {}
+    payload = content.strip()
+    if payload.startswith("```"):
+        payload = payload.split("\n", 1)[-1]
+        payload = payload.rsplit("```", 1)[0].strip()
+    try:
+        parsed = json.loads(payload)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 async def _llm_validate_fusion(raw: dict, inputs: FusionInput) -> dict:
@@ -62,12 +85,7 @@ async def _llm_validate_fusion(raw: dict, inputs: FusionInput) -> dict:
         '"assessment":"<2 sentences>","recommendations":["<tip1>","<tip2>","<tip3>"]}'
     )
     content = await invoke_llm([("user", prompt)], temperature=0.1, timeout=12)
-    if not content:
-        return {}
-    try:
-        return json.loads(content.strip().lstrip("```json").rstrip("```"))
-    except Exception:
-        return {}
+    return _json_object(content)
 
 
 async def _llm_validate_rain(raw: dict, inputs: RainInput) -> dict:
@@ -81,12 +99,7 @@ async def _llm_validate_rain(raw: dict, inputs: RainInput) -> dict:
         '"recommendation":"<2 sentences>","reasoning":"<1 sentence>"}'
     )
     content = await invoke_llm([("user", prompt)], temperature=0.1, timeout=12)
-    if not content:
-        return {}
-    try:
-        return json.loads(content.strip().lstrip("```json").rstrip("```"))
-    except Exception:
-        return {}
+    return _json_object(content)
 
 
 @router.get("/status")
@@ -96,27 +109,25 @@ def fpga_status():
         "status": "ok",
         "hardware_mode": _HW_MODE(),
         "fpga_status": bridge.get_status(),
-        "timestamp": datetime.utcnow().isoformat(),
+        "physical_hardware_confirmed": bridge.get_status()["connected"],
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
 @router.post("/fusion")
 async def sensor_fusion(data: FusionInput):
-    bridge = get_fpga_bridge()
-    raw = bridge.send_fusion(
-        int(round(data.soil_moisture)),
-        int(round(data.temperature)),
-        int(round(data.humidity)),
-        int(round(data.light_level)),
-    )
+    bridge = _connected_bridge()
+    try:
+        raw = bridge.send_fusion(
+            data.soil_moisture,
+            data.temperature,
+            data.humidity,
+            data.light_level,
+        )
+    except (HardwareUnavailable, ValueError, OSError) as exc:
+        raise HTTPException(503, str(exc)) from exc
     adjusted = await _llm_validate_fusion(raw, data)
-    final = {
-        "fusion_score": adjusted.get("adjusted_fusion_score", raw.get("fusion_score")),
-        "stress_index": adjusted.get("adjusted_stress_index", raw.get("stress_index")),
-        "alert_level": adjusted.get("adjusted_alert_level", raw.get("alert_level")),
-        "alert_name": adjusted.get("alert_name", raw.get("alert_name", "Normal")),
-        "timestamp": raw.get("timestamp"),
-    }
+    final = raw
     return {
         "status": "success",
         "hardware_mode": _HW_MODE(),
@@ -124,29 +135,21 @@ async def sensor_fusion(data: FusionInput):
         "fpga_raw": raw,
         "ai_insights": adjusted.get("assessment", ""),
         "ai_recommendations": adjusted.get("recommendations", []),
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
 @router.post("/rain-predict")
 async def rain_predict(data: RainInput):
-    bridge = get_fpga_bridge()
-    raw = bridge.send_rain_prediction(
-        int(round(data.temperature)),
-        int(round(data.humidity)),
-        int(round(data.pressure)),
-        int(round(data.wind_speed)),
-    )
+    bridge = _connected_bridge()
+    try:
+        raw = bridge.send_rain_prediction(
+            data.temperature, data.humidity, data.pressure, data.wind_speed
+        )
+    except (HardwareUnavailable, ValueError, OSError) as exc:
+        raise HTTPException(503, str(exc)) from exc
     adjusted = await _llm_validate_rain(raw, data)
-    final = {
-        "rain_probability": adjusted.get(
-            "adjusted_rain_probability", raw.get("rain_probability")
-        ),
-        "stress_level": adjusted.get("adjusted_stress_level", raw.get("stress_level")),
-        "rain_alert": adjusted.get("rain_alert", raw.get("rain_alert")),
-        "confidence": adjusted.get("confidence", "medium"),
-        "timestamp": raw.get("timestamp"),
-    }
+    final = raw
     return {
         "status": "success",
         "hardware_mode": _HW_MODE(),
@@ -154,7 +157,7 @@ async def rain_predict(data: RainInput):
         "fpga_raw": raw,
         "farmer_recommendation": adjusted.get("recommendation", ""),
         "ai_reasoning": adjusted.get("reasoning", ""),
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -189,12 +192,7 @@ async def combined_analysis(data: CombinedInput):
         '"recommendation":"<2-3 sentences>","actions":["<a1>","<a2>","<a3>"]}'
     )
     rec_raw = await invoke_llm([("user", prompt)], temperature=0.2, timeout=12)
-    rec = {}
-    if rec_raw:
-        try:
-            rec = json.loads(rec_raw.strip().lstrip("```json").rstrip("```"))
-        except Exception:
-            pass
+    rec = _json_object(rec_raw)
 
     return {
         "status": "success",
@@ -206,25 +204,28 @@ async def combined_analysis(data: CombinedInput):
             "recommendation": rec.get("recommendation", ""),
             "actions": rec.get("actions", []),
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
 @router.post("/test")
 async def fpga_test():
-    bridge = get_fpga_bridge()
+    bridge = _connected_bridge()
     cases = [
         {"name": "Optimal", "soil": 50, "temp": 25, "humid": 60, "light": 70},
         {"name": "Dry Soil", "soil": 10, "temp": 30, "humid": 40, "light": 80},
         {"name": "Hot", "soil": 60, "temp": 40, "humid": 30, "light": 90},
         {"name": "Frost Risk", "soil": 50, "temp": 2, "humid": 80, "light": 30},
     ]
-    results = [
-        {
-            "test": c["name"],
-            "input": c,
-            "output": bridge.send_fusion(c["soil"], c["temp"], c["humid"], c["light"]),
-        }
-        for c in cases
-    ]
+    try:
+        results = [
+            {
+                "test": c["name"],
+                "input": c,
+                "output": bridge.send_fusion(c["soil"], c["temp"], c["humid"], c["light"]),
+            }
+            for c in cases
+        ]
+    except (HardwareUnavailable, ValueError, OSError) as exc:
+        raise HTTPException(503, str(exc)) from exc
     return {"status": "success", "tests": results, "hardware_mode": _HW_MODE()}

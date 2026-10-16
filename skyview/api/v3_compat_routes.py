@@ -4,7 +4,7 @@ import asyncio
 import json
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from skyview.api.v3_routes import Owner
@@ -197,12 +197,54 @@ def simulated(body):
 @router.post("/api/fpga/fusion")
 @router.post("/api/fpga/rain-predict")
 @router.post("/api/fpga/combined-analysis")
-def accelerator(body: AcceleratorInputs, owner: Owner):
+def accelerator(body: AcceleratorInputs, owner: Owner, request: Request):
+    from skyview.agents.fpga_agent import HardwareUnavailable, get_fpga_bridge
+    from skyview.utils.config import get_settings
+
+    if get_settings().ENABLE_FPGA:
+        bridge = get_fpga_bridge()
+        if not bridge.get_status()["connected"]:
+            raise HTTPException(503, "FPGA is not connected or has not passed its version probe")
+        if request.url.path != "/api/fpga/fusion":
+            raise HTTPException(503, "Rain accelerator is not commissioned through this register map")
+        try:
+            result = bridge.send_fusion(
+                body.soil_moisture,
+                body.temperature,
+                body.humidity,
+                body.light_level,
+            )
+        except (HardwareUnavailable, OSError, ValueError) as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return {
+            "status": "success",
+            "hardware_mode": "real_hardware",
+            "physical_hardware_confirmed": True,
+            "fpga_result": result,
+            "fpga_raw": result,
+            "data_origin": "hardware_registers",
+        }
     return simulated(body)
 
 
 @router.post("/api/fpga/test")
 def accelerator_tests(owner: Owner):
+    from skyview.agents.fpga_agent import HardwareUnavailable, get_fpga_bridge
+    from skyview.utils.config import get_settings
+
+    if get_settings().ENABLE_FPGA:
+        bridge = get_fpga_bridge()
+        if not bridge.get_status()["connected"]:
+            raise HTTPException(503, "FPGA is not connected or has not passed its version probe")
+        try:
+            result = bridge.send_fusion(50, 25, 60, 70)
+        except (HardwareUnavailable, OSError, ValueError) as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return {
+            "hardware_mode": "real_hardware",
+            "physical_hardware_confirmed": True,
+            "tests": [{"input": {"soil_moisture": 50, "temperature": 25, "humidity": 60, "light_level": 70}, "output": result}],
+        }
     return {
         "hardware_mode": "mock",
         "tests": [

@@ -21,6 +21,8 @@ If the target is the ZC706, choose the installed ZC706 board definition and Zynq
 | `0x20` | Timestamp | Read | Last processing timestamp. |
 | `0x24` | Version | Read | RTL version constant. |
 
+The status register keeps the completed state until the next start command. The host checks both the completed state and a changed timestamp so it never reads a previous calculation as a new one. AXI write address and write data are accepted independently, including when either arrives first.
+
 ## Build and commissioning boundary
 
 After behavioral verification, run synthesis and implementation with the selected clock and pin constraints. Review utilization, setup/hold timing, address map and CDC warnings before generating a bitstream. Export the hardware description and bitstream to a private build-artifact location, not this source tree. Record the assigned base address in the device-specific host configuration.
