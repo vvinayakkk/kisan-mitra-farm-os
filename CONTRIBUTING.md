@@ -15,3 +15,7 @@ npx tsc --noEmit -p tsconfig.app.json
 npx vitest run
 npm run build
 ```
+
+## Source evidence
+
+Do not commit keys, local databases, generated artifacts, private farmer data or recordings. Keep illustrative prices and field cases separate from verified observations. A provider URL alone is not proof of a working integration: include source, license, units, time and failure behavior when adding one.
