@@ -26,7 +26,7 @@ The workspace starts with a voice-enabled exchange brief. `POST /api/exchange/as
 
 Notice and agreement drafts fill editable review forms. Publication still requires explicit sharing consent, and proposing or accepting terms remains a separate farmer action. Missing quantities, dates and amounts become questions rather than invented defaults. Numeric draft checks exclude metadata such as UUIDs and match scores. Assistance requires the configured AI provider and internet connectivity; an unavailable or malformed response leaves the exchange unchanged.
 
-The server checks notice ownership and conversation participation before providing context and rechecks the session after the provider returns. Private participant conversation text may be processed by the configured provider to answer their request. Demo mode remains visibly simulated. Suggestions are not farmer verification, a transport booking, a payment, or a physical handover confirmation.
+The server checks notice ownership and conversation participation before providing context and rechecks the session after the provider returns. Private participant conversation text may be processed by the configured provider to answer their request. Suggestions are not farmer verification, a transport booking, a payment, or a physical handover confirmation.
 
 ## API and ownership
 
@@ -54,13 +54,13 @@ Action receipts bind replay keys to exact submitted payloads. Replaying identica
 
 It adds four tables: `exchange_listings`, `exchange_conversations`, `exchange_messages` and `exchange_events`. Listings have discovery/owner indexes; conversation indexes serve each participant's inbox; message/event sequence indexes serve a specific conversation. Messages and action receipts are append-only for the application writer. Private conversation access does not expand access to other farm tables.
 
-The frontend uses bounded reads and visible-page polling rather than opening a new websocket infrastructure. This gives real persisted messages between two authenticated members, with a brief polling delay; it is not push notification delivery or a claim of WhatsApp-scale operation. A demonstration profile is fictional. A second authenticated test/demo account can exercise the other side of an exchange, but no synthetic farmer replies automatically.
+The frontend uses bounded reads and visible-page polling rather than opening a new websocket infrastructure. This gives persisted messages between two authenticated members, with a brief polling delay; it is not push notification delivery or a claim of WhatsApp-scale operation. The other side of an exchange requires a separate authenticated account; the system does not generate participant replies automatically.
 
 Run exchange PostgreSQL contracts against `skyview_v3_test`, never against a production farmer account. `tests/data_v3/test_exchange_security.py` independently checks unauthenticated/foreign access, consent types, reconnect identity, replay-key collisions, proposal authorship, stale terms and premature completion. The main exchange test file covers the bilateral lifecycle and reservation behavior. TypeScript, frontend regression tests and desktop/mobile visual checks remain required.
 
 ## Mandi and routing boundaries
 
-Market observations and historical charts retain their existing provenance and dates. A posted resource value or farmer-written balancing payment is an offer, not a current mandi observation. Synthetic market history and future scenarios remain visibly synthetic; the exchange does not turn them into verified rates.
+Market observations and historical charts retain their existing provenance and dates. A posted resource value or farmer-written balancing payment is an offer, not a current mandi observation. Future planning scenarios retain their origin labels; the exchange does not turn them into verified rates.
 
 Match scores are transparent resource/regional-fit scores, not probability of a successful deal. State/district similarity does not prove road proximity, availability or capacity. The exchange trail visualizes the agreement workflow; it does not track a vehicle or compute a road route.
 

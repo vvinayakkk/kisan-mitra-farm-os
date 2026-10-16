@@ -1,6 +1,6 @@
 # Configuration inventory
 
-This inventory is extracted from literal `os.getenv` calls in the backend and data-platform Python source. It identifies configuration entry points; it does not contain credentials. Some values are used only in the classic lane, optional provider adapters or local tools. A client-side `VITE_` or Flutter `--dart-define` value is bundled into the app and must never contain a secret.
+This inventory identifies common configuration entry points from literal `os.getenv` calls in the backend and data-platform Python source; it does not contain credentials. Some values are used only in the classic lane, optional provider adapters or local tools. A client-side `VITE_` or Flutter `--dart-define` value is bundled into the app and must never contain a secret.
 
 | Variable | Code path | Source default |
 | --- | --- | --- |
@@ -65,7 +65,6 @@ This inventory is extracted from literal `os.getenv` calls in the backend and da
 | `V3_AUTH_JWKS_URL` | `skyview/assistant/auth.py` | `` |
 | `V3_BACKGROUND_WORKER` | `skyview/data/v3/worker.py` | `true` |
 | `V3_DATABASE_URL` | `skyview/data/v3/db.py` | `` |
-| `V3_DEMO_FARMER_KEY` | `data_platform/v3/check_local.py` | `` |
 | `V3_INGEST_LOCATION_KEY` | `skyview/data/v3/worker.py` | `` |
 | `V3_RAW_DIR` | `skyview/data/v3/ingestion.py` | `.v3-data/raw` |
 | `V3_RAW_STORAGE_DIR` | `skyview/data/v3/ingestion.py` | `` |

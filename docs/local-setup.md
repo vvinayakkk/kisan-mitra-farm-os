@@ -7,15 +7,14 @@ python3.12 -m venv .venv
 .venv/bin/pip install -r infra/requirements.txt
 (cd frontend && npm ci)
 
-# First run only: create the database and its initialization files.
-.venv/bin/python data_platform/v3/seed_demo.py --output /absolute/path/to/seed
+# First run only: provision from an existing initialization bundle.
 .venv/bin/python data_platform/v3/provision.py --seed-dir /absolute/path/to/seed
 
 # Start the retained database, API/worker and frontend.
 .venv/bin/python data_platform/v3/local.py
 ```
 
-The workspace is at `http://127.0.0.1:5173/workspace`; API health is at `http://127.0.0.1:8001/health`. The launcher reuses the existing database and applies additive migrations on later starts. Runtime credentials, raw downloads and generated artifacts stay in ignored local paths. Back up database and artifact bytes together.
+The standalone provisioning command requires an existing initialization bundle. Use Docker Compose for first-time setup when one is not available. The workspace is at `http://127.0.0.1:5173/workspace`; API health is at `http://127.0.0.1:8001/health`. The launcher reuses the existing database and applies additive migrations on later starts. Runtime credentials, raw downloads and generated artifacts stay in ignored local paths. Back up database and artifact bytes together.
 
 ## Verification
 

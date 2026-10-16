@@ -15,21 +15,21 @@ The machine-readable source is `data_platform/v3/catalog/schema-catalog.json`; t
 | Group | Table | Purpose |
 | --- | --- | --- |
 | ingestion | `sv3.providers` | Source contract, license, access and refresh policy |
-| ingestion | `sv3.datasets` | Immutable release boundary for live versus synthetic data |
+| ingestion | `sv3.datasets` | Immutable release boundary with source and origin metadata |
 | ingestion | `sv3.ingest_runs` | Watermark, retries, bounded jobs and source failure audit |
 | ingestion | `sv3.raw_objects` | Original payload in object storage, hash and request identity |
 | ingestion | `sv3.quality_issues` | Quarantine incorrect timestamps, units and conflicting duplicate values |
-| reference | `sv3.regions` | Official versioned state/district/tehsil/village hierarchy; demo IDs separate |
+| reference | `sv3.regions` | Versioned state/district/tehsil/village hierarchy with source identity |
 | reference | `sv3.locations` | Shared weather grid or public location anchor |
 | reference | `sv3.crops` | Canonical crops with multilingual aliases |
 | reference | `sv3.crop_varieties` | Keep crop variety/grade distinct for market comparisons |
 | reference | `sv3.units` | Explicit dimensions and conversion factors, never infer price units |
-| reference | `sv3.markets` | Real official markets or explicitly named demo markets |
+| reference | `sv3.markets` | Market directory identities and source status |
 | market | `sv3.market_series` | One market/crop/variety/grade/unit series |
-| farm | `sv3.farmers` | Consented account and synthetic profile; no Aadhaar or stored plaintext OTP |
+| farm | `sv3.farmers` | Consented account and farm profile; no Aadhaar or stored plaintext OTP |
 | farm | `sv3.consents` | Purpose-scoped permissions, expiry and revocation |
 | farm | `sv3.farms` | One farmer can own/manage several farms |
-| farm | `sv3.plots` | Real user-drawn field geometry or an explicitly synthetic example |
+| farm | `sv3.plots` | Field geometry and its recorded origin |
 | farm | `sv3.crop_cycles` | Crop, sowing date, harvest window and season per plot |
 | farm | `sv3.farm_operations` | Irrigation/sowing/fertilizing/scouting actual events, not inferred execution |
 | sharing | `sv3.resources` | Farmer inventory of equipment, produce or supplies |
@@ -38,19 +38,19 @@ The machine-readable source is `data_platform/v3/catalog/schema-catalog.json`; t
 | farm | `sv3.expenses` | Exact decimal INR expenses, quantities and idempotency |
 | farm | `sv3.tasks` | Owned calendar plan with recoverable deletion |
 | farm | `sv3.task_events` | Audit events and before/after edits for undo |
-| telemetry | `sv3.stations` | Real device or simulated station with explicit source identity |
+| telemetry | `sv3.stations` | Station enrollment and explicit reading-source identity |
 | telemetry | `sv3.station_sensors` | Metric/unit/depth/calibration per station |
 | telemetry | `sv3.packet_receipts` | Global boot/sequence replay protection across monthly partitions |
 | telemetry | `sv3.sensor_packets` | Idempotent packet with event/received time and valid readings |
 | telemetry | `sv3.sensor_daily` | UTC daily aggregates with counts/completeness |
 | environment | `sv3.weather_series` | Shared provider/grid/model series; never pretend to be on-farm hardware |
-| environment | `sv3.weather_daily` | Historical observations, reanalysis or simulated history |
+| environment | `sv3.weather_daily` | Dated weather series with observation and model origin metadata |
 | environment | `sv3.weather_forecasts` | Issued short-range forecasts or explicitly labeled long-range scenarios |
-| environment | `sv3.soil_samples` | Consent-scoped real lab reports or demo samples |
+| environment | `sv3.soil_samples` | Consent-scoped soil reports with collection date and source |
 | environment | `sv3.soil_indicators` | Property/unit/depth/uncertainty, with predicted values distinct from lab values |
 | environment | `sv3.satellite_assets` | STAC scene metadata and immutable external asset reference |
 | environment | `sv3.plot_indices` | Cloud-masked vegetation indicators with valid pixel coverage |
-| market | `sv3.price_observations` | Daily market observations; synthetic history only in the demo DB |
+| market | `sv3.price_observations` | Dated market prices with explicit origin and source fields |
 | market | `sv3.model_versions` | Training cutoff, backtest evidence and scenario-only markers |
 | market | `sv3.forecast_runs` | One issuance with training cutoff and horizon |
 | market | `sv3.price_projections` | Future scenarios or backtested forecasts; never observed prices |
@@ -71,7 +71,7 @@ The machine-readable source is `data_platform/v3/catalog/schema-catalog.json`; t
 | agent | `sv3.artifacts` | Owned file metadata, safe excerpt, hash and object storage reference |
 | agent | `sv3.memories` | Correction-aware durable farmer facts with evidence, expiry and text search |
 | agent | `sv3.retrieval_citations` | Answer evidence references with exact excerpts and source versions |
-| agent | `sv3.notifications` | Transactional outbox; demo delivery disabled, never imply an actual send |
+| agent | `sv3.notifications` | Transactional outbox and delivery status; never imply an actual send |
 | reference | `sv3.source_mappings` | Reviewed external crop/variety/market/region identifiers, never fuzzy-merge silently |
 | ingestion | `sv3.source_health` | Per-provider/scope freshness, outage, rate limiting and last-good state |
 | reference | `sv3.measurement_definitions` | Soil property basis, accepted units, bounds and non-convertible nutrient forms |
@@ -87,7 +87,7 @@ The machine-readable source is `data_platform/v3/catalog/schema-catalog.json`; t
 | agent | `sv3.question_answers` | Typed answer payload and revision identity; server validates against request form schema |
 | agent | `sv3.context_compactions` | Versioned summary checkpoints, covered sequences, open questions and token budget audit |
 | farm | `sv3.alert_events` | Farmer-facing sourced/derived warning lifecycle with expiry and acknowledgment |
-| telemetry | `sv3.device_commands` | Approved bounded command intent: mock/live, exact approval link, expiry and execution identity |
+| telemetry | `sv3.device_commands` | Approved bounded command intent, exact approval link, expiry and execution identity |
 | telemetry | `sv3.device_command_events` | Device acknowledgment/rejection/timeout audit; broker delivery is not execution proof |
 
 ## Reviewed source inventory
@@ -115,7 +115,7 @@ The source catalog records access conditions and intended refresh contracts. Pre
 | `plant-datasets` | PlantVillage / PlantDoc evaluation images | Dataset repository; verify release rights and image provenance |
 | `fao-et0` | FAO irrigation / ET0 methodology | Public method references |
 | `consented-profiles` | Farmer onboarding / authorized AgriStack | Direct consent; AgriStack only with authorized access |
-| `hardware` | Real hardware protocol / mock adapter | Authenticated device registration; same validated envelope for mock |
+| `hardware` | Hardware protocol and station adapter | Authenticated device registration and validated packet envelope |
 | `bhashini` | BHASHINI language / voice services | Organization registration, authorization and pipeline access |
 | `kvk-directory` | ICAR KVK / expert referral directory | Reviewed official directory, dated per record |
 | `npss` | National Pest Surveillance System | Official farmer portal/app or approved integration; public API not verified |

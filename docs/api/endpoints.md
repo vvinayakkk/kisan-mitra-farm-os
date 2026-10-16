@@ -1,6 +1,6 @@
 # HTTP endpoint inventory
 
-The FastAPI application selects one route lane at startup using `SKYVIEW_DATA_MODE`. The canonical lane serves the Farm OS workspace and classic compatibility views; the legacy lane remains available when canonical mode is disabled. These tables are generated from the router decorators in `skyview/api/`. They describe registered route shapes, not an authorization bypass or a claim that an external provider is configured.
+The FastAPI application selects one route lane at startup using `SKYVIEW_DATA_MODE`. The canonical lane serves the Farm OS workspace and classic compatibility views; the legacy lane remains available when canonical mode is disabled. These tables summarize router decorators in `skyview/api/`. They describe registered route shapes, not an authorization bypass or a claim that an external provider is configured.
 
 The live OpenAPI schema at `/openapi.json` is authoritative for request fields and response schemas. Private routes require the server-verified session or account identity documented in [overview](overview.md).
 
@@ -50,8 +50,8 @@ The live OpenAPI schema at `/openapi.json` is authoritative for request fields a
 | GET | `/api/weather/city-dashboard` | `weather_city_dashboard` |
 | POST | `/api/sensors/ingest` | `ingest` |
 | POST | `/api/sensors/data` | `ingest` |
-| POST | `/api/auth/send-otp` | `send_demo_otp` |
-| POST | `/api/auth/verify-otp` | `verify_demo_otp` |
+| POST | `/api/auth/send-otp` | OTP request |
+| POST | `/api/auth/verify-otp` | OTP verification |
 | POST | `/api/auth/signup` | `signup` |
 | GET | `/api/fpga/status` | `fpga_status` |
 

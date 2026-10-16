@@ -23,7 +23,7 @@ This is a complete local application, with a React/Three.js frontend, FastAPI se
 
 <table>
 <tr><th>Interactive farm station</th><th>Weather for the farmer's location</th></tr>
-<tr><td><img src="docs/media/farm-station.png" alt="New Farm OS 3D farm station with component labels and measurements" width="690"></td><td><img src="docs/media/farm-weather.png" alt="Farm OS weather page with current conditions, hourly outlook, forecast, wind and air quality" width="690"></td></tr>
+<tr><td><img src="docs/media/farm-station.png" alt="Close view of the Farm OS 3D station and labeled components" width="690"></td><td><img src="docs/media/farm-weather.png" alt="Farm OS weather page with current conditions, hourly outlook, forecast, wind and air quality" width="690"></td></tr>
 <tr><th>Work calendar</th><th>Farm notebook</th></tr>
 <tr><td><img src="docs/media/farm-calendar.png" alt="Farm OS calendar with dated tasks, a selected day's actions and contextual Mitra help" width="690"></td><td><img src="docs/media/farm-notebook.png" alt="Farm OS spiral notebook with today's work, field follow-ups and Mitra input" width="690"></td></tr>
 <tr><th>Farmer exchange</th><th>Farmer profile</th></tr>
