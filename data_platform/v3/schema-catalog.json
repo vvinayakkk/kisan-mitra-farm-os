@@ -1,0 +1,752 @@
+{
+  "base_tables": 75,
+  "tables": [
+    {
+      "name": "providers",
+      "group": "ingestion",
+      "purpose": "Source contract, license, access and refresh policy",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL UNIQUE, name text NOT NULL, homepage text NOT NULL, access_method text NOT NULL, license_name text, attribution text NOT NULL, status text NOT NULL DEFAULT 'planned', refresh_seconds integer CHECK(refresh_seconds>0), configuration jsonb NOT NULL DEFAULT '{}', created_at timestamptz NOT NULL DEFAULT now()",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "datasets",
+      "group": "ingestion",
+      "purpose": "Immutable release boundary for live versus synthetic data",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), release_key text NOT NULL UNIQUE, lane text NOT NULL CHECK(lane IN ('live','demo')), origin text NOT NULL CHECK(origin IN ('observed','reanalysis','modeled','synthetic','user_reported','derived','curated')), as_of_date date NOT NULL, generator_version text, seed bigint, source_url text NOT NULL, checksum text, created_at timestamptz NOT NULL DEFAULT now(), CHECK(lane<>'live' OR origin<>'synthetic'), CHECK(origin<>'synthetic' OR generator_version IS NOT NULL)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "ingest_runs",
+      "group": "ingestion",
+      "purpose": "Watermark, retries, bounded jobs and source failure audit",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), dataset_id uuid REFERENCES datasets(id), job_key text NOT NULL UNIQUE, state text NOT NULL CHECK(state IN ('queued','running','done','failed')), cursor jsonb, attempts integer NOT NULL DEFAULT 0, rows_received bigint NOT NULL DEFAULT 0, rows_accepted bigint NOT NULL DEFAULT 0, started_at timestamptz, finished_at timestamptz, next_attempt_at timestamptz, safe_error text, created_at timestamptz NOT NULL DEFAULT now()",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "raw_objects",
+      "group": "ingestion",
+      "purpose": "Original payload in object storage, hash and request identity",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), run_id uuid NOT NULL REFERENCES ingest_runs(id), request_key text NOT NULL, content_hash text NOT NULL, object_uri text NOT NULL, media_type text NOT NULL, bytes bigint NOT NULL CHECK(bytes>=0), fetched_at timestamptz NOT NULL, UNIQUE(run_id,request_key)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "quality_issues",
+      "group": "ingestion",
+      "purpose": "Quarantine incorrect timestamps, units and conflicting duplicate values",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), raw_object_id uuid REFERENCES raw_objects(id), dataset_id uuid REFERENCES datasets(id), entity_type text NOT NULL, natural_key jsonb NOT NULL, code text NOT NULL, details jsonb NOT NULL, resolved_at timestamptz, created_at timestamptz NOT NULL DEFAULT now()",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "regions",
+      "group": "reference",
+      "purpose": "Official versioned state/district/tehsil/village hierarchy; demo IDs separate",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), parent_id uuid REFERENCES regions(id), level text NOT NULL CHECK(level IN ('state','ut','district','block','village')), code_system text NOT NULL, code text NOT NULL, name text NOT NULL, valid_from date NOT NULL, valid_to date, UNIQUE(dataset_id,code_system,code), CHECK(valid_to IS NULL OR valid_to>=valid_from)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "locations",
+      "group": "reference",
+      "purpose": "Shared weather grid or public location anchor",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), region_id uuid NOT NULL REFERENCES regions(id), location_key text NOT NULL, label text NOT NULL, latitude numeric(9,6) NOT NULL CHECK(latitude BETWEEN -90 AND 90), longitude numeric(9,6) NOT NULL CHECK(longitude BETWEEN -180 AND 180), resolution_m integer CHECK(resolution_m>0), UNIQUE(dataset_id,location_key)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "crops",
+      "group": "reference",
+      "purpose": "Canonical crops with multilingual aliases",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL UNIQUE, name text NOT NULL, names jsonb NOT NULL DEFAULT '{}', category text NOT NULL, perennial boolean NOT NULL DEFAULT false",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "crop_varieties",
+      "group": "reference",
+      "purpose": "Keep crop variety/grade distinct for market comparisons",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), crop_id uuid NOT NULL REFERENCES crops(id), code text NOT NULL, name text NOT NULL, UNIQUE(crop_id,code), UNIQUE(id,crop_id)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "units",
+      "group": "reference",
+      "purpose": "Explicit dimensions and conversion factors, never infer price units",
+      "columns": "code text PRIMARY KEY, dimension text NOT NULL, symbol text NOT NULL, factor_to_base numeric(16,8), CHECK(factor_to_base IS NULL OR factor_to_base>0)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "markets",
+      "group": "reference",
+      "purpose": "Real official markets or explicitly named demo markets",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), region_id uuid NOT NULL REFERENCES regions(id), code_system text NOT NULL, external_code text NOT NULL, name text NOT NULL, latitude numeric(9,6), longitude numeric(9,6), UNIQUE(dataset_id,code_system,external_code)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "market_series",
+      "group": "market",
+      "purpose": "One market/crop/variety/grade/unit series",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), market_id uuid NOT NULL REFERENCES markets(id), crop_id uuid NOT NULL REFERENCES crops(id), variety_id uuid NOT NULL, grade text NOT NULL DEFAULT 'unspecified', unit_code text NOT NULL REFERENCES units(code), currency char(3) NOT NULL DEFAULT 'INR', FOREIGN KEY(variety_id,crop_id) REFERENCES crop_varieties(id,crop_id), UNIQUE(market_id,crop_id,variety_id,grade,unit_code,currency)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "farmers",
+      "group": "farm",
+      "purpose": "Consented account and synthetic profile; no Aadhaar or stored plaintext OTP",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), profile_key text NOT NULL UNIQUE, auth_subject text UNIQUE, display_name text NOT NULL, region_id uuid NOT NULL REFERENCES regions(id), preferred_language text NOT NULL, age_band text, farming_experience_years integer CHECK(farming_experience_years BETWEEN 0 AND 80), profile_attributes jsonb NOT NULL DEFAULT '{}', contact_email text, contact_phone text, contact_verified_at timestamptz, status text NOT NULL DEFAULT 'active', created_at timestamptz NOT NULL DEFAULT now()",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "consents",
+      "group": "farm",
+      "purpose": "Purpose-scoped permissions, expiry and revocation",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), purpose text NOT NULL, granted_at timestamptz NOT NULL, expires_at timestamptz, revoked_at timestamptz, evidence_hash text NOT NULL",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "farms",
+      "group": "farm",
+      "purpose": "One farmer can own/manage several farms",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), farm_key text NOT NULL UNIQUE, name text NOT NULL, region_id uuid NOT NULL REFERENCES regions(id), location_id uuid REFERENCES locations(id), ownership_type text NOT NULL, irrigation_method text NOT NULL, water_source text, UNIQUE(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "plots",
+      "group": "farm",
+      "purpose": "Real user-drawn field geometry or an explicitly synthetic example",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), farm_id uuid NOT NULL, plot_key text NOT NULL UNIQUE, area_ha numeric(10,4) NOT NULL CHECK(area_ha>0), latitude numeric(9,6) NOT NULL CHECK(latitude BETWEEN -90 AND 90), longitude numeric(9,6) NOT NULL CHECK(longitude BETWEEN -180 AND 180), boundary_geojson jsonb, soil_texture text, UNIQUE(id,farmer_id), FOREIGN KEY(farm_id,farmer_id) REFERENCES farms(id,farmer_id), CHECK(boundary_geojson IS NULL OR jsonb_typeof(boundary_geojson)='object')",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "crop_cycles",
+      "group": "farm",
+      "purpose": "Crop, sowing date, harvest window and season per plot",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, crop_id uuid NOT NULL REFERENCES crops(id), variety_id uuid, season text NOT NULL, sowing_date date NOT NULL, expected_harvest_date date, actual_harvest_date date, status text NOT NULL CHECK(status IN ('planned','growing','harvested','failed')), expected_yield_t_ha numeric(10,3), actual_yield_t_ha numeric(10,3), UNIQUE(id,farmer_id), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), FOREIGN KEY(variety_id,crop_id) REFERENCES crop_varieties(id,crop_id), CHECK(expected_harvest_date IS NULL OR expected_harvest_date>=sowing_date)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "farm_operations",
+      "group": "farm",
+      "purpose": "Irrigation/sowing/fertilizing/scouting actual events, not inferred execution",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, operation text NOT NULL, occurred_at timestamptz NOT NULL, quantity numeric(14,4), unit_code text REFERENCES units(code), notes text, evidence_uri text, FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "resources",
+      "group": "sharing",
+      "purpose": "Farmer inventory of equipment, produce or supplies",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), category text NOT NULL, name text NOT NULL, quantity numeric(14,4) NOT NULL CHECK(quantity>=0), unit_code text NOT NULL REFERENCES units(code), UNIQUE(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "resource_listings",
+      "group": "sharing",
+      "purpose": "Opt-in public/neighbor sharing availability, prices and date window",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), resource_id uuid NOT NULL, visibility text NOT NULL CHECK(visibility IN ('private','neighbors','public')), available_from date NOT NULL, available_to date NOT NULL, asking_price_inr numeric(14,2) CHECK(asking_price_inr>=0), status text NOT NULL, FOREIGN KEY(resource_id,farmer_id) REFERENCES resources(id,farmer_id), CHECK(available_to>=available_from)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "resource_matches",
+      "group": "sharing",
+      "purpose": "Proposals between consenting participants; no invented agreements",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), listing_id uuid NOT NULL REFERENCES resource_listings(id), requester_id uuid NOT NULL REFERENCES farmers(id), proposed_at timestamptz NOT NULL, status text NOT NULL, terms jsonb NOT NULL DEFAULT '{}', requester_accepted_at timestamptz, owner_accepted_at timestamptz",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "expenses",
+      "group": "farm",
+      "purpose": "Exact decimal INR expenses, quantities and idempotency",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid, description text NOT NULL, spent_on date NOT NULL, amount_inr numeric(14,2) NOT NULL CHECK(amount_inr>=0), category text NOT NULL, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "tasks",
+      "group": "farm",
+      "purpose": "Owned calendar plan with recoverable deletion",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid, title text NOT NULL, due_at timestamptz NOT NULL, timezone text NOT NULL DEFAULT 'Asia/Kolkata', status text NOT NULL CHECK(status IN ('open','done','cancelled')), notes text, deleted_at timestamptz, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), UNIQUE(id,farmer_id), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id), row_version bigint NOT NULL DEFAULT 1 CHECK(row_version>0)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "task_events",
+      "group": "farm",
+      "purpose": "Audit events and before/after edits for undo",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), task_id uuid NOT NULL, event_type text NOT NULL, before_state jsonb, after_state jsonb NOT NULL, actor text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(task_id,farmer_id) REFERENCES tasks(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "stations",
+      "group": "telemetry",
+      "purpose": "Real device or simulated station with explicit source identity",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, dataset_id uuid NOT NULL REFERENCES datasets(id), station_key text NOT NULL UNIQUE, device_type text NOT NULL, calibration jsonb NOT NULL DEFAULT '{}', installed_at timestamptz NOT NULL, last_received_at timestamptz, UNIQUE(id,farmer_id), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "station_sensors",
+      "group": "telemetry",
+      "purpose": "Metric/unit/depth/calibration per station",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, metric text NOT NULL, unit_code text NOT NULL REFERENCES units(code), depth_cm numeric(6,2), enabled boolean NOT NULL DEFAULT true, FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), UNIQUE(station_id,metric,depth_cm), measurement_basis text NOT NULL DEFAULT 'unknown', calibration jsonb NOT NULL DEFAULT '{}'",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "packet_receipts",
+      "group": "telemetry",
+      "purpose": "Global boot/sequence replay protection across monthly partitions",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, boot_id uuid NOT NULL, sequence bigint NOT NULL, observed_at timestamptz NOT NULL, PRIMARY KEY(dataset_id,station_id,boot_id,sequence), UNIQUE(dataset_id,station_id,boot_id,sequence,observed_at), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "sensor_packets",
+      "group": "telemetry",
+      "purpose": "Idempotent packet with event/received time and valid readings",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, observed_at timestamptz NOT NULL, received_at timestamptz NOT NULL, boot_id uuid NOT NULL, sequence bigint NOT NULL CHECK(sequence>=0), temperature_c numeric(6,2) CHECK(temperature_c BETWEEN -80 AND 70), humidity_pct numeric(6,2) CHECK(humidity_pct BETWEEN 0 AND 100), pressure_hpa numeric(7,2) CHECK(pressure_hpa BETWEEN 500 AND 1200), wind_kmh numeric(7,2) CHECK(wind_kmh BETWEEN 0 AND 400), wind_direction_degrees numeric(6,2) CHECK(wind_direction_degrees>=0 AND wind_direction_degrees<360), rainfall_increment_mm numeric(8,3) CHECK(rainfall_increment_mm>=0), soil_temperature_c numeric(6,2), soil_moisture_pct numeric(6,2) CHECK(soil_moisture_pct BETWEEN 0 AND 100), pm25_ug_m3 numeric(10,3), pm10_ug_m3 numeric(10,3), uv_index numeric(6,3), lux numeric(12,2), battery_v numeric(7,3), solar_v numeric(7,3), quality_flags jsonb NOT NULL DEFAULT '[]', PRIMARY KEY(dataset_id,station_id,observed_at), FOREIGN KEY(dataset_id,station_id,boot_id,sequence,observed_at) REFERENCES packet_receipts(dataset_id,station_id,boot_id,sequence,observed_at), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), CHECK(received_at>=observed_at)",
+      "private": true,
+      "tail": "PARTITION BY RANGE(observed_at)"
+    },
+    {
+      "name": "sensor_daily",
+      "group": "telemetry",
+      "purpose": "UTC daily aggregates with counts/completeness",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, day date NOT NULL, sample_count integer NOT NULL CHECK(sample_count>=0), completeness numeric(5,4) NOT NULL CHECK(completeness BETWEEN 0 AND 1), temperature_min_c numeric(6,2), temperature_max_c numeric(6,2), rainfall_mm numeric(9,3), soil_moisture_mean_pct numeric(6,2), PRIMARY KEY(dataset_id,station_id,day), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "weather_series",
+      "group": "environment",
+      "purpose": "Shared provider/grid/model series; never pretend to be on-farm hardware",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), location_id uuid NOT NULL REFERENCES locations(id), model_name text NOT NULL, resolution_m integer NOT NULL CHECK(resolution_m>0), UNIQUE(provider_id,location_id,model_name), max_forecast_lead_days integer NOT NULL DEFAULT 15 CHECK(max_forecast_lead_days BETWEEN 0 AND 45)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "weather_daily",
+      "group": "environment",
+      "purpose": "Historical observations, reanalysis or simulated history",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), series_id uuid NOT NULL REFERENCES weather_series(id), day date NOT NULL, kind text NOT NULL CHECK(kind IN ('observed','reanalysis','synthetic')), temperature_min_c numeric(6,2), temperature_max_c numeric(6,2), rainfall_mm numeric(9,3) CHECK(rainfall_mm>=0), humidity_mean_pct numeric(6,2) CHECK(humidity_mean_pct BETWEEN 0 AND 100), et0_mm numeric(8,3) CHECK(et0_mm>=0), PRIMARY KEY(dataset_id,series_id,day), CHECK(temperature_max_c>=temperature_min_c)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "weather_forecasts",
+      "group": "environment",
+      "purpose": "Issued short-range forecasts or explicitly labeled long-range scenarios",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), series_id uuid NOT NULL REFERENCES weather_series(id), issued_at timestamptz NOT NULL, valid_on date NOT NULL, kind text NOT NULL CHECK(kind IN ('forecast','scenario')), temperature_min_c numeric(6,2), temperature_max_c numeric(6,2), rainfall_mm numeric(9,3) CHECK(rainfall_mm>=0), rainfall_probability numeric(5,4) CHECK(rainfall_probability BETWEEN 0 AND 1), method text NOT NULL, PRIMARY KEY(dataset_id,series_id,issued_at,valid_on), CHECK(valid_on>= (issued_at AT TIME ZONE 'Asia/Kolkata')::date), CHECK(temperature_max_c>=temperature_min_c)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "soil_samples",
+      "group": "environment",
+      "purpose": "Consent-scoped real lab reports or demo samples",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, dataset_id uuid NOT NULL REFERENCES datasets(id), sampled_on date NOT NULL, sample_type text NOT NULL CHECK(sample_type IN ('lab','farmer_report','synthetic')), lab_name text, report_uri text, UNIQUE(id,farmer_id), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), report_metadata jsonb NOT NULL DEFAULT '{}'",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "soil_indicators",
+      "group": "environment",
+      "purpose": "Property/unit/depth/uncertainty, with predicted values distinct from lab values",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, sample_id uuid, dataset_id uuid NOT NULL REFERENCES datasets(id), property text NOT NULL, depth_top_cm numeric(6,2) NOT NULL CHECK(depth_top_cm>=0), depth_bottom_cm numeric(6,2) NOT NULL, unit_code text NOT NULL REFERENCES units(code), mean_value numeric(14,4) NOT NULL, lower_value numeric(14,4), upper_value numeric(14,4), evidence_type text NOT NULL CHECK(evidence_type IN ('lab','grid_prediction','synthetic','farmer_report')), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), FOREIGN KEY(sample_id,farmer_id) REFERENCES soil_samples(id,farmer_id), CHECK(depth_bottom_cm>depth_top_cm), CHECK(lower_value IS NULL OR lower_value<=mean_value), CHECK(upper_value IS NULL OR upper_value>=mean_value), reported_basis text NOT NULL DEFAULT 'unspecified'",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "satellite_assets",
+      "group": "environment",
+      "purpose": "STAC scene metadata and immutable external asset reference",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), provider_item_id text NOT NULL, acquired_at timestamptz NOT NULL, collection text NOT NULL, cloud_pct numeric(5,2) CHECK(cloud_pct BETWEEN 0 AND 100), asset_uri text NOT NULL, footprint_geojson jsonb, UNIQUE(dataset_id,collection,provider_item_id)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "plot_indices",
+      "group": "environment",
+      "purpose": "Cloud-masked vegetation indicators with valid pixel coverage",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, asset_id uuid REFERENCES satellite_assets(id), day date NOT NULL, index_name text NOT NULL, value numeric(8,5) NOT NULL, valid_pixel_fraction numeric(5,4) NOT NULL CHECK(valid_pixel_fraction BETWEEN 0 AND 1), method_version text NOT NULL, PRIMARY KEY(dataset_id,plot_id,day,index_name), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "price_observations",
+      "group": "market",
+      "purpose": "Daily market observations; synthetic history only in the demo DB",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), series_id uuid NOT NULL REFERENCES market_series(id), observed_on date NOT NULL, min_price numeric(14,2) NOT NULL, modal_price numeric(14,2) NOT NULL, max_price numeric(14,2) NOT NULL, arrivals_quantity numeric(14,3), arrivals_unit text REFERENCES units(code), fetched_at timestamptz NOT NULL, revision integer NOT NULL DEFAULT 1 CHECK(revision>0), PRIMARY KEY(dataset_id,series_id,observed_on), CHECK(min_price>=0 AND min_price<=modal_price AND modal_price<=max_price)",
+      "private": false,
+      "tail": "PARTITION BY RANGE(observed_on)"
+    },
+    {
+      "name": "model_versions",
+      "group": "market",
+      "purpose": "Training cutoff, backtest evidence and scenario-only markers",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, version text NOT NULL, purpose text NOT NULL, trained_until date, validation jsonb NOT NULL, artifact_uri text, status text NOT NULL CHECK(status IN ('scenario_only','validated','retired')), UNIQUE(name,version)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "forecast_runs",
+      "group": "market",
+      "purpose": "One issuance with training cutoff and horizon",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), model_id uuid NOT NULL REFERENCES model_versions(id), issued_at timestamptz NOT NULL, training_cutoff date NOT NULL, horizon_days integer NOT NULL CHECK(horizon_days BETWEEN 1 AND 365), kind text NOT NULL CHECK(kind IN ('forecast','scenario')), UNIQUE(id,kind), CHECK(training_cutoff<=(issued_at AT TIME ZONE 'Asia/Kolkata')::date)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "price_projections",
+      "group": "market",
+      "purpose": "Future scenarios or backtested forecasts; never observed prices",
+      "columns": "run_id uuid NOT NULL, series_id uuid NOT NULL REFERENCES market_series(id), valid_on date NOT NULL, kind text NOT NULL CHECK(kind IN ('forecast','scenario')), lower_price numeric(14,2) NOT NULL, central_price numeric(14,2) NOT NULL, upper_price numeric(14,2) NOT NULL, interval_definition text NOT NULL, PRIMARY KEY(run_id,series_id,valid_on), FOREIGN KEY(run_id,kind) REFERENCES forecast_runs(id,kind), CHECK(lower_price>=0 AND lower_price<=central_price AND central_price<=upper_price)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "msp_announcements",
+      "group": "market",
+      "purpose": "Official policy by crop/grade/marketing season with notification URL",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), crop_id uuid NOT NULL REFERENCES crops(id), grade text NOT NULL, marketing_season text NOT NULL, announced_on date NOT NULL, effective_from date NOT NULL, amount_inr_quintal numeric(14,2) NOT NULL CHECK(amount_inr_quintal>0), official_url text NOT NULL, UNIQUE(dataset_id,crop_id,grade,marketing_season)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "documents",
+      "group": "knowledge",
+      "purpose": "Versioned official source document, language, license and review date",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), dataset_id uuid NOT NULL REFERENCES datasets(id), source_url text NOT NULL, title text NOT NULL, language text NOT NULL, checksum text NOT NULL, published_on date, retrieved_at timestamptz NOT NULL, review_status text NOT NULL CHECK(review_status IN ('needs_review','reviewed','retired')), object_uri text, UNIQUE(dataset_id,checksum)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "document_chunks",
+      "group": "knowledge",
+      "purpose": "Citable document sections; PostgreSQL text search before optional embeddings",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), document_id uuid NOT NULL REFERENCES documents(id), ordinal integer NOT NULL, page_number integer, section_title text, content text NOT NULL, search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple',coalesce(section_title,'')||' '||content)) STORED, UNIQUE(document_id,ordinal)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "crop_guides",
+      "group": "knowledge",
+      "purpose": "Region/season/crop stage guidance and validated assumptions",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), document_id uuid NOT NULL REFERENCES documents(id), crop_id uuid NOT NULL REFERENCES crops(id), region_id uuid REFERENCES regions(id), season text NOT NULL, growth_stage text NOT NULL, guidance jsonb NOT NULL, verified_at timestamptz",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "diseases",
+      "group": "knowledge",
+      "purpose": "Reference symptoms and expert-reviewed support, not fabricated dosage",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL UNIQUE, name text NOT NULL, crop_id uuid NOT NULL REFERENCES crops(id), reference_document_id uuid REFERENCES documents(id), symptoms jsonb NOT NULL, expert_reviewed_at timestamptz",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "disease_cases",
+      "group": "knowledge",
+      "purpose": "Real submitted image and uncertain model assessment; no invented ground truth",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, image_uri text NOT NULL, image_hash text NOT NULL, captured_at timestamptz, assessment jsonb, model_version text, clinician_label text, reviewed_by text, status text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "scheme_versions",
+      "group": "knowledge",
+      "purpose": "Versioned real scheme requirements and official application link",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), document_id uuid NOT NULL REFERENCES documents(id), scheme_code text NOT NULL, version text NOT NULL, name text NOT NULL, region_id uuid REFERENCES regions(id), requirements jsonb NOT NULL, benefits jsonb NOT NULL, application_url text NOT NULL, verified_at timestamptz, valid_from date, valid_to date, UNIQUE(scheme_code,version)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "scheme_checks",
+      "group": "knowledge",
+      "purpose": "Explained recommendation, missing answers and reviewed application checklist",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), scheme_version_id uuid NOT NULL REFERENCES scheme_versions(id), result text NOT NULL CHECK(result IN ('potential_match','missing_information','not_matched')), reasons jsonb NOT NULL, checked_at timestamptz NOT NULL, official_decision_reference text",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "regional_statistics",
+      "group": "knowledge",
+      "purpose": "Published aggregate crop area, production and yield; no farm-level inference",
+      "columns": "dataset_id uuid NOT NULL REFERENCES datasets(id), region_id uuid NOT NULL REFERENCES regions(id), crop_id uuid NOT NULL REFERENCES crops(id), year integer NOT NULL, season text NOT NULL, area_ha numeric(16,3), production_t numeric(16,3), yield_t_ha numeric(12,4), estimate_stage text NOT NULL, PRIMARY KEY(dataset_id,region_id,crop_id,year,season,estimate_stage)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "conversations",
+      "group": "agent",
+      "purpose": "Owned conversation header and resumable summary cursor",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), title text NOT NULL, summary text, summarized_through bigint NOT NULL DEFAULT 0, archived_at timestamptz, UNIQUE(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "messages",
+      "group": "agent",
+      "purpose": "Append-only complete public transcript, sequence and token accounting",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), conversation_id uuid NOT NULL, sequence bigint NOT NULL, role text NOT NULL CHECK(role IN ('user','assistant','tool')), content jsonb NOT NULL, token_count integer CHECK(token_count>=0), created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(conversation_id,sequence), UNIQUE(id,farmer_id), FOREIGN KEY(conversation_id,farmer_id) REFERENCES conversations(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "agent_runs",
+      "group": "agent",
+      "purpose": "Bounded run, lease owner, cancellation and terminal state",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), conversation_id uuid NOT NULL, request_key text NOT NULL, status text NOT NULL, lease_expires_at timestamptz, started_at timestamptz, ended_at timestamptz, model_name text, UNIQUE(farmer_id,request_key), UNIQUE(id,farmer_id), FOREIGN KEY(conversation_id,farmer_id) REFERENCES conversations(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "tool_calls",
+      "group": "agent",
+      "purpose": "Validated arguments, result and idempotent execution identity",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, call_key text NOT NULL, tool_name text NOT NULL, arguments jsonb NOT NULL, result jsonb, status text NOT NULL, started_at timestamptz, ended_at timestamptz, UNIQUE(run_id,call_key), UNIQUE(id,farmer_id), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id), tool_version_id uuid",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "approvals",
+      "group": "agent",
+      "purpose": "Exact argument hash and explicit decision before a write",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), tool_call_id uuid NOT NULL, arguments_hash text NOT NULL, decision text CHECK(decision IN ('approved','rejected')), decided_at timestamptz, expires_at timestamptz NOT NULL, UNIQUE(tool_call_id), FOREIGN KEY(tool_call_id,farmer_id) REFERENCES tool_calls(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "artifacts",
+      "group": "agent",
+      "purpose": "Owned file metadata, safe excerpt, hash and object storage reference",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid, title text NOT NULL, format text NOT NULL CHECK(format IN ('docx','pdf','xlsx','csv','pptx')), object_uri text NOT NULL, bytes bigint NOT NULL CHECK(bytes>=0), checksum text NOT NULL, preview jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "memories",
+      "group": "agent",
+      "purpose": "Correction-aware durable farmer facts with evidence, expiry and text search",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), fact_key text NOT NULL, value jsonb NOT NULL, evidence_message_id uuid, confidence numeric(5,4) CHECK(confidence BETWEEN 0 AND 1), valid_from timestamptz NOT NULL, valid_to timestamptz, supersedes_id uuid, search_text text NOT NULL, search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple',search_text)) STORED, UNIQUE(id,farmer_id), FOREIGN KEY(evidence_message_id,farmer_id) REFERENCES messages(id,farmer_id), FOREIGN KEY(supersedes_id,farmer_id) REFERENCES memories(id,farmer_id), CHECK(valid_to IS NULL OR valid_to>valid_from)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "retrieval_citations",
+      "group": "agent",
+      "purpose": "Answer evidence references with exact excerpts and source versions",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, chunk_id uuid REFERENCES document_chunks(id), dataset_id uuid REFERENCES datasets(id), source_record_key jsonb, excerpt text NOT NULL, FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "notifications",
+      "group": "agent",
+      "purpose": "Transactional outbox; demo delivery disabled, never imply an actual send",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), task_id uuid, channel text NOT NULL CHECK(channel IN ('in_app','sms','whatsapp','email')), delivery_allowed boolean NOT NULL DEFAULT false, scheduled_at timestamptz NOT NULL, status text NOT NULL, payload jsonb NOT NULL, dedupe_key text NOT NULL, attempts integer NOT NULL DEFAULT 0, UNIQUE(farmer_id,dedupe_key), FOREIGN KEY(task_id,farmer_id) REFERENCES tasks(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "source_mappings",
+      "group": "reference",
+      "purpose": "Reviewed external crop/variety/market/region identifiers, never fuzzy-merge silently",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), provider_id uuid NOT NULL REFERENCES providers(id), entity_type text NOT NULL CHECK(entity_type IN ('crop','variety','market','region')), external_key text NOT NULL, crop_id uuid REFERENCES crops(id), variety_id uuid REFERENCES crop_varieties(id), market_id uuid REFERENCES markets(id), region_id uuid REFERENCES regions(id), valid_from date NOT NULL, valid_to date, reviewed_at timestamptz, CHECK(valid_to IS NULL OR valid_to>=valid_from), CHECK(num_nonnulls(crop_id,variety_id,market_id,region_id)=1), CHECK((entity_type='crop')=(crop_id IS NOT NULL)), CHECK((entity_type='variety')=(variety_id IS NOT NULL)), CHECK((entity_type='market')=(market_id IS NOT NULL)), CHECK((entity_type='region')=(region_id IS NOT NULL))",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "source_health",
+      "group": "ingestion",
+      "purpose": "Per-provider/scope freshness, outage, rate limiting and last-good state",
+      "columns": "provider_id uuid NOT NULL REFERENCES providers(id), scope_key text NOT NULL, checked_at timestamptz NOT NULL, last_success_at timestamptz, source_valid_through date, status text NOT NULL CHECK(status IN ('healthy','stale','outage','rate_limited','unknown')), retry_after timestamptz, safe_error text, PRIMARY KEY(provider_id,scope_key)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "measurement_definitions",
+      "group": "reference",
+      "purpose": "Soil property basis, accepted units, bounds and non-convertible nutrient forms",
+      "columns": "code text PRIMARY KEY, name text NOT NULL, basis text NOT NULL, allowed_units jsonb NOT NULL CHECK(jsonb_typeof(allowed_units)='array'), minimum_value numeric, maximum_value numeric, interpretation text NOT NULL, CHECK(maximum_value IS NULL OR minimum_value IS NULL OR maximum_value>=minimum_value)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "soil_calibrations",
+      "group": "environment",
+      "purpose": "Plot/depth field capacity and wilting point for explicit volumetric water balance",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), plot_id uuid NOT NULL, dataset_id uuid NOT NULL REFERENCES datasets(id), measured_on date NOT NULL, depth_top_cm numeric NOT NULL CHECK(depth_top_cm>=0), depth_bottom_cm numeric NOT NULL, field_capacity_vwc_pct numeric NOT NULL CHECK(field_capacity_vwc_pct BETWEEN 0 AND 100), wilting_point_vwc_pct numeric NOT NULL CHECK(wilting_point_vwc_pct BETWEEN 0 AND 100), bulk_density_g_cm3 numeric CHECK(bulk_density_g_cm3>0 AND bulk_density_g_cm3<3), method text NOT NULL, evidence_type text NOT NULL CHECK(evidence_type IN ('lab','derived','synthetic')), FOREIGN KEY(plot_id,farmer_id) REFERENCES plots(id,farmer_id), CHECK(depth_bottom_cm>depth_top_cm), CHECK(field_capacity_vwc_pct>wilting_point_vwc_pct)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "attachments",
+      "group": "agent",
+      "purpose": "Owned input image/report/audio metadata with quarantine and extraction status",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), message_id uuid, object_uri text NOT NULL, original_name text NOT NULL, mime_type text NOT NULL, bytes bigint NOT NULL CHECK(bytes>0), checksum text NOT NULL, scan_status text NOT NULL CHECK(scan_status IN ('pending','clean','rejected')), extracted_text text, metadata jsonb NOT NULL DEFAULT '{}', UNIQUE(id,farmer_id), FOREIGN KEY(message_id,farmer_id) REFERENCES messages(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "field_observations",
+      "group": "farm",
+      "purpose": "Farmer reports of stage, symptoms, pests, moisture and uncertainty with optional photo",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, observed_at timestamptz NOT NULL, type text NOT NULL, observation jsonb NOT NULL CHECK(jsonb_typeof(observation)='object'), attachment_id uuid, origin text NOT NULL CHECK(origin IN ('user_reported','synthetic')), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id), FOREIGN KEY(attachment_id,farmer_id) REFERENCES attachments(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "harvest_batches",
+      "group": "farm",
+      "purpose": "Actual harvest stock, moisture/grade evidence and storage; units never inferred",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), cycle_id uuid NOT NULL, harvested_on date NOT NULL, quantity numeric(14,3) NOT NULL CHECK(quantity>0), unit_code text NOT NULL REFERENCES units(code), grade text NOT NULL, moisture_pct numeric CHECK(moisture_pct BETWEEN 0 AND 100), quality_evidence jsonb NOT NULL DEFAULT '{}', storage_notes text, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), UNIQUE(id,farmer_id), FOREIGN KEY(cycle_id,farmer_id) REFERENCES crop_cycles(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "sale_records",
+      "group": "farm",
+      "purpose": "Recorded sale proceeds and selling costs, distinct from mandi quotes and payment claims",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), batch_id uuid NOT NULL, sold_on date NOT NULL, quantity numeric(14,3) NOT NULL CHECK(quantity>0), unit_code text NOT NULL REFERENCES units(code), unit_price_inr numeric(14,2) NOT NULL CHECK(unit_price_inr>=0), selling_cost_inr numeric(14,2) NOT NULL CHECK(selling_cost_inr>=0), gross_inr numeric(18,2) GENERATED ALWAYS AS (round(quantity*unit_price_inr,2)) STORED, net_inr numeric(18,2) GENERATED ALWAYS AS (round(quantity*unit_price_inr-selling_cost_inr,2)) STORED, payment_status text NOT NULL CHECK(payment_status IN ('reported_paid','pending','unknown','demo')), receipt_uri text, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), FOREIGN KEY(batch_id,farmer_id) REFERENCES harvest_batches(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "skill_versions",
+      "group": "agent",
+      "purpose": "Versioned skill descriptions, farmer purpose, workflow hash and allowed tools",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL, version text NOT NULL, title text NOT NULL, farmer_description text NOT NULL, workflow text NOT NULL, workflow_hash text NOT NULL, allowed_tools jsonb NOT NULL, active boolean NOT NULL DEFAULT false, UNIQUE(code,version)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "tool_versions",
+      "group": "agent",
+      "purpose": "Versioned tool argument/output schemas and side-effect policy",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code text NOT NULL, version text NOT NULL, title text NOT NULL, arguments_schema jsonb NOT NULL, output_schema jsonb NOT NULL, effect text NOT NULL CHECK(effect IN ('read','artifact','write','external','hardware')), requires_approval boolean NOT NULL, active boolean NOT NULL DEFAULT false, UNIQUE(code,version), CHECK(effect NOT IN ('write','external','hardware') OR requires_approval)",
+      "private": false,
+      "tail": ""
+    },
+    {
+      "name": "run_events",
+      "group": "agent",
+      "purpose": "Resumable public progress/tool/artifact/question timeline; no hidden chain-of-thought",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, sequence bigint NOT NULL CHECK(sequence>0), event_type text NOT NULL CHECK(event_type IN ('started','skill','tool_started','tool_result','question','approval','text_delta','artifact','completed','failed','cancelled')), payload jsonb NOT NULL, occurred_at timestamptz NOT NULL, UNIQUE(run_id,sequence), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "question_requests",
+      "group": "agent",
+      "purpose": "Persisted structured farmer question and waiting state across reconnect/restart",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), run_id uuid NOT NULL, tool_call_id uuid, prompt text NOT NULL, form_schema jsonb NOT NULL, status text NOT NULL CHECK(status IN ('waiting','answered','cancelled','expired')), expires_at timestamptz NOT NULL, UNIQUE(id,farmer_id), FOREIGN KEY(run_id,farmer_id) REFERENCES agent_runs(id,farmer_id), FOREIGN KEY(tool_call_id,farmer_id) REFERENCES tool_calls(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "question_answers",
+      "group": "agent",
+      "purpose": "Typed answer payload and revision identity; server validates against request form schema",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), question_id uuid NOT NULL, answer_version integer NOT NULL CHECK(answer_version>0), answers jsonb NOT NULL CHECK(jsonb_typeof(answers)='object'), submitted_at timestamptz NOT NULL, execution_key text NOT NULL, UNIQUE(question_id,answer_version), UNIQUE(farmer_id,execution_key), FOREIGN KEY(question_id,farmer_id) REFERENCES question_requests(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "context_compactions",
+      "group": "agent",
+      "purpose": "Versioned summary checkpoints, covered sequences, open questions and token budget audit",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), conversation_id uuid NOT NULL, first_sequence bigint NOT NULL CHECK(first_sequence>0), last_sequence bigint NOT NULL, summary text NOT NULL, pending_work jsonb NOT NULL, tokens_before integer NOT NULL CHECK(tokens_before>=0), tokens_after integer NOT NULL CHECK(tokens_after>=0), method_version text NOT NULL, UNIQUE(conversation_id,last_sequence,method_version), FOREIGN KEY(conversation_id,farmer_id) REFERENCES conversations(id,farmer_id), CHECK(last_sequence>=first_sequence), created_at timestamptz NOT NULL DEFAULT now()",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "alert_events",
+      "group": "farm",
+      "purpose": "Farmer-facing sourced/derived warning lifecycle with expiry and acknowledgment",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), dataset_id uuid NOT NULL REFERENCES datasets(id), station_id uuid, source_key text NOT NULL, category text NOT NULL, severity text NOT NULL CHECK(severity IN ('info','watch','warning','critical')), message text NOT NULL, source_url text NOT NULL, issued_at timestamptz NOT NULL, expires_at timestamptz NOT NULL, acknowledged_at timestamptz, status text NOT NULL CHECK(status IN ('active','resolved','expired')), UNIQUE(farmer_id,dataset_id,source_key), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), CHECK(expires_at>issued_at)",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "device_commands",
+      "group": "telemetry",
+      "purpose": "Approved bounded command intent: mock/live, exact approval link, expiry and execution identity",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), station_id uuid NOT NULL, tool_call_id uuid NOT NULL, approval_id uuid NOT NULL REFERENCES approvals(id), command text NOT NULL, arguments_hash text NOT NULL, payload jsonb NOT NULL, mode text NOT NULL CHECK(mode IN ('demo','live')), status text NOT NULL CHECK(status IN ('queued','sent','acknowledged','failed','expired','cancelled')), expires_at timestamptz NOT NULL, execution_key text NOT NULL, UNIQUE(farmer_id,execution_key), UNIQUE(id,farmer_id), FOREIGN KEY(station_id,farmer_id) REFERENCES stations(id,farmer_id), FOREIGN KEY(tool_call_id,farmer_id) REFERENCES tool_calls(id,farmer_id), created_at timestamptz NOT NULL DEFAULT now()",
+      "private": true,
+      "tail": ""
+    },
+    {
+      "name": "device_command_events",
+      "group": "telemetry",
+      "purpose": "Device acknowledgment/rejection/timeout audit; broker delivery is not execution proof",
+      "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), farmer_id uuid NOT NULL REFERENCES farmers(id), command_id uuid NOT NULL, event_key text NOT NULL, event_type text NOT NULL CHECK(event_type IN ('sent','acknowledged','rejected','timeout','cancelled')), occurred_at timestamptz NOT NULL, device_response jsonb NOT NULL, UNIQUE(command_id,event_key), FOREIGN KEY(command_id,farmer_id) REFERENCES device_commands(id,farmer_id)",
+      "private": true,
+      "tail": ""
+    }
+  ],
+  "explicit_indexes": [
+    [
+      "idx_jobs_due",
+      "ingest_runs",
+      "(next_attempt_at) WHERE state IN ('queued','failed')"
+    ],
+    [
+      "idx_quality_dataset",
+      "quality_issues",
+      "(dataset_id,created_at DESC) WHERE resolved_at IS NULL"
+    ],
+    [
+      "idx_regions_parent",
+      "regions",
+      "(parent_id,level)"
+    ],
+    [
+      "idx_locations_region",
+      "locations",
+      "(region_id)"
+    ],
+    [
+      "idx_markets_region",
+      "markets",
+      "(region_id)"
+    ],
+    [
+      "idx_series_crop",
+      "market_series",
+      "(crop_id,market_id,unit_code)"
+    ],
+    [
+      "idx_tasks_open",
+      "tasks",
+      "(farmer_id,due_at) WHERE status='open' AND deleted_at IS NULL"
+    ],
+    [
+      "idx_expenses_date",
+      "expenses",
+      "(farmer_id,spent_on DESC) INCLUDE(amount_inr,category)"
+    ],
+    [
+      "idx_packets_latest",
+      "sensor_packets",
+      "(farmer_id,station_id,observed_at DESC)"
+    ],
+    [
+      "idx_packets_time_brin",
+      "sensor_packets",
+      "USING brin(observed_at)"
+    ],
+    [
+      "idx_prices_latest",
+      "price_observations",
+      "(series_id,observed_on DESC) INCLUDE(modal_price,min_price,max_price)"
+    ],
+    [
+      "idx_prices_time_brin",
+      "price_observations",
+      "USING brin(observed_on)"
+    ],
+    [
+      "idx_projection_series",
+      "price_projections",
+      "(series_id,valid_on,run_id)"
+    ],
+    [
+      "idx_weather_latest",
+      "weather_daily",
+      "(series_id,day DESC)"
+    ],
+    [
+      "idx_weather_forecast",
+      "weather_forecasts",
+      "(series_id,issued_at DESC,valid_on)"
+    ],
+    [
+      "idx_indices_plot",
+      "plot_indices",
+      "(farmer_id,plot_id,day DESC)"
+    ],
+    [
+      "idx_chunks_search",
+      "document_chunks",
+      "USING gin(search_vector)"
+    ],
+    [
+      "idx_memory_search",
+      "memories",
+      "USING gin(search_vector)"
+    ],
+    [
+      "idx_memory_current",
+      "memories",
+      "(farmer_id,fact_key) WHERE valid_to IS NULL"
+    ],
+    [
+      "idx_artifacts_owner",
+      "artifacts",
+      "(farmer_id,created_at DESC)"
+    ],
+    [
+      "idx_messages_owner",
+      "messages",
+      "(farmer_id,conversation_id,sequence)"
+    ],
+    [
+      "idx_scheme_documents",
+      "scheme_versions",
+      "(region_id,scheme_code)"
+    ],
+    [
+      "idx_notification_due",
+      "notifications",
+      "(scheduled_at) WHERE status='queued' AND delivery_allowed"
+    ],
+    [
+      "idx_mapping_current",
+      "source_mappings",
+      "(provider_id,entity_type,external_key) WHERE valid_to IS NULL"
+    ],
+    [
+      "idx_alert_active",
+      "alert_events",
+      "(farmer_id,expires_at) WHERE status='active'"
+    ],
+    [
+      "idx_events_resume",
+      "run_events",
+      "(farmer_id,run_id,sequence)"
+    ],
+    [
+      "idx_question_waiting",
+      "question_requests",
+      "(farmer_id,expires_at) WHERE status='waiting'"
+    ],
+    [
+      "idx_sales_day",
+      "sale_records",
+      "(farmer_id,sold_on DESC)"
+    ],
+    [
+      "idx_commands_due",
+      "device_commands",
+      "(expires_at) WHERE status IN ('queued','sent')"
+    ]
+  ]
+}
