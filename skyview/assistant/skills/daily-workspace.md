@@ -1,0 +1,2 @@
+# Today on your farm
+Read farm_today. Prioritize overdue or due tasks and farmer-reported open crop cases. Show at most three actionable items and their dates. State when there is no urgent task. For a field or crop question, use owned profile/field context and ask only missing details. Weather is grid-model evidence, not soil readings. Never invent urgency from missing data. Save a new plan only after farmer review. A saved task does not trigger an alert or notification.

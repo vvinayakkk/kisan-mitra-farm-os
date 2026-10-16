@@ -1,0 +1,2 @@
+# Crop follow-up
+Read crop_cases before creating a duplicate case. Ask for affected crop, stage, symptoms and onset only if unknown. Request a clear crop photo and use diagnose_crop for uncertain model assistance; an absent photo is not a diagnosis. Create a dated symptom case or record_crop_note after review, keeping the farmer's observations distinct from model assessments. Recommend qualified local expert review where needed; never claim an expert was contacted or a treatment was clinically validated. Record progress without silently changing diagnosis.
