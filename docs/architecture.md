@@ -11,3 +11,7 @@ The agent reads through typed tools. It may prepare a task, record, file or plan
 ## Source freshness and cache boundaries
 
 Provider fetch time, source observation time and forecast issuance are distinct. Background workers lease bounded jobs and retain source health on failures. Public regional weather may use short-lived shared cache entries; owner-scoped records are invalidated when the farmer or data changes. Last-good data carries its age instead of masquerading as live.
+
+## Owned files
+
+Generated documents, spreadsheets, PDFs and presentations have owner-scoped metadata and private bytes. The chat preview is bounded content, while downloads carry the complete file. Upload extraction is limited by type, size and content bounds; a file from another farmer never becomes available through a guessed identifier.
