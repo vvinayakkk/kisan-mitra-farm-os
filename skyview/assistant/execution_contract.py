@@ -276,6 +276,20 @@ def language_instruction(messages, start=0, ui_language="en"):
             "me",
             "prices",
             "weather",
+            # Plain English instructions ("Save a task for ... in the field")
+            # carry few question words; function words identify them.
+            "a",
+            "an",
+            "is",
+            "are",
+            "to",
+            "of",
+            "in",
+            "on",
+            "and",
+            "add",
+            "save",
+            "field",
         }
         if len(words) >= 3 and len(set(words) & english_words) >= 2:
             return "Reply in English, matching the farmer's current English question. Write questions, choices, headings and the final answer in English even if the interface is set to another language."

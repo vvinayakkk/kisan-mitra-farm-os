@@ -115,6 +115,12 @@ DISPLAY_RESULT_FIELDS = (
     "citation",
     "citations",
     "message",
+    # Web research evidence, so restored conversations (web and mobile) keep
+    # their sources instead of showing an unsourced answer after a restart.
+    "sources",
+    "retrieved_at",
+    "search_suggestions_html",
+    "preparation",
 )
 
 

@@ -15,7 +15,7 @@ The provider adapter in `provider.py` rotates configured Groq keys and can use a
 
 ## Memory and evidence
 
-`memory.py`, `memory_facts.py`, `v3_store.py` and the canonical SQL tables retain transcripts, compactions, owner-scoped facts and execution events. Compaction preserves farmer-stated facts, corrections, dates, unresolved goals, file identifiers and verified tool outcomes. Older content is evidence, not a command or approval. Source observation time, fetch time and forecast issuance remain distinct. Uploaded files and web pages are untrusted material. Generated files have owner-scoped metadata, checksums and bounded previews; downloads contain the complete artifact.
+`memory.py`, `memory_facts.py`, `v3_store.py` and the canonical SQL tables retain transcripts, compactions, owner-scoped facts and execution events. Compaction preserves farmer-stated facts, corrections, dates, unresolved goals, file identifiers and verified tool outcomes. Older content is evidence, not a command or approval. Source observation time, fetch time and forecast issuance remain distinct. Uploaded files and web pages are untrusted material. Generated files have owner-scoped metadata, checksums and bounded previews; downloads contain the complete artifact. Restored conversations keep each activity's bounded display result, including web-research sources and retrieval time, so web and mobile clients show the same evidence after a refresh or restart.
 
 ## Review and channels
 
@@ -64,23 +64,23 @@ The `approval` column describes whether the tool itself pauses for a write revie
 | `exchange_journeys` | Checking your exchange progress | No |
 | `field_context` | Reading your field records | No |
 | `soil_report_options` | Checking report units | No |
-| `save_soil_report` | Saving your checked soil report | No |
+| `save_soil_report` | Saving your checked soil report | Yes |
 | `soil_reports` | Reading your saved soil reports | No |
 | `expert_referrals` | Finding official expert help | No |
 | `farm_today` | Checking today's priorities | No |
 | `farm_ledger` | Reading your farm ledger | No |
-| `record_ledger` | Saving your ledger entry | No |
+| `record_ledger` | Saving your ledger entry | Yes |
 | `crop_cases` | Reading your crop follow-ups | No |
-| `create_crop_case` | Opening a crop follow-up | No |
-| `record_crop_note` | Saving a crop observation | No |
+| `create_crop_case` | Opening a crop follow-up | Yes |
+| `record_crop_note` | Saving a crop observation | Yes |
 | `farm_missions` | Reading your longer farm plans | No |
-| `create_mission` | Preparing your longer farm plan | No |
+| `create_mission` | Preparing your longer farm plan | Yes |
 | `service_notebook` | Reading your service arrangements | No |
-| `record_service` | Saving your service arrangement | No |
+| `record_service` | Saving your service arrangement | Yes |
 | `shared_groups` | Reading your household or FPO groups | No |
 | `shared_group_tasks` | Reading a shared group plan | No |
-| `create_farm_group` | Creating your private group plan | No |
-| `create_shared_task` | Saving a shared checklist task | No |
+| `create_farm_group` | Creating your private group plan | Yes |
+| `create_shared_task` | Saving a shared checklist task | Yes |
 | `recall_memory` | Remembering earlier conversations | No |
 | `load_skill` | Preparing a skill | No |
 | `station_snapshot` | Checking your station | No |
@@ -97,11 +97,11 @@ The `approval` column describes whether the tool itself pauses for a write revie
 | `ask_farmer` | A little more detail | No |
 | `calculate_budget` | Calculating costs | No |
 | `list_tasks` | Reading your tasks | No |
-| `save_task` | Saving a farm task | No |
-| `update_task` | Updating your farm plan | No |
-| `delete_task` | Removing a farm task | No |
-| `complete_task` | Completing a task | No |
-| `record_expense` | Recording an expense | No |
+| `save_task` | Saving a farm task | Yes |
+| `update_task` | Updating your farm plan | Yes |
+| `delete_task` | Removing a farm task | Yes |
+| `complete_task` | Completing a task | Yes |
+| `record_expense` | Recording an expense | Yes |
 | `list_expenses` | Reading farm expenses | No |
 | `create_file` | Creating your file | No |
 | `revise_file` | Revising your file | No |
