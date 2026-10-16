@@ -1,0 +1,65 @@
+/* A labelled field stays one form item, including its shared dictation control. */
+.feature-search-field {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 100%;
+}
+.feature-search-field > label {
+  display: block;
+  width: 100%;
+  line-height: 1.5;
+}
+.feature-search-field > .workspace-voice-field {
+  margin-top: 8px;
+}
+.feature-search .workspace-voice-field > input {
+  margin-top: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 46px;
+  min-height: 42px;
+}
+.feature-search > .feature-primary {
+  flex-shrink: 0;
+  min-height: 42px;
+}
+.market-search-context {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin: 14px 0 24px;
+  color: #687b5e;
+  font-size: 12px;
+}
+.feature-loading-line { display: flex; align-items: center; gap: 9px; color: #526c45; padding: 24px 0; }
+.market-history-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #405f32; padding: 8px 0; }
+.market-history-link:hover { text-decoration: underline; }
+.market-result-count { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: #687b5e; padding: 14px 0 20px; }
+.market-directory { margin: 0 0 20px; border-bottom: 1px solid #dce4d4; padding: 0 0 14px; color: #405c36; font-size: 12px; }
+.market-directory summary { cursor: pointer; }
+.market-directory-list { margin: 12px 0; }
+.market-directory-list article { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 12px 0; border-top: 1px solid #e0e7da; }
+.market-directory-list strong,.market-directory-list small { display: block; }
+.market-directory-list strong { font-size: 14px; margin-bottom: 5px; }
+.market-directory-list small { color: #6b7c60; line-height: 1.6; }
+.market-directory-list article > div:last-child { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.market-directory-list a { display: inline-flex; align-items: center; gap: 3px; }
+.market-directory-list button { border: 1px solid #c9d6bd; border-radius: 9px; padding: 7px 10px; }
+@media (max-width: 700px) { .market-directory-list article { align-items: start; flex-direction: column; } }
+@media (min-width: 701px) and (max-width: 1200px) {
+  .feature-search { flex-wrap: wrap; }
+  .feature-search-field { flex-basis: 28%; }
+}
+@media (max-width: 700px) {
+  .feature-search-field {
+    flex-basis: auto;
+  }
+  .feature-search .workspace-voice-field > input {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .feature-search > .feature-primary {
+    min-height: 44px;
+  }
+}
