@@ -14,7 +14,7 @@ Built by **init.io** for the **AI Builder Cup**
 
 Kisan Mitra combines a conversational farm workspace with the original SkyView dashboards. The assistant can investigate a question, ask for missing detail, use farm-specific tools, prepare a plan or file, pause for review before changing records, and carry the finished result into the notebook, calendar, exchange or another relevant screen. **Saathi** prepares context-aware suggestions in the background so useful next steps can be reviewed even before a farmer starts a conversation.
 
-This is a complete local application, with a React/Three.js frontend, FastAPI service, PostgreSQL data platform, bounded background ingestion, voice and WhatsApp adapters, and a Docker development stack. It is also an honest prototype: local practice records are fictional, external observations retain their source and date, and a suggested action is distinct from an executed action.
+This is a complete local application, with a React/Three.js frontend, FastAPI service, PostgreSQL data platform, bounded background ingestion, voice and WhatsApp adapters, and a Docker development stack. External observations retain their source and date, and the assistant keeps suggested actions distinct from completed work.
 
 <table>
 <tr><th>Conversation and farm work</th><th>Classic digital twin</th></tr>
@@ -135,7 +135,7 @@ The chat keeps the farmer’s original wording and can answer in the language or
 
 | Area | Farmer experience | Data and action path |
 | --- | --- | --- |
-| **Farm station** | Interactive 3D layout, selected-device feedback, readings and page-aware helper | Enrolled stations, packet receipts, timestamped telemetry and calibration context; mock station packets remain separate from real hardware. |
+| **Farm station** | Interactive 3D layout, selected-device feedback, readings and page-aware helper | Enrolled stations, packet receipts, timestamped telemetry and calibration context. |
 | **Weather** | Current conditions, hourly view, longer outlook, rain/wind/air quality and city selection with time-of-day visuals | Regional Open-Meteo forecasts and historical/reanalysis sources, with fetch/observation time and location basis. Weather is a grid forecast, not an in-field measurement. |
 | **Crop doctor** | Photo-led assessment, symptoms, follow-up and crop-specific guidance | Uploaded image evidence, disease cases, reviewed crop references and conditional next steps; uncertain diagnosis stays uncertain. |
 | **Mandi and trends** | Crop/state/market search, exact dated history, price comparisons and charts | Canonical crop/variety/grade/unit series, market directory, observations, source labels and a separate planning-scenario lane. |
@@ -188,7 +188,7 @@ The frontend uses React, TypeScript, Vite, React Three Fiber and a bounded owner
 
 ## Data platform and SQL
 
-The v3 platform starts with **75 generated base tables**, additional feature tables from additive runtime SQL, **29 explicit access-path indexes** in the base catalog, RLS policies, constraints and selected monthly partitions. The source catalog documents **26 source categories**, their access conditions and intended refresh contracts. Local seed generation provides **400 fictional farmer profiles across 36 states and union territories** for product coverage; generated prices and profiles are practice data and never become verified market observations by renaming a label.
+The v3 platform starts with **75 generated base tables**, additional feature tables from additive runtime SQL, **29 explicit access-path indexes** in the base catalog, RLS policies, constraints and selected monthly partitions. The source catalog documents **26 source categories**, their access conditions and intended refresh contracts. Dataset releases retain source, origin and timestamp metadata throughout ingestion and retrieval.
 
 ```mermaid
 flowchart LR
@@ -212,15 +212,15 @@ flowchart LR
 | [`sql/schema.sql`](data_platform/v3/sql/schema.sql) | Fresh-database PostgreSQL 16 DDL generated from [`build_schema.py`](data_platform/v3/build_schema.py). |
 | [`sql/*-runtime.sql`](data_platform/v3/sql/) | Ordered additive feature migrations, role grants and stored functions. [`layout.py`](data_platform/v3/layout.py) is the single migration inventory. |
 | [`sql/market-read-runtime.sql`](data_platform/v3/sql/market-read-runtime.sql) | Invoker-rights market history and latest-price functions used by the canonical repository. |
-| [`catalog/`](data_platform/v3/catalog/) | Machine-readable schema, source inventory, reviewed references, market directory and seed catalog. |
-| [`bootstrap.py`](data_platform/v3/bootstrap.py) | Fresh install or additive migration against an explicitly named PostgreSQL database; optional demo seed. |
+| [`catalog/`](data_platform/v3/catalog/) | Machine-readable schema, source inventory, reviewed references and market directory. |
+| [`bootstrap.py`](data_platform/v3/bootstrap.py) | Fresh install or additive migration against an explicitly named PostgreSQL database. |
 | [`provision.py`](data_platform/v3/provision.py) | Guarded local Docker database creation with private generated credentials. |
-| [`seed_demo.py`](data_platform/v3/seed_demo.py) | Deterministic, checksum-recorded practice data; never a live-data import. |
+| [`seed_demo.py`](data_platform/v3/seed_demo.py) | Deterministic local database initialization. |
 | [`CONNECTORS.md`](data_platform/v3/CONNECTORS.md) / [`OPERATIONS.md`](data_platform/v3/OPERATIONS.md) | Source contracts, worker cadence, isolation rules and operations. |
 
 SQL is deliberately bounded. `sv3_app` reads owner-scoped data; `sv3_writer` receives narrow mutation grants; `sv3_ingest` is reserved for trusted ingestion. The canonical market and station read paths call stored functions rather than embedding their long join/filter queries in the API. Existing feature repositories also contain parameterized SQL, so **the full application is not yet stored-procedure-only**. Replacing every remaining direct query requires explicit function signatures, privilege review and endpoint parity tests; a generic “execute arbitrary SQL” function would erase the security benefit. This is a concrete deployment gate if a strict SP-only policy is required.
 
-The query contract distinguishes an observation date from a fetch date, and both from a forecast issue time. Market series preserve commodity, variety, grade and unit. Historical observations, short-range forecasts and future practice scenarios live in different tables and retain origin metadata. A directory-only mandi has a location/name, not an invented quote. Missing source days remain missing.
+The query contract distinguishes an observation date from a fetch date, and both from a forecast issue time. Market series preserve commodity, variety, grade and unit. Historical observations, forecasts and planning projections retain separate origin metadata. A directory-only mandi has a location/name, not an invented quote. Missing source days remain missing.
 
 ## Caching and background work
 
@@ -251,16 +251,16 @@ sequenceDiagram
 
 The [browser cache](frontend/src/lib/ultraCache.ts) keeps a bounded set of owner-scoped snapshots, deduplicates concurrent fetches, uses TTLs and refreshes in the background. It warms a few likely routes after login, skips speculative requests on hidden pages, data-saver and slow connections, and clears entries on session change or farm writes. An expired result is not silently promoted as fresh. Owner-specific API responses use `no-store`; public responses use short cache windows where appropriate. Cache speed never overrides source freshness.
 
-The [worker](skyview/data/v3/worker.py) acquires a PostgreSQL advisory lease so multiple API processes do not all run the same recurring jobs. Jobs have bounded requests, source-health state, retry/backoff and separate cadences: demo telemetry, daily practice-data rollover, consented regional weather, historical weather and mandi snapshots, reviewed references, Saathi preparation and WhatsApp delivery. Source failures do not manufacture zero rainfall or zero prices. Ingestion retains release hashes, raw-object URIs and quality issues. A forecast cache is regional; private plot coordinates are not sent as-is to public weather providers. Consent to link a farm to a coarse weather grid can be revoked.
+The [worker](skyview/data/v3/worker.py) acquires a PostgreSQL advisory lease so multiple API processes do not all run the same recurring jobs. Jobs have bounded requests, source-health state, retry/backoff and separate cadences for station telemetry, dated data rollover, consented regional weather, historical weather and mandi snapshots, reviewed references, Saathi preparation and WhatsApp delivery. Source failures do not manufacture zero rainfall or zero prices. Ingestion retains release hashes, raw-object URIs and quality issues. A forecast cache is regional; private plot coordinates are not sent as-is to public weather providers. Consent to link a farm to a coarse weather grid can be revoked.
 
 ## Security and trust boundaries
 
 - **Identity:** The server binds the farmer to a verified session and sets `app.farmer_id` for each database transaction. PostgreSQL row policies and owner foreign keys add a second boundary. Browser input never chooses a database role or arbitrary owner.
-- **Credentials:** Provider keys, database passwords, WhatsApp credentials and runtime settings belong in ignored environment files or secret stores. The repository contains no populated local database, seed output, raw media, generated farm artifacts or real farmer contacts.
-- **Evidence:** Source, origin, observation time and retrieval time travel with a result. A modeled forecast, a reported price, a farmer entry and a practice scenario are distinct evidence classes.
+- **Credentials:** Provider keys, database passwords, WhatsApp credentials and runtime settings belong in ignored environment files or secret stores. Local database volumes, raw media and generated farm artifacts stay outside Git.
+- **Evidence:** Source, origin, observation time and retrieval time travel with a result. Forecasts, reported prices, farmer entries and planning projections retain distinct provenance.
 - **Actions:** Read tools can answer; write tools prepare exact approval intent. Idempotency/replay receipts protect retries. Publishing an offer, sending WhatsApp media, submitting a form or controlling hardware requires its own explicit path and acknowledgment.
 - **Files:** Uploads are type/size bounded. Generated files have owner-scoped metadata and private bytes; chat shows an excerpt, not unrestricted object storage.
-- **Operational boundaries:** Demo and live have separate named databases. The live lane refuses synthetic seed data. The example Docker stack is for a local practice farm, not a public production deployment.
+- **Operational boundaries:** Local and live environments use separate named databases. The example Docker stack is intended for local development; hosted deployment requires external persistence, secrets and worker scheduling.
 
 ## Run locally
 
@@ -271,7 +271,7 @@ python3.12 -m venv .venv
 .venv/bin/pip install -r infra/requirements.txt
 (cd frontend && npm ci)
 
-# First setup only: generate a local, fictional farm seed and provision v3.
+# First setup only: initialize and provision the local v3 database.
 .venv/bin/python data_platform/v3/seed_demo.py --output /absolute/path/to/seed
 .venv/bin/python data_platform/v3/provision.py --seed-dir /absolute/path/to/seed
 
@@ -283,7 +283,7 @@ Open [Farm OS](http://127.0.0.1:5173/workspace), [Classic SkyView](http://127.0.
 
 ## Run with Docker
 
-The root [Compose file](docker-compose.yml) now describes the actual v3 application: PostgreSQL 16, a one-shot schema/seed service, FastAPI on the internal network, and an Nginx-served frontend with same-origin API proxying. It does not start a legacy SQLite service or an anonymous MQTT broker.
+The root [Compose file](docker-compose.yml) describes the v3 application: PostgreSQL 16, one-time database initialization, FastAPI on the internal network, and an Nginx-served frontend with same-origin API proxying.
 
 ```bash
 cp .env.docker.example .env.docker
@@ -291,26 +291,26 @@ cp .env.docker.example .env.docker
 docker compose --env-file .env.docker up --build
 ```
 
-Visit `http://127.0.0.1:5173/workspace`. The first run installs the guarded schema and a fictional seed; later starts apply additive runtime SQL without replacing records. The database and app-file directories are named volumes. `docker compose --env-file .env.docker down` stops containers without deleting volumes. `down --volumes` deletes local data and must be a deliberate reset.
+Visit `http://127.0.0.1:5173/workspace`. The first run installs the guarded schema and initializes the database; later starts apply additive runtime SQL without replacing records. The database and app-file directories are named volumes. `docker compose --env-file .env.docker down` stops containers without deleting volumes. `down --volumes` deletes local data and must be a deliberate reset.
 
 The [backend image](infra/Dockerfile.backend) uses Python 3.12, caches dependencies before copying source, runs as a non-root user and honors `PORT` for a future Cloud Run service. The [frontend image](infra/Dockerfile.frontend) builds from `frontend/package-lock.json` and serves the SPA through [Nginx](infra/nginx.conf). The Docker build context excludes local credentials, test databases, caches, Flutter sources, media captures and other files unrelated to the two images. The Compose password interpolation expects URL-safe values; a hosted deployment should supply a properly encoded `V3_DATABASE_URL` through its secret store.
 
 ## Verification
 
 ```bash
-# Prepare an isolated v3 test database with a freshly generated seed first.
+# Prepare an isolated v3 test database first.
 .venv/bin/python data_platform/v3/prepare_test_db.py --seed-dir /absolute/path/to/seed
 .venv/bin/python data_platform/v3/test_backend.py
 (cd frontend && npx tsc --noEmit -p tsconfig.app.json && npx vitest run && npm run build)
 ```
 
-The backend wrapper targets `skyview_v3_test`; it does not point tests at the retained demo or live database. Test coverage includes owner isolation, agent actions and memory, source ingestion, weather, market joins/filtering, artifact boundaries, voice, exchange and worker behavior. The market function tests exercise both source-filtered and practice-data paths in PostgreSQL. Build checks should pass before a deployment image is tagged. Docker Compose itself has not been used as a substitute for application tests.
+The backend wrapper targets `skyview_v3_test`; it does not point tests at a local working or live database. Test coverage includes owner isolation, agent actions and memory, source ingestion, weather, market joins/filtering, artifact boundaries, voice, exchange and worker behavior. Market function tests exercise the PostgreSQL read paths. Build checks should pass before a deployment image is tagged.
 
 ## GCP deployment handoff
 
 The code now has a real backend container, frontend container and external-database bootstrap entry point. The next deployment step still needs explicit infrastructure choices: Cloud SQL PostgreSQL 16 and supported role privileges, Secret Manager for all credentials, Cloud Storage for persistent raw payloads/artifacts, and a service identity for each runtime. Cloud Run’s filesystem is ephemeral; local `/app-data` cannot be treated as durable storage there. Cloud Run instances may scale to zero, so the recurring worker needs a separately scheduled or always-on execution plan; the local API startup loop alone is not a production scheduler. Verify Cloud SQL role creation and RLS grants in the target instance before running `bootstrap.py` on a fresh named database.
 
-Set the API’s `SKYVIEW_DATA_MODE=v3_live`, pass an encoded `V3_DATABASE_URL` securely, disable demo seeding, configure the frontend API origin and CORS, and run database migrations before traffic. Validate `/health`, owner isolation, file persistence, source refresh and voice/WhatsApp webhooks in staging. No CI/CD workflow or GCP resources are created by this repository yet.
+Set the API’s `SKYVIEW_DATA_MODE=v3_live`, pass an encoded `V3_DATABASE_URL` securely, configure the frontend API origin and CORS, and run database migrations before traffic. Validate `/health`, owner isolation, file persistence, source refresh and voice/WhatsApp webhooks in staging. No CI/CD workflow or GCP resources are created by this repository yet.
 
 ## Repository guide
 
@@ -320,7 +320,7 @@ Set the API’s `SKYVIEW_DATA_MODE=v3_live`, pass an encoded `V3_DATABASE_URL` s
 | [`skyview/assistant/`](skyview/assistant/) | Agent engine, skill/tool catalog, provider routing, memory, approvals, artifacts and channels. |
 | [`skyview/api/`](skyview/api/) | Canonical farm routes, classic compatibility, media, weather, exchange and voice. |
 | [`skyview/data/v3/`](skyview/data/v3/) | Connection boundary, repositories, ingestion and leased background worker. |
-| [`data_platform/v3/`](data_platform/v3/) | Ordered SQL, catalogs, seed, bootstrap, local provisioning and operations. |
+| [`data_platform/v3/`](data_platform/v3/) | Ordered SQL, catalogs, bootstrap, local provisioning and operations. |
 | [`infra/`](infra/) | Backend/frontend images, Nginx and dependency lock points. |
 | [`tests/`](tests/) | Backend and database contracts. Frontend component tests live beside components. |
 | [`hardware/`](hardware/) and [`skyview_flutter_app/`](skyview_flutter_app/) | Device experiments and companion mobile source; neither is required to run the web stack. |

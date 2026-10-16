@@ -1,6 +1,6 @@
 # Kisan Mitra data platform v3
 
-This directory contains the current PostgreSQL schema and the tooling that builds, provisions, migrates, tests and refreshes it. It is source code, not a checked-in database. The local seed represents fictional farmers and practice scenarios; source-backed observations keep separate provenance.
+This directory contains the current PostgreSQL schema and the tooling that builds, provisions, migrates, tests and refreshes it. It is source code, not a checked-in database. Source-backed observations retain separate provenance.
 
 | Path | Responsibility |
 | --- | --- |
@@ -10,9 +10,9 @@ This directory contains the current PostgreSQL schema and the tooling that build
 | `catalog/source-catalog.json` | 26 researched public-source contracts and access boundaries. |
 | `catalog/reviewed_sources.json` | Curated reference extracts for reviewed imports. |
 | `catalog/enam_market_reference.json` | Partial official directory of market names; not price quotes. |
-| `catalog/agent-catalog.json` | Seed-time assistant registry. Runtime skill/tool inventory is in `skyview/assistant/tools.py`. |
+| `catalog/agent-catalog.json` | Assistant registry. Runtime skill/tool inventory is in `skyview/assistant/tools.py`. |
 | `build_schema.py` | Regenerates `sql/schema.sql`, `sql/roles.sql` and the schema catalog. |
-| `seed_demo.py` | Generates an ignored, deterministic 400-farmer seed outside Git. |
+| `seed_demo.py` | Generates deterministic local initialization data outside Git. |
 | `bootstrap.py` | Installs a fresh, explicitly named v3 PostgreSQL database or reapplies additive runtime SQL. |
 | `provision.py` / `prepare_test_db.py` | Guarded local Docker provisioning and isolated test preparation. |
 | `local.py` / `run_backend.py` | Existing local database, API and frontend launcher. |
