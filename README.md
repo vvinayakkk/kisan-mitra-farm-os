@@ -16,3 +16,12 @@ Built by **init.io** for the **AI Builder Cup**. Kisan Mitra brings an agentic f
 | **Markets** | Compare mandi quotes by crop and region and inspect dated price series with variety and unit context. |
 | **Farm station** | Explore a Three.js station and sensor scene with live-status context, readings and a movable assistant. |
 | **Weather** | View current regional conditions, hourly and ten-day outlooks, rainfall, wind and air quality in a time-aware scene. |
+| **Exchange** | Discover resources, compare matches, discuss an exchange privately and follow the handover trail. |
+| **Farm notebook & calendar** | Keep fields, crop seasons, work, expenses, reports and plans in a notebook-style workspace and a dated task view. |
+| **Farm support** | Explore cited programme information and assemble a checklist for an application or visit. |
+
+
+The assistant can use typed farm tools to read relevant records, compare prices, research a question, prepare plans and create DOCX, PDF, XLSX, CSV and PPTX files with previews in chat. Actions that change farm records pause for review. Approval is bound to the proposed action and replay-safe execution; a draft alone does not publish an exchange, send a message, claim a subsidy or operate hardware.
+
+Voice input and read-aloud are available across the workspace when speech providers and browser microphone permissions are configured. The live conversation flow records a turn, transcribes it, runs the same agent tools, then speaks the reply. It is turn-based speech rather than a full-duplex call. Language preference follows the farmer across chat and workspace; translation and speech quality depend on their configured providers.
+
