@@ -16,12 +16,34 @@ Kisan Mitra combines a conversational farm workspace with the original SkyView d
 
 This is a complete local application, with a React/Three.js frontend, FastAPI service, PostgreSQL data platform, bounded background ingestion, voice and WhatsApp adapters, and a Docker development stack. External observations retain their source and date, and the assistant keeps suggested actions distinct from completed work.
 
+### Farm OS in action
+
+<p align="center"><img src="docs/media/assistant-tool-activity.png" alt="New Farm OS assistant showing four completed skill and tool steps, a prioritized farm task table, and the conversation composer" width="1100"></p>
+<p align="center"><sub>Mitra reads saved work and the weather outlook, shows each step, and turns the evidence into a prioritized checklist.</sub></p>
+
 <table>
-<tr><th>Conversation and farm work</th><th>Classic digital twin</th></tr>
-<tr><td><img src="docs/media/farm-os-chat.png" alt="Farm OS chat and task workspace" width="690"></td><td><img src="docs/media/classic-station.png" alt="Classic SkyView digital twin" width="690"></td></tr>
-<tr><th>Regional weather</th><th>The farm notebook</th></tr>
-<tr><td><img src="docs/media/farm-weather.png" alt="Weather workspace" width="690"></td><td><img src="docs/media/farm-notebook.png" alt="Spiral notebook" width="690"></td></tr>
+<tr><th>Interactive farm station</th><th>Weather for the farmer's location</th></tr>
+<tr><td><img src="docs/media/farm-station.png" alt="New Farm OS 3D farm station with component labels and measurements" width="690"></td><td><img src="docs/media/farm-weather.png" alt="Farm OS weather page with current conditions, hourly outlook, forecast, wind and air quality" width="690"></td></tr>
+<tr><th>Work calendar</th><th>Farm notebook</th></tr>
+<tr><td><img src="docs/media/farm-calendar.png" alt="Farm OS calendar with dated tasks, a selected day's actions and contextual Mitra help" width="690"></td><td><img src="docs/media/farm-notebook.png" alt="Farm OS spiral notebook with today's work, field follow-ups and Mitra input" width="690"></td></tr>
+<tr><th>Farmer exchange</th><th>Farmer profile</th></tr>
+<tr><td><img src="docs/media/farm-exchange.png" alt="Farm OS farmer exchange with guided offer input, exchange stages and resource trail" width="690"></td><td><img src="docs/media/farm-profile.png" alt="Farm OS farmer profile showing land, crops, location, preferences and resources" width="690"></td></tr>
 </table>
+
+### Inside the assistant
+
+<table>
+<tr><th>A task drafted for review</th><th>A response in Hindi</th></tr>
+<tr><td><img src="docs/media/assistant-task-preview.png" alt="Mitra drafting a dated calendar task and waiting for the farmer's confirmation before saving" width="690"></td><td><img src="docs/media/assistant-hindi.png" alt="A Hindi farm-work question answered in Hindi with a prioritized table and checklist" width="690"></td></tr>
+<tr><th>Skills and tools</th><th>Chart rendered in chat</th></tr>
+<tr><td><img src="docs/media/assistant-toolkit-detail.png" alt="Inspectable farm skills, including research, exchange, weather, crop planning and market comparison" width="690"></td><td><img src="docs/media/assistant-weather-chart.png" alt="Dated rainfall forecast chart rendered inside a Mitra conversation" width="690"></td></tr>
+</table>
+
+<p align="center"><img src="docs/media/assistant-file-preview.png" alt="Mitra completes a PDF task, then shows the generated file, revision action and inline content preview in the conversation" width="1000"></p>
+<p align="center"><sub>A generated PDF stays in the conversation with a partial preview, revision action and private download.</sub></p>
+
+<p align="center"><img src="docs/media/saathi-review.png" alt="Zoomed view of a Saathi prepared exchange plan with review, edit and dismiss actions" width="1000"></p>
+<p align="center"><sub>Saathi prepares a contextual exchange plan; the farmer can inspect the steps, edit it, approve it, or dismiss it.</sub></p>
 
 ## Contents
 
