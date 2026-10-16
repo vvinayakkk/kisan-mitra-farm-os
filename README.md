@@ -81,3 +81,17 @@ npm run build
 
 The backend test wrapper expects a separately prepared test database for database-backed tests; [local operation](data_platform/v3/OPERATIONS.md) describes that preparation. Never point it at a populated farmer database.
 
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| [`frontend/`](frontend/) | Classic app and the new responsive farmer workspace. |
+| [`skyview/assistant/`](skyview/assistant/) | Agent engine, skills, typed tools, memory, research and artifact creation. |
+| [`skyview/api/`](skyview/api/) | FastAPI routes for farm, assistant, voice, weather and integrations. |
+| [`skyview/data/v3/`](skyview/data/v3/) | Canonical repositories, ingestion and background worker. |
+| [`data_platform/v3/`](data_platform/v3/) | PostgreSQL schema, provisioning, local checks and source catalogs. |
+| [`tests/`](tests/) | Backend behavior and integration tests. |
+| [`hardware/`](hardware/) | Device, firmware and acceleration experiments. |
+| [`skyview_flutter_app/`](skyview_flutter_app/) | Companion mobile application source. |
+| [`docs/`](docs/) | Architecture, API and feature details. |
+
