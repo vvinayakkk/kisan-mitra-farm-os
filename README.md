@@ -69,6 +69,7 @@ The counts describe the current code and catalog. They are not latency or produc
 - [Verification & Quality](#-verification--quality)
 - [Autonomous Agentic Workflows](#-autonomous-agentic-workflows)
 - [Core Functional Engines](#-core-functional-engines)
+- [Farm station & hardware integration](#hardware-integration)
 - [Monorepo Directory Structure](#-monorepo-directory-structure)
 - [Quick Start & Development](#-quick-start--development)
 - [OpenAPI REST Endpoints](#-openapi-rest-endpoints)
@@ -474,9 +475,48 @@ Every feature has a short job description here. The images are clickable for a f
 
 [![Farmer exchange resource journey](docs/media/farm-exchange.png)](docs/media/farm-exchange.png)
 
+<a id="hardware-integration"></a>
+
 ### 9. 🛰️ 3D Farm Station & Connected Hardware
 
-**See farm equipment and readings in a single visual station.** The Three.js scene makes sensors and tools explorable; enrolled devices contribute dated measurements and health. Hardware setup, packet verification and an optional FPGA register bridge live in [the hardware guide](docs/hardware/README.md).
+**From a measurement in the field to context Mitra can use.** An enrolled station sends authenticated sensor packets to the backend. Validated, dated measurements are stored against its farmer and station, then read by the website, Flutter app and Mitra’s station tools.
+
+[![Interactive 3D farm station showing wind direction, wind speed, rainfall, ESP32 controller, status display, solar array and soil-moisture probe](docs/media/farm-station.png)](docs/media/farm-station.png)
+
+*The React Three Fiber station visualization labels the wind vane, anemometer, rain collector, ESP32 controller, display, solar array and soil probe. This is a captured software visualization, not a photograph or proof of a connected physical installation. Displayed equipment and animations do not create sensor readings.*
+
+#### How the station connects
+
+```mermaid
+flowchart LR
+    Sensors["Calibrated field sensors"] --> Device["Enrolled device / gateway"]
+    Device -->|"HTTPS · device credential"| Ingest["POST /api/sensors/ingest"]
+    Ingest --> Check["Validate identity, units, time and replay"]
+    Check --> DB[("Owned station measurements + packet receipts")]
+    DB --> Read["Owner-scoped station API"]
+    Read --> Web["Web farm station"]
+    Read --> App["Flutter station screen"]
+    DB --> Mitra["Mitra station snapshot and history tools"]
+    Mitra --> Plan["Explain readings and prepare next steps for review"]
+```
+
+| Stage | Integration in the repository |
+| :--- | :--- |
+| **Enroll** | Create the farm and plot, then call `POST /api/stations/enroll` as the owner. Enrollment binds the station to that account and returns a device key; the server stores its hash. |
+| **Send** | Device or gateway firmware calls `POST /api/sensors/ingest` with `Authorization: Device <key>`, a station ID, device observation time, per-boot UUID, increasing sequence and calibrated measurements. |
+| **Validate and save** | The backend verifies the credential and validates the measurement envelope. Identical packet retries are safe; conflicting reuse of a boot/sequence is rejected. Receipt updates `last_received_at`. |
+| **Read in app and web** | `GET /api/sensors/latest/{station_id}` exposes the owned station snapshot. The screens retain dates and measurement context; provider forecasts remain distinct from physical readings. |
+| **Use with Mitra** | Station snapshot and history tools bring measured conditions into a conversation or proposed plan. Receiving telemetry does not itself activate irrigation or other equipment. |
+
+The [connection guide](docs/hardware/README.md#connect-a-station) includes the JSON packet format, units, boot/sequence rules and commissioning notes. Firmware must implement this HTTPS contract; a rendered ESP32 in the scene is not device enrollment.
+
+#### Optional FPGA sensor fusion
+
+The repository also includes [C++ HLS sources and testbenches](hardware/hls/README.md), [Verilog RTL and the Vivado register map](hardware/rtl/VIVADO_GUIDE.md), and a [Python register bridge](skyview/agents/fpga_agent.py). On a Linux host physically connected to the board, the bridge accesses the fusion accelerator through a 32-bit AXI4-Lite memory map (`/dev/mem` or a UIO device).
+
+`GET /api/fpga/status` probes the configured IP version. `POST /api/fpga/fusion` writes Q8.8 sensor inputs, waits for a fresh completion and returns the raw hardware results, with AI interpretation kept separately. Enable the bridge only on the host that can access the FPGA registers; Cloud Run cannot directly access a remote board’s memory map. The rain-prediction RTL has a separate address map and is not wired into this fusion bridge.
+
+**Physical commissioning remains a separate step:** sensor wiring, calibration, firmware uploads, board configuration and end-to-end delivery must be verified on the actual installation. The source code, screenshots and software tests alone do not establish a live connected board or measured hardware latency.
 
 ### 10. ✨ Saathi: Prepared Work to Review
 
