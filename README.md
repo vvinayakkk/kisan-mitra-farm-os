@@ -7,12 +7,16 @@
 ---
 
 [![AI Builder Cup](https://img.shields.io/badge/AI%20Builder%20Cup-init.io-355B3C?style=for-the-badge)](https://github.com/vvinayakkk/kisan-mitra-farm-os)
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Live%20deployment-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://project-0b9b4009-1644-4477-aec.web.app/workspace)
+[![Firebase](https://img.shields.io/badge/Firebase-Hosting%20%2B%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://project-0b9b4009-1644-4477-aec.web.app/workspace)
 [![Web](https://img.shields.io/badge/Web-Farm%20OS%20%2B%20Classic-50784C?style=for-the-badge&logo=react&logoColor=white)](frontend/)
 [![Mobile](https://img.shields.io/badge/Mobile-Flutter-638C56?style=for-the-badge&logo=flutter&logoColor=white)](mobile/)
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Connected%20channel-77A966?style=for-the-badge&logo=whatsapp&logoColor=white)](docs/api/websocket-and-webhooks.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-A5C48A?style=for-the-badge)](LICENSE)
 
-**Kisan Mitra**, built by **init.io** for the **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
+**Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
+
+**Explore the live deployment:** [Open Farm OS](https://project-0b9b4009-1644-4477-aec.web.app/workspace) · [Open Classic SkyView](https://project-0b9b4009-1644-4477-aec.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/tag/v1.0.0)
 
 > **A question is the beginning of a workflow, not the end of a chat.** Ask what needs doing; Mitra finds the relevant farm context, shows its work, asks for missing details and returns an answer, chart, file or action ready to approve.
 
@@ -46,7 +50,7 @@ The counts describe the current code and catalog. They are not latency or produc
 - [Monorepo Directory Structure](#-monorepo-directory-structure)
 - [Quick Start & Development](#-quick-start--development)
 - [OpenAPI REST Endpoints](#-openapi-rest-endpoints)
-- [GCP Deployment Blueprint](#-gcp-deployment-blueprint)
+- [Live Google Cloud Deployment](#-live-google-cloud-deployment)
 - [License & Open Source Dedication](#-license--open-source-dedication)
 
 ---
@@ -453,23 +457,43 @@ Private endpoints require verified account or assistant-session access; client-s
 
 ---
 
-## 📦 GCP Deployment Blueprint
+## ☁️ Live Google Cloud Deployment
 
-**Google Cloud Platform is the intended application host.** The [deployment runbook](docs/gcp-deployment.md) records the database, identity, storage, and messaging gates:
+Kisan Mitra's website and API are deployed on **Google Cloud**. Firebase Hosting serves both web experiences over HTTPS; Firebase Authentication verifies phone sign-in; Cloud Run runs the FastAPI agent in Mumbai. Cloud Build creates the backend image, Artifact Registry stores it, and Secret Manager provides runtime credentials. Cloud Scheduler triggers source refreshes while Cloud Tasks dispatches WhatsApp work, so the API can scale to zero between requests. The [deployment runbook](docs/gcp-deployment.md) documents the live topology and operational checks.
 
 ```mermaid
 flowchart LR
-    Web["Firebase Hosting · web"] --> Run["Cloud Run · FastAPI"]
+    Farmer["Farmer"] --> Web["Firebase Hosting · Farm OS + Classic"]
+    Web --> Auth["Firebase Authentication · phone identity"]
+    Web --> Run["Cloud Run · FastAPI + Mitra"]
     Mobile["Flutter · mobile"] --> Run
     Twilio["Twilio · WhatsApp"] --> Run
-    Run --> Postgres[("External PostgreSQL")]
+    Auth --> Run
+    Build["Cloud Build"] --> Registry["Artifact Registry · backend image"]
+    Registry --> Run
+    Secrets["Secret Manager"] --> Run
+    Run --> Postgres[("Neon PostgreSQL · farm data")]
     Run --> Files["Private Neon object storage · files"]
     Run --> Tasks["Cloud Tasks · replies"]
     Scheduler["Cloud Scheduler · source refresh"] --> Run
     Run --> Sources["Weather + market sources"]
 ```
 
-The deployment uses Firebase phone identity, managed secrets, persistent file bytes, database and file backups, request-driven WhatsApp replies, scheduled source refresh, and HTTPS callbacks. The repository includes the root backend [Dockerfile](Dockerfile) and [Firebase Hosting configuration](firebase.json); resource provisioning and data cutover follow the runbook.
+The live web and API run on Google's platform; **Neon hosts the PostgreSQL database and private files**. The Android APK is distributed through GitHub Releases. The configured Twilio trial channel accepts inbound WhatsApp messages, while outbound free-form agent replies require a sender with that capability. Firebase test-number sign-in and the API's database health path have been verified; a physical-phone SMS test remains a release check.
+
+### Built with Google
+
+| Google technology | Role in Kisan Mitra |
+| :--- | :--- |
+| **Firebase Hosting** | Global HTTPS delivery for Farm OS and Classic SkyView |
+| **Firebase Authentication** | Phone identity shared by the website, app and backend session flow |
+| **Cloud Run** | Request-driven FastAPI and Mitra agent runtime in `asia-south1` |
+| **Cloud Build + Artifact Registry** | Reproducible backend image builds and storage |
+| **Secret Manager** | Runtime database, storage and provider credentials |
+| **Cloud Scheduler + Cloud Tasks** | Timed data refresh and queued WhatsApp processing |
+| **Google Antigravity** | AI-assisted architecture exploration, implementation and interface iteration during development |
+
+Google Antigravity assisted the team throughout planning, code exploration, implementation, UI iteration, debugging and documentation. The team reviewed and tested the resulting work against the running web and API. Antigravity is a **development tool**; the services above form the deployed application. The [architecture guide](docs/architecture.md) covers the runtime boundaries in detail.
 
 ---
 
