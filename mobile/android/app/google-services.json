@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "344920654513",
+    "project_id": "project-0b9b4009-1644-4477-aec",
+    "storage_bucket": "project-0b9b4009-1644-4477-aec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:344920654513:android:dd0e8ca7a074382a939890",
+        "android_client_info": {
+          "package_name": "com.initio.kisanmitra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDab6MSYoZTmM4zRT4P9nfGzVM5V9Hd6pc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

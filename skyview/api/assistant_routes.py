@@ -386,7 +386,9 @@ def download(sid: str, file_id: str, authorization: str | None = Header(default=
     if not artifact:
         raise HTTPException(404, "File not found in this conversation")
     path = store.ROOT / "files" / f"{file_id}.{artifact['format']}"
-    if not path.is_file():
+    from skyview.data import object_storage
+
+    if not object_storage.ensure(path, store.ROOT, "assistant"):
         raise HTTPException(404, "File no longer exists")
     return FileResponse(
         path,

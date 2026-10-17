@@ -10,7 +10,7 @@ Status: **Parity**: same contract and behaviour, with a phone layout. **Adapted*
 | --- | --- | --- | --- | --- | --- |
 | Detect backend lane | implicit | `GET /` → `data_mode` | none | `AuthController` reads `data_mode` and shows only the matching sign-in | Parity |
 | Demo sign-in | demo OTP → `adoptAssistantSession` | `POST /api/auth/send-otp`, `/verify-otp` (demo lane only) | OTP; token stored but never sent | Explicit "demo farm" button. It uses the server-issued challenge and stores the session capability in the Keystore (`flutter_secure_storage`) | Parity |
-| Live sign-in | OIDC bearer → `POST /api/assistant/sessions` | server verifies issuer/audience/JWKS | none | AppAuth PKCE (`flutter_appauth`), then the bearer goes to `POST /api/assistant/sessions`. Fails closed if the build has no `OIDC_ISSUER`/`OIDC_CLIENT_ID` | Parity (unverified: no IdP configured locally) |
+| Live sign-in | Firebase Phone bearer → `POST /api/assistant/sessions` | server verifies the Firebase token and phone provider | none | Native Firebase phone code verification, then the ID token goes to `POST /api/assistant/sessions` | Parity (physical-phone verification pending) |
 | Client farmer id | never sent | rejected (`extra="forbid"`) | sent `user_id`/`phone` in bodies and query strings | never sent; tested in `tests/assistant/test_mobile_contract.py` | Parity |
 | Session headers | `Authorization` + `X-Assistant-Session` | required by `identity()` | missing | `ApiClient` sends both on every private call | Parity |
 | Revoked/expired session | clears and re-creates | 401 | ignored | any 401 → `expire()` erases the capability and goes to sign-in | Parity |

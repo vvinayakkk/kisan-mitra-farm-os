@@ -19,7 +19,7 @@ Navigation keeps the original app: splash → language → sign in → choice sc
 
 1. On launch the app reads `GET /` and shows the sign-in that matches `data_mode`.
 2. **Demo lane (`v3_demo`)**: "Open the demo farm" requests the server's explicit demo challenge (`/api/auth/send-otp`, then `/verify-otp`). No SMS is sent. The server returns an assistant session capability.
-3. **Live lane (`v3_live`)**: AppAuth runs an OIDC authorization-code flow with PKCE. The ID token is sent (or the access token, when `OIDC_AUDIENCE` is set) as a bearer to `POST /api/assistant/sessions`. The server verifies it against `V3_AUTH_ISSUER`/`V3_AUTH_AUDIENCE`/`V3_AUTH_JWKS_URL` and binds the session to that account. Builds without an OIDC configuration cannot sign in live; they show why.
+3. **Live lane (`v3_live`)**: Firebase Phone Authentication verifies an Indian mobile number. The Firebase ID token is sent to `POST /api/assistant/sessions`; the server verifies its project, signature and phone provider before binding the farm session to that account. The Android Firebase app is registered under `com.initio.kisanmitra`, with release-certificate fingerprints configured.
 4. Only the session capability `{id, token}` is stored, in the platform Keystore. Every private request sends `Authorization: Bearer <token>` and `X-Assistant-Session: <id>`. The app never sends a farmer ID.
 5. Any 401 erases the capability and returns to sign-in. Sign-out revokes the session on the server, preserving history, then wipes local secrets and the read cache.
 
@@ -40,9 +40,6 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8001
 | `--dart-define` | Purpose | Default |
 | --- | --- | --- |
 | `API_BASE_URL` | Canonical API origin | `http://10.0.2.2:8001` |
-| `OIDC_ISSUER`, `OIDC_CLIENT_ID` | Live-lane sign-in (both required) | empty → live sign-in disabled |
-| `OIDC_REDIRECT_URI` | Registered redirect | `com.initio.kisanmitra:/oauthredirect` |
-| `OIDC_AUDIENCE` | Send the access token for this audience instead of the ID token | empty |
 | `STATION_ID` | Station to show | `WS01` |
 
 These values are compiled into the app. None of them may be a secret.
@@ -60,23 +57,19 @@ iOS `Info.plist` has microphone, camera and photo-library usage strings. iOS was
 
 ## Release
 
-Release signing is read from an ignored `mobile/android/key.properties` or the same values in environment variables. A release build **without** these values is left unsigned; it never falls back to the debug key.
+Release signing is read from an ignored `mobile/android/key.properties` or the same values in environment variables. A release build **without** these values is left unsigned; it never falls back to the debug key. Keep the release keystore and passwords private and backed up outside Git. The registered Firebase SHA-1 and SHA-256 must match this keystore for phone verification.
 
 ```properties
 # mobile/android/key.properties  (ignored by Git; never commit)
-storeFile=/absolute/path/to/kisan-mitra-release.jks
+storeFile=../kisan-mitra-release.keystore
 storePassword=…
-keyAlias=kisan-mitra
+keyAlias=kisan-mitra-release
 keyPassword=…
 ```
 
 Environment alternative: `KISAN_MITRA_KEYSTORE`, `KISAN_MITRA_KEYSTORE_PASSWORD`, `KISAN_MITRA_KEY_ALIAS`, `KISAN_MITRA_KEY_PASSWORD`.
 
-The keystore owner creates the key once and keeps it outside the repository. Losing it prevents app updates.
-
-```bash
-keytool -genkeypair -v -keystore ~/secure/kisan-mitra-release.jks -alias kisan-mitra -keyalg RSA -keysize 4096 -validity 10000
-```
+The signing files are ignored by Git. Losing the key prevents updates to the same installed app identity.
 
 Build, verify and publish a draft release on the private repository:
 
@@ -99,7 +92,7 @@ Build outputs stay in `mobile/build/` (ignored). No APK is tracked in Git.
 `flutter analyze`, `flutter test`, the backend suite (`data_platform/v3/test_backend.py`) and a walkthrough on Android emulators (Pixel 4 size and Pixel 7 Pro size with 130% font and dark theme) against the local canonical backend cover the flows in the parity matrix. The walkthrough was not run on a physical device. These items still need one:
 
 - Spoken input end to end: the emulator ran without audio input. Recording, consent, transcription error handling and playback were exercised. Provider transcription was verified separately with a Hindi round trip through `/api/speech/synthesize` and `/api/speech/transcribe`.
-- Live OIDC sign-in: no identity provider is configured locally, so only the fail-closed path is tested.
+- Live Firebase Phone sign-in: the controller's code and session handshake are tested, but a physical-phone SMS or Play Integrity run remains to be checked.
 - Play/store distribution and iOS builds.
 
 The interface ships in English, Hindi, Marathi, Telugu, Tamil, Gujarati, Bengali, Kannada, Malayalam and Punjabi (`assets/translations/`; a test checks every language has every key with matching placeholders). Odia, Assamese and Urdu fall back to English text, while the assistant still answers in the farmer's own language. Conversation history is scoped to a sign-in session on the server.

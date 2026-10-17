@@ -196,6 +196,9 @@ async def download_media(client, url, mime, message_sid):
 
 def media_url(owner, file_key, mime, filename):
     from skyview.api.v3_whatsapp_routes import public_base
+    from skyview.data import object_storage
+
+    object_storage.put(store.ROOT / file_key, store.ROOT, "assistant")
 
     identifier = str(uuid.uuid4())
     expires = int(time.time()) + 900

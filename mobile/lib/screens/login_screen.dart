@@ -7,14 +7,26 @@ import '../core/session.dart';
 import '../ui/kit.dart';
 import '../utils/constants.dart';
 
-/// Sign-in follows the server's lane: the demo lane issues an explicit demo
-/// session; the live lane requires a verified account (OIDC). The app never
-/// picks a farmer itself.
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final phone = TextEditingController(text: '+91');
+  final code = TextEditingController();
+
+  @override
+  void dispose() {
+    phone.dispose();
+    code.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final controller = ref.read(authProvider.notifier);
     final ink = inkColor(context);
@@ -36,18 +48,44 @@ class LoginScreen extends ConsumerWidget {
                   const SizedBox(height: 28),
                   if (auth.status == AuthStatus.loading || auth.busy)
                     const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
-                  else if (auth.mode == BackendMode.demo || auth.mode == BackendMode.live)
-                    SizedBox(
-                      width: 220,
-                      height: 48,
-                      child: FilledButton(
+                  else if (auth.mode == BackendMode.demo)
+                    SizedBox(width: 220, height: 48, child: FilledButton(
+                      onPressed: () { HapticFeedback.mediumImpact(); controller.signInDemo(); },
+                      child: Text('splash.get_started'.tr()),
+                    ))
+                  else if (auth.mode == BackendMode.live)
+                    Column(children: [
+                      TextField(
+                        controller: phone,
+                        enabled: !auth.codeSent,
+                        keyboardType: TextInputType.phone,
+                        autofillHints: const [AutofillHints.telephoneNumber],
+                        decoration: InputDecoration(labelText: 'fos.auth.mobile_number'.tr(), hintText: '+91 98765 43210', border: const OutlineInputBorder()),
+                      ),
+                      if (auth.codeSent) ...[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: code,
+                          keyboardType: TextInputType.number,
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          maxLength: 6,
+                          decoration: InputDecoration(labelText: 'fos.auth.six_digit_code'.tr(), border: const OutlineInputBorder(), counterText: ''),
+                          onSubmitted: (_) => controller.confirmPhoneCode(code.text.trim()),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      SizedBox(width: double.infinity, height: 48, child: FilledButton(
                         onPressed: () {
                           HapticFeedback.mediumImpact();
-                          auth.mode == BackendMode.demo ? controller.signInDemo() : controller.signInLive();
+                          auth.codeSent ? controller.confirmPhoneCode(code.text.trim()) : controller.sendPhoneCode(phone.text.trim());
                         },
-                        child: Text('splash.get_started'.tr()),
+                        child: Text(auth.codeSent ? 'fos.auth.verify_continue'.tr() : 'fos.auth.send_code'.tr()),
+                      )),
+                      if (auth.codeSent) TextButton(
+                        onPressed: () => controller.sendPhoneCode(phone.text.trim()),
+                        child: Text('fos.auth.resend_code'.tr()),
                       ),
-                    )
+                    ])
                   else
                     ErrorView(auth.error ?? 'fos.assistant.server_unreachable'.tr(), onRetry: controller.refreshMode),
                   if (auth.error != null && (auth.mode == BackendMode.demo || auth.mode == BackendMode.live))

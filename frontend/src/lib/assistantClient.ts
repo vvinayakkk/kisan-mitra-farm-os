@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { workspaceReadCache } from "./workspaceReadCache";
 import { invalidateWorkspaceCaches } from "./workspaceCacheLifecycle";
 import { reportedMarketsOnly } from "./localPresentation";
+import { currentIdentityToken, firebasePhoneEnabled } from "./firebasePhoneAuth";
 export interface Artifact {
   id: string;
   file_id: string;
@@ -126,6 +127,9 @@ function update(patch: Partial<State>) {
 }
 async function request(path: string, options: RequestInit = {}) {
   const generation = sessionGeneration, owner = session;
+  const identityToken = path === "/sessions" && firebasePhoneEnabled
+    ? await currentIdentityToken()
+    : null;
   const response = await fetch(base + "/api/assistant" + path, {
     ...options,
     headers: {
@@ -133,6 +137,7 @@ async function request(path: string, options: RequestInit = {}) {
         ? {}
         : { "Content-Type": "application/json" }),
       ...(owner ? { Authorization: `Bearer ${owner.token}`, "X-Assistant-Session": owner.id } : {}),
+      ...(identityToken ? { Authorization: `Bearer ${identityToken}` } : {}),
       ...options.headers,
     },
   });

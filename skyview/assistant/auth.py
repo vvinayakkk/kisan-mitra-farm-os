@@ -38,6 +38,33 @@ def _jwks(url):
 
 
 def verify_identity(token):
+    firebase_project = os.getenv("FIREBASE_PROJECT_ID", "").strip()
+    if firebase_project:
+        if not token or len(token) > 16000:
+            raise ValueError("Invalid sign-in token")
+        try:
+            import firebase_admin
+            from firebase_admin import auth as firebase_auth
+
+            try:
+                firebase_admin.get_app()
+            except ValueError:
+                firebase_admin.initialize_app(options={"projectId": firebase_project})
+            claims = firebase_auth.verify_id_token(token)
+            uid = claims.get("uid")
+            provider = (claims.get("firebase") or {}).get("sign_in_provider")
+            if not isinstance(uid, str) or not uid or provider != "phone":
+                raise ValueError("A verified phone sign-in is required")
+            issuer = "https://securetoken.google.com/" + firebase_project
+            return {
+                "auth_subject": "oidc:"
+                + hashlib.sha256((issuer + "\0" + uid).encode()).hexdigest(),
+                "issuer": issuer,
+            }
+        except ValueError:
+            raise
+        except Exception as exc:
+            raise ValueError("Sign-in could not be verified") from exc
     url = os.getenv("V3_AUTH_JWKS_URL", "")
     issuer = os.getenv("V3_AUTH_ISSUER", "")
     audience = os.getenv("V3_AUTH_AUDIENCE", "")

@@ -1057,6 +1057,13 @@
       "queued": "जतन केले. इंटरनेट आल्यावर पाठवू.",
       "waiting_to_send": "इंटरनेटची वाट",
       "remove": "काढा"
+    },
+    "auth": {
+      "mobile_number": "मोबाइल क्रमांक",
+      "six_digit_code": "सहा अंकी कोड",
+      "send_code": "कोड पाठवा",
+      "verify_continue": "पडताळा आणि पुढे जा",
+      "resend_code": "कोड पुन्हा पाठवा"
     }
   }
 }

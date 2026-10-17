@@ -1,6 +1,6 @@
 # Configuration inventory
 
-This inventory identifies common configuration entry points from literal `os.getenv` calls in the backend and data-platform Python source; it does not contain credentials. Some values are used only in the classic lane, optional provider adapters or local tools. A client-side `VITE_` or Flutter `--dart-define` value is bundled into the app and must never contain a secret. The Flutter defines (`API_BASE_URL`, `OIDC_*`, `STATION_ID`) are listed in the [mobile guide](mobile/README.md).
+This inventory identifies common configuration entry points from literal `os.getenv` calls in the backend and data-platform Python source; it does not contain credentials. Some values are used only in the classic lane, optional provider adapters or local tools. A client-side `VITE_` or Flutter `--dart-define` value is bundled into the app and must never contain a secret. The Flutter defines (`API_BASE_URL`, `STATION_ID`) are listed in the [mobile guide](mobile/README.md).
 
 | Variable | Code path | Source default |
 | --- | --- | --- |
@@ -29,6 +29,7 @@ This inventory identifies common configuration entry points from literal `os.get
 | `FPGA_FUSION_BASE` | `skyview/utils/config.py` | `` |
 | `FPGA_TIMEOUT_MS` | `skyview/utils/config.py` | `100` |
 | `FRONTEND_URL` | `skyview/utils/config.py` | `http://localhost:5173` |
+| `FIREBASE_PROJECT_ID` | `skyview/assistant/auth.py` | `` |
 | `GEMINI_API_KEY` | `skyview/agents/disease_service.py` | `` |
 | `GEMINI_MODEL` | `skyview/utils/config.py` | `gemini-2.5-flash` |
 | `GROQ_API_KEY` | `skyview/utils/config.py` | `` |
@@ -65,13 +66,18 @@ This inventory identifies common configuration entry points from literal `os.get
 | `V3_AUTH_AUDIENCE` | `skyview/assistant/auth.py` | `` |
 | `V3_AUTH_ISSUER` | `skyview/assistant/auth.py` | `` |
 | `V3_AUTH_JWKS_URL` | `skyview/assistant/auth.py` | `` |
-| `V3_BACKGROUND_WORKER` | `skyview/data/v3/worker.py` | `true` |
+| `V3_BACKGROUND_WORKER` | `skyview/data/v3/worker.py` | `false` on Cloud Run, `true` elsewhere |
 | `V3_DATABASE_URL` | `skyview/data/v3/db.py` | `` |
+| `V3_DB_POOL_SIZE` | `skyview/data/v3/db.py` | `2` |
+| `V3_DB_MAX_OVERFLOW` | `skyview/data/v3/db.py` | `0` |
+| `V3_SCHEDULER_SERVICE_ACCOUNT` | `skyview/api/v3_whatsapp_routes.py` | `` |
 | `V3_INGEST_LOCATION_KEY` | `skyview/data/v3/worker.py` | `` |
 | `V3_RAW_DIR` | `skyview/data/v3/ingestion.py` | `.v3-data/raw` |
 | `V3_RAW_STORAGE_DIR` | `skyview/data/v3/ingestion.py` | `` |
 | `VAPI_AI_API_KEY` | `skyview/utils/config.py` | `` |
 | `VAPI_ASSISTANT_ID` | `skyview/utils/config.py` | `default_assistant_id` |
 | `WHATSAPP_WEBHOOK_URL` | `skyview/api/v3_whatsapp_routes.py` | `` |
+| `WHATSAPP_TASK_QUEUE` | `skyview/assistant/whatsapp_tasks.py` | `` |
+| `WHATSAPP_TASK_SERVICE_ACCOUNT` | `skyview/assistant/whatsapp_tasks.py` | `` |
 
-For Docker, start with `.env.docker.example`. For native server settings, use ignored environment files or a secret store. `skyview/.env.example` lists the common provider variables with empty values. Canonical database credentials belong in `V3_DATABASE_URL` or the provisioner-owned `.v3-data/runtime.env`; do not commit either. Live account verification requires the issuer, audience and JWKS settings. Review [operations](operations.md) for worker, backup and deployment boundaries.
+For Docker, start with `.env.docker.example`. For native server settings, use ignored environment files or a secret store. `skyview/.env.example` lists common provider variables with empty values. Canonical database credentials belong in `V3_DATABASE_URL` or the provisioner-owned `.v3-data/runtime.env`; do not commit either. Live account verification uses Firebase phone identity when `FIREBASE_PROJECT_ID` is set, or the configured OIDC issuer, audience and JWKS otherwise. Review the [GCP deployment runbook](gcp-deployment.md) for the database, worker, backup and messaging gates.

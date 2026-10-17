@@ -8,6 +8,7 @@ from xml.sax.saxutils import escape
 
 from . import store
 from .models import FileArgs
+from skyview.data import object_storage
 
 MIME = {
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -363,6 +364,7 @@ def create_file(sid: str, args: FileArgs, *, revision_of: str | None = None):
                         for paragraph in cell.text_frame.paragraphs:
                             paragraph.font.size = Pt(12)
         deck.save(path)
+    object_storage.put(path, store.ROOT, "assistant")
     metadata = store.add_record(
         sid,
         "artifact",

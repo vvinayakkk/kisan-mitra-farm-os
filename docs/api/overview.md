@@ -4,7 +4,7 @@ The service entry point is `skyview.main:app`. Canonical v3 mode registers the r
 
 ## Identity and access
 
-The assistant opens a session with `POST /api/assistant/sessions`. Requests for private assistant and farm data use `Authorization: Bearer <session capability>` and `X-Assistant-Session: <session id>`. In live mode, session creation requires a separately verified account token and configured OIDC issuer, audience and JWKS. `skyview/assistant/auth.py` fails closed when that verification is unavailable. Session revocation invalidates the capability while preserving owned history.
+The assistant opens a session with `POST /api/assistant/sessions`. Requests for private assistant and farm data use `Authorization: Bearer <session capability>` and `X-Assistant-Session: <session id>`. In the deployed live mode, session creation requires a verified Firebase Phone ID token. `skyview/assistant/auth.py` fails closed when verification is unavailable. Session revocation invalidates the capability while preserving owned history.
 
 The server resolves farmer scope; a query parameter or JSON field cannot select an arbitrary owner. PostgreSQL transaction scope and row policies protect private records. Review actions use row versions and stable execution keys to reject stale or conflicting writes. Uploads, file previews and downloads have owner and size boundaries.
 

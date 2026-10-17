@@ -266,10 +266,33 @@ async def incoming(request: Request):
                 "media": json.dumps(media),
             },
         )
-    from skyview.data.v3.worker import notify_whatsapp
+    from skyview.assistant.whatsapp_tasks import dispatch
 
-    notify_whatsapp()
+    try:
+        await dispatch(sid)
+    except Exception as exc:
+        raise HTTPException(503, "WhatsApp reply dispatch is temporarily unavailable") from exc
     return twiml()
+
+
+@router.post("/internal/whatsapp/drain", include_in_schema=False)
+async def drain_whatsapp(request: Request):
+    from skyview.assistant.whatsapp import process_next
+    from skyview.assistant.whatsapp_tasks import verify_task
+
+    verify_task(request)
+    return {"processed": await process_next()}
+
+
+@router.post("/internal/sources/refresh", include_in_schema=False)
+async def refresh_sources(request: Request):
+    from skyview.assistant.whatsapp_tasks import verify_service_identity
+    from skyview.data.v3.worker import run_due_once
+
+    verify_service_identity(request, "V3_SCHEDULER_SERVICE_ACCOUNT")
+    import asyncio
+
+    return await asyncio.to_thread(run_due_once)
 
 
 @router.post("/webhook/whatsapp/status")
@@ -340,10 +363,11 @@ def media_file(identifier: str, owner: str, expires: int, signature: str):
     from pathlib import Path
 
     from skyview.assistant import store
+    from skyview.data import object_storage
 
     item = items[0]
     path = (store.ROOT / item["file_key"]).resolve()
-    if not path.is_relative_to(store.ROOT.resolve()) or not path.is_file():
+    if not path.is_relative_to(store.ROOT.resolve()) or not object_storage.ensure(path, store.ROOT, "assistant"):
         raise HTTPException(404, "Media unavailable")
     return FileResponse(
         path,

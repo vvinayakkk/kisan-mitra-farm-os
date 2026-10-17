@@ -1,0 +1,12 @@
+[
+  {
+    "name": "delete-older-images",
+    "action": {"type": "Delete"},
+    "condition": {"tagState": "any", "olderThan": "1d"}
+  },
+  {
+    "name": "keep-five-recent-images",
+    "action": {"type": "Keep"},
+    "mostRecentVersions": {"keepCount": 5}
+  }
+]

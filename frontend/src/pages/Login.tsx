@@ -9,6 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { AlertCircle, ArrowRight, Leaf, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
 import { SkyViewLogo } from '@/components/SkyViewLogo';
 import { PhoneInput } from '@/components/PhoneInput';
+import { firebasePhoneEnabled } from '@/lib/firebasePhoneAuth';
 
 export default function Login() {
   const [phone, setPhone]     = useState('');
@@ -48,7 +49,7 @@ export default function Login() {
     }
 
 
-    if (isDemoPhoneNumber(fullPhone())) {
+    if (!firebasePhoneEnabled && isDemoPhoneNumber(fullPhone())) {
       setError('');
       setIsLoading(true);
       const success = await loginDemoUser(fullPhone());
@@ -81,7 +82,7 @@ export default function Login() {
     setError('');
     setIsLoading(true);
 
-    if (isDemoPhoneNumber(fullPhone()) || otp === '999999') {
+    if (!firebasePhoneEnabled && (isDemoPhoneNumber(fullPhone()) || otp === '999999')) {
       const success = await loginDemoUser(fullPhone());
       if (success) navigate('/dashboard');
       else setError('This account could not sign in. Please check your number.');
@@ -171,7 +172,7 @@ export default function Login() {
         )}
 
         {                                                            }
-        {!otpSent && (
+        {!otpSent && !firebasePhoneEnabled && (
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
             <button
               type="button"

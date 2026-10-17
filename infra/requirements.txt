@@ -52,6 +52,12 @@ tiktoken>=0.8,<1
 
 
 PyJWT[crypto]>=2.10,<3
+firebase-admin==6.6.0
+boto3>=1.35,<2
+google-cloud-tasks>=2.17,<3
+google-cloud-firestore<2.21
+grpcio-status<1.70
+protobuf>=4.25,<6
 
 Shapely>=2,<3  # Field boundary validation
 numpy>=2,<3  # Reproducible local price-series generation

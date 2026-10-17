@@ -94,6 +94,20 @@ def _eligible_locations():
                 if key
                 else None
             )
+            anchors = list(
+                execute(
+                    db,
+                    """SELECT DISTINCT ON (l.region_id) l.id,l.latitude,l.longitude
+                    FROM sv3.locations l JOIN sv3.datasets d ON d.id=l.dataset_id
+                    WHERE l.location_key LIKE '%-anchor-%' AND d.origin<>'user_reported'
+                    ORDER BY l.region_id,l.id LIMIT 40""",
+                )
+                .mappings()
+                .all()
+            )
+            for anchor in anchors:
+                if all(item["id"] != anchor["id"] for item in locations):
+                    locations.append(anchor)
         if public and all(item["id"] != public["id"] for item in locations):
             locations.insert(0, public)
         return locations
@@ -564,10 +578,11 @@ class BackgroundWorker:
 
 async def start_background_worker():
     global _worker
+    default_enabled = "false" if os.getenv("K_SERVICE") else "true"
     if (
         _worker is not None
         or not enabled()
-        or os.getenv("V3_BACKGROUND_WORKER", "true").lower() != "true"
+        or os.getenv("V3_BACKGROUND_WORKER", default_enabled).lower() != "true"
     ):
         return False
     lease = await asyncio.to_thread(_lease)
@@ -601,3 +616,33 @@ def notify_companion():
 def notify_whatsapp():
     if _worker is not None:
         _worker.loop.call_soon_threadsafe(_worker.whatsapp_wake.set)
+
+
+def run_due_once():
+    """Run a bounded source refresh from an authenticated scheduled request."""
+    lease = _lease()
+    if lease is None:
+        return {"status": "already_running"}
+    result = {"status": "done", "weather_jobs": 0, "mandi": False}
+    try:
+        _reviewed()
+        for location, jobs in _weather_jobs(limit=1):
+            source, history, power, scope = jobs[0]
+            try:
+                _weather(location, history, power)
+                result["weather_jobs"] += 1
+            except Exception as exc:
+                _failure(source, scope, exc)
+        if any(os.getenv(key) for key in ("DATAGOV_API_KEY", "DATA_GOV_API_KEY", "OGD_API_KEY")) and _mandi_due():
+            try:
+                _mandi()
+                result["mandi"] = True
+            except Exception as exc:
+                _failure("ogd_agmarknet", "daily", exc)
+        _companion_sweep()
+        from skyview.assistant.companion_plans import process_next
+
+        asyncio.run(process_next())
+        return result
+    finally:
+        _release(lease)

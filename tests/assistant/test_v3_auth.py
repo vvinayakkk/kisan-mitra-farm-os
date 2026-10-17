@@ -71,3 +71,29 @@ def test_unconfigured_identity_is_explicitly_unavailable(monkeypatch):
     monkeypatch.delenv("V3_AUTH_JWKS_URL", raising=False)
     with pytest.raises(auth.AuthenticationUnavailable):
         auth.verify_identity("placeholder")
+
+
+def test_firebase_phone_identity_is_verified_and_stable(monkeypatch):
+    from firebase_admin import auth as firebase_auth
+
+    monkeypatch.setenv("FIREBASE_PROJECT_ID", "farm-project")
+    monkeypatch.setattr(firebase_auth, "verify_id_token", lambda token: {
+        "uid": "farmer-123",
+        "firebase": {"sign_in_provider": "phone"},
+    })
+    identity = auth.verify_identity("signed-token")
+    assert identity == auth.verify_identity("signed-token")
+    assert identity["issuer"] == "https://securetoken.google.com/farm-project"
+    assert identity["auth_subject"].startswith("oidc:")
+
+
+def test_firebase_rejects_non_phone_sign_in(monkeypatch):
+    from firebase_admin import auth as firebase_auth
+
+    monkeypatch.setenv("FIREBASE_PROJECT_ID", "farm-project")
+    monkeypatch.setattr(firebase_auth, "verify_id_token", lambda token: {
+        "uid": "farmer-123",
+        "firebase": {"sign_in_provider": "anonymous"},
+    })
+    with pytest.raises(ValueError):
+        auth.verify_identity("signed-token")

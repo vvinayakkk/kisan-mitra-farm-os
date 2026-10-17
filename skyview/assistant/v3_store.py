@@ -410,6 +410,7 @@ def canonical_record(db, fid, rid, kind, data, key):
         )
     elif kind in {"artifact", "attachment"}:
         from . import store
+        from skyview.data import object_storage
 
         if kind == "artifact":
             path = store.ROOT / "files" / f"{data['file_id']}.{data['format']}"
@@ -417,7 +418,7 @@ def canonical_record(db, fid, rid, kind, data, key):
             p.update(
                 title=data["title"],
                 format=data["format"],
-                uri=str(path),
+                uri=object_storage.uri(path, store.ROOT, "assistant"),
                 bytes=path.stat().st_size,
                 checksum=checksum,
                 preview=dump(data.get("preview", {})),
@@ -435,7 +436,7 @@ def canonical_record(db, fid, rid, kind, data, key):
                 / data["filename"]
             )
             p.update(
-                uri=str(path),
+                uri=object_storage.uri(path, store.ROOT, "assistant"),
                 name=data["name"],
                 mime=data.get("mime", "application/octet-stream"),
                 bytes=path.stat().st_size,

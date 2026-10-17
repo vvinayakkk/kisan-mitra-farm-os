@@ -1,0 +1,25 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TIKTOKEN_CACHE_DIR=/tmp/tiktoken-cache
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev postgresql-client fonts-dejavu-core ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY infra/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+    && python -c "import tiktoken; tiktoken.get_encoding('cl100k_base')"
+
+COPY skyview ./skyview
+COPY data_platform ./data_platform
+
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /app-data /tmp/tiktoken-cache \
+    && chown -R app:app /app-data /tmp/tiktoken-cache
+USER app
+
+EXPOSE 8001
+CMD ["sh", "-c", "exec uvicorn skyview.bootstrap:app --host 0.0.0.0 --port ${PORT:-8001}"]

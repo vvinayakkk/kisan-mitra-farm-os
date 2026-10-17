@@ -28,10 +28,17 @@ def _engine(url):
         raise RuntimeError("V3_DATABASE_URL must target the selected v3 database")
     if parsed.get_backend_name() != "postgresql":
         raise RuntimeError("V3 requires PostgreSQL; no silent SQLite fallback")
+    pool_size = int(os.getenv("V3_DB_POOL_SIZE", "2"))
+    max_overflow = int(os.getenv("V3_DB_MAX_OVERFLOW", "0"))
+    if not 1 <= pool_size <= 8 or not 0 <= max_overflow <= 8:
+        raise RuntimeError("V3 database pool settings are outside the safe range")
+    if mode() == "v3_live" and parsed.host not in {"localhost", "127.0.0.1"}:
+        if parsed.query.get("sslmode") not in {"require", "verify-ca", "verify-full"}:
+            raise RuntimeError("Remote live PostgreSQL connections require sslmode=require or stronger")
     return create_engine(
         url,
-        pool_size=8,
-        max_overflow=12,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
         pool_pre_ping=True,
         pool_recycle=300,
         connect_args={"connect_timeout": 5},

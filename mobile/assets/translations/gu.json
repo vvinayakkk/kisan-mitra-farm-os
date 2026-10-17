@@ -1057,6 +1057,13 @@
       "queued": "સાચવ્યું. ઇન્ટરનેટ આવે ત્યારે મોકલીશું.",
       "waiting_to_send": "ઇન્ટરનેટની રાહ",
       "remove": "દૂર કરો"
+    },
+    "auth": {
+      "mobile_number": "મોબાઇલ નંબર",
+      "six_digit_code": "છ અંકનો કોડ",
+      "send_code": "કોડ મોકલો",
+      "verify_continue": "ચકાસો અને આગળ વધો",
+      "resend_code": "કોડ ફરી મોકલો"
     }
   }
 }

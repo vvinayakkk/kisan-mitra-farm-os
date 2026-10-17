@@ -11,6 +11,7 @@ import { SmartVoiceForm } from '@/components/SmartVoiceForm';
 import { AlertCircle, MapPin, Leaf, RefreshCw, ShieldCheck, ArrowRight, User, Layers, Wheat, Mic, Zap } from 'lucide-react';
 import { SkyViewLogo } from '@/components/SkyViewLogo';
 import { PhoneInput } from '@/components/PhoneInput';
+import { firebasePhoneEnabled } from '@/lib/firebasePhoneAuth';
 
 export default function Signup() {
   const [name, setName]         = useState('');
@@ -45,7 +46,7 @@ export default function Signup() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isDemoPhoneNumber(fullPhone())) {
+    if (!firebasePhoneEnabled && isDemoPhoneNumber(fullPhone())) {
       setError(''); setIsLoading(true);
       await loginDemoUser(fullPhone());
       navigate('/dashboard');
@@ -78,18 +79,6 @@ export default function Signup() {
     const fp = fullPhone();
 
     try {
-      try {
-        await apiFetch(`${import.meta.env.VITE_API_URL || ''}/api/profile/save`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name, phone: fp,
-            land_size_acres: landSize ? Number(landSize) : null,
-            location,
-            crops: crops.split(',').map(c => c.trim()).filter(Boolean),
-          }),
-        });
-      } catch {                                     }
-
       const sanitizeStorage = (val: string) => val.replace(/[^a-zA-Z0-9\s,.-]/g, '').trim().slice(0, 100);
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem('user_name', sanitizeStorage(name));
@@ -100,6 +89,15 @@ export default function Signup() {
 
       const success = await login(fp, otp);
       if (success) {
+        await apiFetch(`${import.meta.env.VITE_API_URL || ''}/api/profile/save`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, phone: fp,
+            land_size_acres: landSize ? Number(landSize) : null,
+            location,
+            crops: crops.split(',').map(c => c.trim()).filter(Boolean),
+          }),
+        });
         navigate('/hardware-setup');
       } else {
         setError('Wrong OTP. Please try again.');

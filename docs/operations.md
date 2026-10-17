@@ -20,7 +20,7 @@ Back up the PostgreSQL database together with raw payload and generated artifact
 
 ## Hosted deployment handoff
 
-The backend image runs as a non-root user and honors `PORT`; the frontend image builds the SPA and serves it through Nginx. A hosted deployment requires managed PostgreSQL 16, persistent private object storage, secret injection, HTTPS account verification, a scheduled/always-on worker, database backups and callback URLs for any enabled messaging provider. Cloud Run's filesystem and scale-to-zero behavior do not provide durable file storage or reliable recurring work by themselves. No CI/CD or GCP resources are provisioned by this repository.
+The backend image runs as a non-root user and honors `PORT`; the frontend image builds the SPA and serves it through Nginx. The [GCP deployment runbook](gcp-deployment.md) covers Firebase sign-in, the external PostgreSQL data gate, durable files, scheduled refresh, signed Twilio ingress, and Cloud Tasks delivery. Cloud Run's filesystem and scale-to-zero behavior do not provide durable file storage or reliable recurring work by themselves. No CI/CD or GCP resources are provisioned by this repository.
 
 ## Checks
 

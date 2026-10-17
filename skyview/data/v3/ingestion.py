@@ -15,6 +15,8 @@ from zoneinfo import ZoneInfo
 import httpx
 from sqlalchemy import text
 
+from skyview.data import object_storage
+
 
 def uid(key):
     return str(uuid5(NAMESPACE_URL, "skyview-v3:" + key))
@@ -180,6 +182,7 @@ class Ingestor:
             temp.write_bytes(encoded)
             temp.chmod(0o600)
             temp.replace(target)
+        object_uri = object_storage.put(target, self.raw_dir, "raw")
         release_day = (
             now.astimezone(ZoneInfo("Asia/Kolkata")).date()
             if code == "ogd_agmarknet"
@@ -223,7 +226,7 @@ class Ingestor:
             r=run,
             scope=scope,
             hash=digest,
-            uri=target.resolve().as_uri(),
+            uri=object_uri,
             size=len(encoded),
             now=now,
         )
@@ -870,6 +873,7 @@ def ingest_sensor_envelope(
     if not path.exists():
         path.write_bytes(encoded)
         path.chmod(0o600)
+    object_uri = object_storage.put(path, ingest.raw_dir, "raw")
     execute(
         conn,
         """INSERT INTO sv3.raw_objects(id,run_id,request_key,content_hash,object_uri,media_type,bytes,fetched_at)
@@ -878,7 +882,7 @@ def ingest_sensor_envelope(
         run=run,
         key=boot + ":" + str(sequence),
         hash=digest,
-        uri=path.resolve().as_uri(),
+        uri=object_uri,
         size=len(encoded),
         now=now,
     )

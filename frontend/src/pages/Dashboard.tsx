@@ -60,19 +60,19 @@ export default function Dashboard() {
   const { data: weatherData, error: weatherError } = useQuery({
     queryKey: ['weatherData'],
     queryFn: getCurrentWeatherData,
-    refetchInterval: 10000,
+    refetchInterval: (query) => query.state.data ? 10000 : 60000,
   });
 
   const { data: systemHealth, error: healthError } = useQuery({
     queryKey: ['systemHealth'],
     queryFn: getSystemHealth,
-    refetchInterval: 10000,
+    refetchInterval: (query) => query.state.data ? 10000 : 60000,
   });
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['recentAlerts'],
     queryFn: getRecentAlerts,
-    refetchInterval: 10000,
+    refetchInterval: (query) => query.state.data ? 10000 : 60000,
   });
 
   const { data: currentSensorData, dataUpdatedAt: sensorUpdatedAt } = useQuery({
@@ -101,7 +101,7 @@ export default function Dashboard() {
         throw new Error('The station could not be reached.');
       }
     },
-    refetchInterval: 10000,
+    refetchInterval: (query) => query.state.data ? 10000 : 60000,
   });
 
   const loading = !weatherData || !systemHealth || !currentSensorData;
@@ -109,7 +109,7 @@ export default function Dashboard() {
   const connectionStatus = !!currentSensorData;
   const lastUpdate = sensorUpdatedAt ? new Date(sensorUpdatedAt).toLocaleTimeString() : "Never";
 
-  if (loading && !weatherData) {
+  if (loading && !weatherData && !weatherError && !healthError) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', position: 'relative' }}>
         <FarmBackground />
@@ -125,7 +125,7 @@ export default function Dashboard() {
         <GlassSection title="" noHeader>
           <div style={{ padding: '40px', textAlign: 'center' }}>
             <p style={{ color: '#D32F2F', marginBottom: '12px', fontWeight: 700 }}>{error || t('error')}</p>
-            <p style={{ color: '#5A7A60', fontSize: '13px' }}>Ensure backend is running on {API_URL}</p>
+            <p style={{ color: '#5A7A60', fontSize: '13px' }}>Connect your farm station to see live sensor readings. Regional weather is available in the new workspace.</p>
           </div>
         </GlassSection>
       </div>

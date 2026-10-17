@@ -1,7 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { revokeAssistantSession, adoptAssistantSession } from "@/lib/assistantClient";
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import { revokeAssistantSession, adoptAssistantSession, clearAssistantSession, initializeAssistant, assistantAuthHeaders } from "@/lib/assistantClient";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
+import { confirmPhoneCode, currentIdentityUid, firebasePhoneEnabled, sendPhoneCode, signOutPhone, watchPhoneIdentity } from '@/lib/firebasePhoneAuth';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -14,6 +15,7 @@ export const isDemoPhoneNumber = (phone: string): boolean => {
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  authReady: boolean;
   hardwareConnected: boolean;
   connectHardware: (deviceId: string) => void;
   disconnectHardware: () => void;
@@ -29,8 +31,39 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   const { setTheme } = useTheme();
   const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('weather_auth') === 'true';
+    return !firebasePhoneEnabled && localStorage.getItem('weather_auth') === 'true';
   });
+  const [authReady, setAuthReady] = useState(!firebasePhoneEnabled);
+  const loginInProgress = useRef(false);
+  useEffect(() => {
+    if (!firebasePhoneEnabled) return;
+    let active = true;
+    const unsubscribe = watchPhoneIdentity(signedIn => {
+      if (!signedIn) {
+        if (active) { setIsAuthenticated(false); setAuthReady(true); }
+        return;
+      }
+      if (loginInProgress.current) return;
+      void (async () => {
+        try {
+          const uid = currentIdentityUid();
+          if (!uid) throw new Error('Missing phone identity');
+          if (localStorage.getItem('firebase-session-uid') !== uid) clearAssistantSession();
+          await initializeAssistant();
+          await assistantAuthHeaders();
+          if (active) {
+            localStorage.setItem('firebase-session-uid', uid);
+            setIsAuthenticated(true);
+          }
+        } catch {
+          if (active) setIsAuthenticated(false);
+        } finally {
+          if (active) setAuthReady(true);
+        }
+      })();
+    });
+    return () => { active = false; unsubscribe(); };
+  }, []);
   const [hardwareConnected, setHardwareConnected] = useState(() => {
     return localStorage.getItem('hardware_connected') === 'true';
   });
@@ -48,6 +81,15 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
   }, []);
 
   const sendOtp = useCallback(async (phone: string, isSignup: boolean = false): Promise<{ success: boolean; message?: string; otp?: string; sms_sent?: boolean; demo_bypass?: boolean }> => {
+
+    if (firebasePhoneEnabled) {
+      try {
+        await sendPhoneCode(phone);
+        return { success: true, sms_sent: true };
+      } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'Could not send a sign-in code.' };
+      }
+    }
 
     try {
       const response = await fetch(`${API_URL}/api/auth/send-otp`, {
@@ -71,33 +113,52 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
 
   const login = useCallback(async (phone: string, otp: string): Promise<boolean> => {
 
+    loginInProgress.current = true;
     try {
-      const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
-      });
+      const response = firebasePhoneEnabled
+        ? await fetch(`${API_URL}/api/assistant/sessions`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${await confirmPhoneCode(otp)}` },
+          })
+        : await fetch(`${API_URL}/api/auth/verify-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, otp }),
+          });
       const data = await response.json();
       
-      if (response.ok && data.status === "success" && data.token) {
+      if (response.ok && (firebasePhoneEnabled || data.status === "success") && data.token) {
         const sid = data.session_id ?? data.id ?? data.session?.id;
-        if (!sid) return false;
+        if (!sid) {
+          if (firebasePhoneEnabled) await signOutPhone();
+          return false;
+        }
         await queryClient.cancelQueries();
         queryClient.clear();
         await adoptAssistantSession(sid, data.token);
         setIsAuthenticated(true);
-        localStorage.setItem('weather_auth', 'true');
+        if (firebasePhoneEnabled) {
+          const uid = currentIdentityUid();
+          if (uid) localStorage.setItem('firebase-session-uid', uid);
+          setAuthReady(true);
+        }
+        if (!firebasePhoneEnabled) localStorage.setItem('weather_auth', 'true');
         localStorage.setItem('user_phone', phone);
         setTheme('light');
         return true;
       }
+      if (firebasePhoneEnabled) await signOutPhone();
       return false;
     } catch {
+      if (firebasePhoneEnabled) await signOutPhone();
       return false;
+    } finally {
+      loginInProgress.current = false;
     }
   }, [setTheme, queryClient]);
 
   const loginDemoUser = useCallback(async (phone: string = DEMO_TEST_PHONE): Promise<boolean> => {
+    if (firebasePhoneEnabled) return false;
     if (!isDemoPhoneNumber(phone)) return false;
     const issued = await sendOtp(phone);
     if (!issued.success || !issued.demo_bypass) return false;
@@ -108,19 +169,21 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     setIsAuthenticated(false);
     setHardwareConnected(false);
     const revocation = revokeAssistantSession();
+    await signOutPhone();
     await queryClient.cancelQueries();
     queryClient.clear();
     setIsAuthenticated(false);
     setHardwareConnected(false);
     localStorage.removeItem('weather_auth');
     localStorage.removeItem('user_phone');
+    localStorage.removeItem('firebase-session-uid');
     localStorage.removeItem('hardware_connected');
     localStorage.removeItem('hardware_device_id');
     await revocation;
   }, [queryClient]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, hardwareConnected, connectHardware, disconnectHardware, sendOtp, login, loginDemoUser, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, authReady, hardwareConnected, connectHardware, disconnectHardware, sendOtp, login, loginDemoUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

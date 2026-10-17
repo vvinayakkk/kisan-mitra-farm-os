@@ -85,6 +85,10 @@ async def read_image(sid, file_id):
     if not item or item.get("format") not in {"jpg", "png", "webp"}:
         raise ValueError("Attach an owned JPEG, PNG or WebP document photo first.")
     path = store.ROOT / "photos" / item["filename"]
+    from skyview.data import object_storage
+
+    if not await asyncio.to_thread(object_storage.ensure, path, store.ROOT, "assistant"):
+        raise ValueError("The photo is no longer available. Attach it again.")
     image = await asyncio.to_thread(normalize_image, path.read_bytes(), max_side=2048)
     try:
         data = await provider_extract(image)

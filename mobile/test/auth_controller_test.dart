@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:skyview_app/core/api.dart';
 import 'package:skyview_app/core/session.dart';
+import 'package:skyview_app/core/phone_auth.dart';
 
 import 'l10n.dart';
 
@@ -23,6 +24,26 @@ class MemoryVault extends SessionVault {
   Future<void> clear() async => value = null;
 }
 
+class TestPhoneIdentity implements PhoneIdentityProvider {
+  String? sentTo;
+
+  @override
+  Future<void> sendCode(String phone, {required void Function(String) onCodeSent, required Future<void> Function(String) onVerified, required void Function(String) onError}) async {
+    sentTo = phone;
+    onCodeSent('verification-1');
+  }
+
+  @override
+  Future<String> confirmCode(String verificationId, String code) async {
+    expect(verificationId, 'verification-1');
+    expect(code, '436281');
+    return 'firebase-id-token';
+  }
+
+  @override
+  Future<void> signOut() async {}
+}
+
 ApiClient Function() server(String mode, {bool demoChallenge = true}) => () => ApiClient(
       baseUrl: 'http://t',
       client: MockClient((r) async {
@@ -36,6 +57,9 @@ ApiClient Function() server(String mode, {bool demoChallenge = true}) => () => A
           case '/api/auth/verify-otp':
             expect(jsonDecode(r.body)['otp'], '999999');
             return http.Response(jsonEncode({'status': 'success', 'session': {'id': 'e' * 32, 'token': 'tok'}}), 200);
+          case '/api/assistant/sessions':
+            expect(r.headers['authorization'], 'Bearer firebase-id-token');
+            return http.Response(jsonEncode({'id': 'e' * 32, 'token': 'tok'}), 200);
         }
         return http.Response('{}', 404);
       }),
@@ -68,12 +92,15 @@ void main() {
     expect(c.state.error, contains('demo server'));
   });
 
-  test('live sign-in fails closed when the build has no OIDC provider', () async {
-    final c = AuthController(MemoryVault(), anonymous: server('v3_live'));
+  test('live phone code is verified before the backend issues a session', () async {
+    final identity = TestPhoneIdentity();
+    final c = AuthController(MemoryVault(), anonymous: server('v3_live'), phoneIdentity: identity);
     await settle(c);
-    await c.signInLive();
-    expect(c.state.isAuthenticated, isFalse);
-    expect(c.state.error, contains('not configured'));
+    await c.sendPhoneCode('+919999999999');
+    expect(identity.sentTo, '+919999999999');
+    expect(c.state.codeSent, isTrue);
+    await c.confirmPhoneCode('436281');
+    expect(c.state.isAuthenticated, isTrue);
   });
 
   test('server refusal of the demo challenge is shown, not bypassed', () async {

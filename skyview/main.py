@@ -3,6 +3,7 @@ SkyView Smart Agriculture — FastAPI Application
 Entry point. Thin orchestrator — logic lives in routers/agents.
 """
 
+import os
 import time
 
 from fastapi import FastAPI
@@ -115,7 +116,7 @@ if not safe_cors_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=safe_cors_origins,
-    allow_origin_regex=r"^(https://[a-zA-Z0-9-]+\.vercel\.app|http://(?:localhost|127\.0\.0\.1):\d+)$",
+    allow_origin_regex=None if os.getenv("K_SERVICE") else r"^(https://[a-zA-Z0-9-]+\.vercel\.app|http://(?:localhost|127\.0\.0\.1):\d+)$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=[
@@ -135,7 +136,29 @@ app.add_middleware(
 async def on_startup():
     from skyview.data.v3 import db as canonical
 
+    if os.getenv("K_SERVICE") and canonical.mode() != "v3_live":
+        raise RuntimeError("Cloud Run requires the authenticated v3_live data lane")
+    if os.getenv("K_SERVICE") and not all(
+        os.getenv(name)
+        for name in (
+            "ASSISTANT_S3_BUCKET",
+            "AWS_ENDPOINT_URL_S3",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_REGION",
+        )
+    ):
+        raise RuntimeError("Cloud Run requires durable object storage for farm files")
     if canonical.enabled():
+        if os.getenv("K_SERVICE"):
+            if not os.getenv("CORS_ORIGINS") or any(not origin.startswith("https://") for origin in settings.CORS_ORIGINS):
+                raise RuntimeError("Cloud Run requires explicit HTTPS CORS origins")
+            if os.getenv("V3_BACKGROUND_WORKER", "false").lower() == "true":
+                raise RuntimeError("Cloud Run requires request-driven and scheduled workers")
+        if os.getenv("K_SERVICE") and settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
+            required = ("WHATSAPP_TASK_QUEUE", "WHATSAPP_TASK_SERVICE_ACCOUNT", "SKYVIEW_PUBLIC_URL")
+            if any(not os.getenv(name) for name in required):
+                raise RuntimeError("Cloud Run WhatsApp requires a task queue, service identity, and public HTTPS URL")
         if not canonical.health():
             raise RuntimeError("V3 schema unavailable; refusing legacy fallback")
         from skyview.assistant.catalog import sync_runtime_catalog

@@ -455,19 +455,21 @@ Private endpoints require verified account or assistant-session access; client-s
 
 ## 📦 GCP Deployment Blueprint
 
-**Google Cloud Platform is the intended hosting target.** The [operations guide](docs/operations.md#hosted-deployment-handoff) records what a deployment must provide:
+**Google Cloud Platform is the intended application host.** The [deployment runbook](docs/gcp-deployment.md) records the database, identity, storage, and messaging gates:
 
 ```mermaid
 flowchart LR
-    Browser["Web + mobile"] --> HTTPS["HTTPS edge"]
-    HTTPS --> Run["Cloud Run API"]
-    Run --> SQL[("Cloud SQL PostgreSQL")]
-    Run --> Storage["Private Cloud Storage"]
-    Jobs["Scheduled worker"] --> SQL
-    Jobs --> Sources["Weather + market sources"]
+    Web["Firebase Hosting · web"] --> Run["Cloud Run · FastAPI"]
+    Mobile["Flutter · mobile"] --> Run
+    Twilio["Twilio · WhatsApp"] --> Run
+    Run --> Postgres[("External PostgreSQL")]
+    Run --> Files["Private Neon object storage · files"]
+    Run --> Tasks["Cloud Tasks · replies"]
+    Scheduler["Cloud Scheduler · source refresh"] --> Run
+    Run --> Sources["Weather + market sources"]
 ```
 
-The deployment needs verified account identity, managed secrets, persistent file bytes, database and file backups, a separately scheduled worker, and public HTTPS callbacks for enabled messaging. A container build alone does not provision those services. The frontend and backend images are in [infra](infra/); this repository does not include a cloud release workflow yet.
+The deployment uses Firebase phone identity, managed secrets, persistent file bytes, database and file backups, request-driven WhatsApp replies, scheduled source refresh, and HTTPS callbacks. The repository includes the root backend [Dockerfile](Dockerfile) and [Firebase Hosting configuration](firebase.json); resource provisioning and data cutover follow the runbook.
 
 ---
 

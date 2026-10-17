@@ -7,6 +7,7 @@ from pathlib import PurePosixPath
 from zipfile import BadZipFile, ZipFile
 
 from . import store
+from skyview.data import object_storage
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_TEXT = 20000
@@ -40,6 +41,7 @@ def extract(sid, filename, content, *, persist=True):
         folder.mkdir(parents=True, exist_ok=True)
         (folder / filename).write_bytes(content)
         try:
+            object_storage.put(folder / filename, store.ROOT, "assistant")
             return store.add_record(
                 sid,
                 "attachment",
@@ -167,6 +169,7 @@ def extract(sid, filename, content, *, persist=True):
         path.write_bytes(content)
         data.update(filename=filename, size=len(content))
         try:
+            object_storage.put(path, store.ROOT, "assistant")
             return store.add_record(sid, "attachment", data)
         except BaseException:
             path.unlink(missing_ok=True)

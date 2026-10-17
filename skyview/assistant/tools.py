@@ -1128,7 +1128,12 @@ class Executor:
                 photo = None
             if not photo:
                 raise ValueError("Attach a clear crop photo with the paperclip first.")
-            content = (store.ROOT / "photos" / photo["filename"]).read_bytes()
+            from skyview.data import object_storage
+
+            path = store.ROOT / "photos" / photo["filename"]
+            if not await asyncio.to_thread(object_storage.ensure, path, store.ROOT, "assistant"):
+                raise ValueError("The crop photo is no longer available. Attach it again.")
+            content = path.read_bytes()
             from skyview.agents.disease_service import (
                 analyze_crop_image,
                 persist_crop_assessment,
@@ -1297,6 +1302,10 @@ class Executor:
                 path = (
                     store.ROOT / "files" / f"{artifact['file_id']}.{artifact['format']}"
                 )
+                from skyview.data import object_storage
+
+                if not await asyncio.to_thread(object_storage.ensure, path, store.ROOT, "assistant"):
+                    raise ValueError("The file is no longer available")
                 attachment = await asyncio.to_thread(
                     attachments.extract,
                     self.sid,

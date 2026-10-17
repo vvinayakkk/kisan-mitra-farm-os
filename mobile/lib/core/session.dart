@@ -1,13 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api.dart';
-import 'config.dart';
 import 'offline.dart';
+import 'phone_auth.dart';
 
 /// Backend lane reported by `GET /`. Only the canonical lanes are supported.
 enum BackendMode { demo, live, unsupported, unknown }
@@ -28,6 +27,7 @@ class AuthState {
     this.session,
     this.error,
     this.busy = false,
+    this.codeSent = false,
   });
 
   final AuthStatus status;
@@ -35,6 +35,7 @@ class AuthState {
   final SessionCapability? session;
   final String? error;
   final bool busy;
+  final bool codeSent;
 
   bool get isAuthenticated => status == AuthStatus.signedIn && session != null;
 
@@ -46,6 +47,7 @@ class AuthState {
     String? error,
     bool clearError = false,
     bool? busy,
+    bool? codeSent,
   }) =>
       AuthState(
         status: status ?? this.status,
@@ -53,6 +55,7 @@ class AuthState {
         session: clearSession ? null : session ?? this.session,
         error: clearError ? null : error ?? this.error,
         busy: busy ?? this.busy,
+        codeSent: codeSent ?? this.codeSent,
       );
 }
 
@@ -81,16 +84,20 @@ class SessionVault {
 }
 
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._vault, {ApiClient Function()? anonymous, FlutterAppAuth? appAuth})
+  AuthController(this._vault, {ApiClient Function()? anonymous, PhoneIdentityProvider? phoneIdentity})
       : _anonymous = anonymous ?? (() => ApiClient()),
-        _appAuth = appAuth ?? const FlutterAppAuth(),
+        _phoneIdentity = phoneIdentity,
         super(const AuthState()) {
     _restore();
   }
 
   final SessionVault _vault;
   final ApiClient Function() _anonymous;
-  final FlutterAppAuth _appAuth;
+  PhoneIdentityProvider? _phoneIdentity;
+  String? _verificationId;
+
+  PhoneIdentityProvider get phoneIdentity =>
+      _phoneIdentity ??= FirebasePhoneIdentity();
 
   Future<BackendMode> _detectMode() async {
     final api = _anonymous();
@@ -162,30 +169,9 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  /// Live lane: obtain an OIDC token with PKCE, then let the server verify it
-  /// and bind a session to the verified account.
-  Future<void> signInLive() async {
-    if (!AppConfig.oidcConfigured) {
-      state = state.copyWith(
-          error: 'Live sign-in is not configured in this build. '
-              'Rebuild with OIDC_ISSUER and OIDC_CLIENT_ID.');
-      return;
-    }
-    state = state.copyWith(busy: true, clearError: true);
+  Future<void> _finishPhoneSignIn(String token) async {
     final api = _anonymous();
     try {
-      final result = await _appAuth.authorizeAndExchangeCode(AuthorizationTokenRequest(
-        AppConfig.oidcClientId,
-        AppConfig.oidcRedirectUri,
-        issuer: AppConfig.oidcIssuer,
-        scopes: const ['openid', 'profile'],
-        additionalParameters:
-            AppConfig.oidcAudience.isEmpty ? null : {'audience': AppConfig.oidcAudience},
-      ));
-      final token = AppConfig.oidcAudience.isEmpty ? result.idToken : result.accessToken;
-      if (token == null || token.isEmpty) {
-        throw ApiException(401, 'Sign-in returned no identity token.');
-      }
       final created = await api.post('/api/assistant/sessions',
           extraHeaders: {'Authorization': 'Bearer $token'});
       final session = SessionCapability.tryParse(created);
@@ -193,8 +179,6 @@ class AuthController extends StateNotifier<AuthState> {
       await _adopt(session);
     } on ApiException catch (e) {
       state = state.copyWith(busy: false, error: e.message);
-    } on FlutterAppAuthUserCancelledException {
-      state = state.copyWith(busy: false);
     } catch (_) {
       state = state.copyWith(busy: false, error: 'Sign-in could not finish. Please retry.');
     } finally {
@@ -202,10 +186,52 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> sendPhoneCode(String phone) async {
+    if (state.mode != BackendMode.live) {
+      state = state.copyWith(error: 'Phone sign-in needs the live farm service.');
+      return;
+    }
+    final normalized = phone.replaceAll(RegExp(r'[\s-]'), '');
+    if (!RegExp(r'^\+91[6-9]\d{9}$').hasMatch(normalized)) {
+      state = state.copyWith(error: 'Enter a valid Indian number with +91.');
+      return;
+    }
+    _verificationId = null;
+    state = state.copyWith(busy: true, codeSent: false, clearError: true);
+    try {
+      await phoneIdentity.sendCode(
+        normalized,
+        onCodeSent: (id) {
+          _verificationId = id;
+          state = state.copyWith(busy: false, codeSent: true);
+        },
+        onVerified: (token) => _finishPhoneSignIn(token),
+        onError: (message) => state = state.copyWith(busy: false, error: message),
+      );
+    } catch (_) {
+      state = state.copyWith(busy: false, error: 'Could not send the code. Please retry.');
+    }
+  }
+
+  Future<void> confirmPhoneCode(String code) async {
+    final verificationId = _verificationId;
+    if (verificationId == null || !RegExp(r'^\d{6}$').hasMatch(code)) {
+      state = state.copyWith(error: 'Enter the six-digit code.');
+      return;
+    }
+    state = state.copyWith(busy: true, clearError: true);
+    try {
+      await _finishPhoneSignIn(await phoneIdentity.confirmCode(verificationId, code));
+    } catch (_) {
+      state = state.copyWith(busy: false, error: 'The code could not be verified. Try again.');
+    }
+  }
+
   /// Server rejected the capability (revoked, expired, other device signed out).
   Future<void> expire() async {
     if (state.session == null) return;
     await _vault.clear();
+    if (state.mode == BackendMode.live) await phoneIdentity.signOut();
     await OfflineStore.clearAll();
     state = AuthState(
         status: AuthStatus.signedOut,
@@ -228,6 +254,7 @@ class AuthController extends StateNotifier<AuthState> {
       }
     }
     await _vault.clear();
+    if (state.mode == BackendMode.live) await phoneIdentity.signOut();
     await OfflineStore.clearAll();
     state = AuthState(status: AuthStatus.signedOut, mode: state.mode);
   }

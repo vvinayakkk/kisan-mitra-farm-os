@@ -1057,6 +1057,13 @@
       "queued": "Saved. It will be sent when internet is back.",
       "waiting_to_send": "Waiting for internet",
       "remove": "Remove"
+    },
+    "auth": {
+      "mobile_number": "Mobile number",
+      "six_digit_code": "Six-digit code",
+      "send_code": "Send code",
+      "verify_continue": "Verify & continue",
+      "resend_code": "Resend code"
     }
   }
 }
