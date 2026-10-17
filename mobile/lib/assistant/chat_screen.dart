@@ -61,6 +61,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onRetry: state.busy ? null : () => controller.retryLast(),
         ),
       if (state.pending != null && !state.busy) PendingCard(pending: state.pending!),
+      for (var i = 0; i < state.outbox.length; i++)
+        _QueuedBubble(text: state.outbox[i], onRemove: () => controller.removeQueued(i)),
     ];
     return Scaffold(
       appBar: AppBar(
@@ -94,7 +96,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: !state.ready && state.loading
                 ? LoadingView('fos.assistant.opening_workspace'.tr())
-                : state.messages.isEmpty && state.pending == null
+                : state.messages.isEmpty && state.pending == null && state.outbox.isEmpty
                     ? _Welcome(onSkills: () => showCatalogSheet(context, onUseSkill: (skill) {
                         _composer.currentState?.setDraft('fos.assistant.use_skill_draft'.tr(namedArgs: {'name': skill.name}));
                       }))
@@ -138,6 +140,41 @@ class _Welcome extends StatelessWidget {
                 icon: Icons.apps_rounded,
                 iconColor: AppColors.primary,
                 onTap: () => _showMore(context, onSkills),
+              ),
+            ]),
+          ]),
+        ),
+      );
+}
+
+/// A message typed without network, waiting to be sent.
+class _QueuedBubble extends StatelessWidget {
+  const _QueuedBubble({required this.text, required this.onRemove});
+
+  final String text;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          margin: const EdgeInsets.only(left: 48, top: 6, bottom: 6),
+          padding: const EdgeInsets.fromLTRB(14, 10, 6, 6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(18).copyWith(bottomRight: const Radius.circular(4)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(text, style: const TextStyle(color: Colors.white, fontSize: 15)),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.schedule_rounded, size: 14, color: Colors.white),
+              const SizedBox(width: 4),
+              Text('fos.offline.waiting_to_send'.tr(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+              IconButton(
+                tooltip: 'fos.offline.remove'.tr(),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                onPressed: onRemove,
               ),
             ]),
           ]),

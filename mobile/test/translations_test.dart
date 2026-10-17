@@ -29,4 +29,21 @@ void main() {
           reason: 'placeholder mismatch: $key');
     }
   });
+
+  test('every shipped language has every English key with the same placeholders', () {
+    final en = _load('en');
+    final placeholders = RegExp(r'\{\w+\}');
+    final files = Directory('assets/translations').listSync().whereType<File>().where((f) => f.path.endsWith('.json'));
+    for (final file in files) {
+      final lang = file.uri.pathSegments.last.replaceAll('.json', '');
+      if (lang == 'en') continue;
+      final other = _load(lang);
+      for (final e in en.entries) {
+        expect(other.containsKey(e.key), isTrue, reason: '$lang missing ${e.key}');
+        expect(placeholders.allMatches(other[e.key]!).map((m) => m[0]).toSet(),
+            placeholders.allMatches(e.value).map((m) => m[0]).toSet(),
+            reason: '$lang placeholder mismatch: ${e.key}');
+      }
+    }
+  });
 }

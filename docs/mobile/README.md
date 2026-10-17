@@ -102,4 +102,6 @@ Build outputs stay in `mobile/build/` (ignored). No APK is tracked in Git.
 - Live OIDC sign-in: no identity provider is configured locally, so only the fail-closed path is tested.
 - Play/store distribution and iOS builds.
 
-Interface text outside the original translated strings is English. The assistant answers in the farmer's own language, including Hindi and Hinglish. Conversation history is scoped to a sign-in session on the server, so a new sign-in starts an empty conversation list. Reads need a connection; nothing is claimed to work offline.
+The interface ships in English, Hindi, Marathi, Telugu, Tamil, Gujarati, Bengali, Kannada, Malayalam and Punjabi (`assets/translations/`; a test checks every language has every key with matching placeholders). Odia, Assamese and Urdu fall back to English text, while the assistant still answers in the farmer's own language. Conversation history is scoped to a sign-in session on the server.
+
+Weak networks: the last successful copy of the assistant session, mandi prices and trends, weather, notebook, station, profile and Saathi is kept per session on the phone (bounded, erased at sign-out). With no network those screens show the saved copy under a banner stating its time. Chat messages typed offline wait in an outbox and are sent in order when the network returns, stopping at any question or approval card. Writes (saving tasks, ledger entries, approvals, uploads) still need a connection.

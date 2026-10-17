@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'router.dart';
+import 'ui/offline_banner.dart';
 import 'services/theme_service.dart';
 import 'utils/constants.dart';
 
@@ -13,7 +14,10 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
   runApp(
     EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('hi')],
+      supportedLocales: const [
+        Locale('en'), Locale('hi'), Locale('mr'), Locale('te'), Locale('ta'),
+        Locale('gu'), Locale('bn'), Locale('kn'), Locale('ml'), Locale('pa'),
+      ],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       child: const ProviderScope(child: KisanMitraApp()),
@@ -35,5 +39,6 @@ class KisanMitraApp extends ConsumerWidget {
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         locale: context.locale,
+        builder: (context, child) => OfflineFrame(child: child!),
       );
 }

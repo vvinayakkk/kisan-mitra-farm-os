@@ -25,16 +25,22 @@ class _LanguageSelectScreenState extends ConsumerState<LanguageSelectScreen> {
     'te': 'Telugu',
     'ta': 'Tamil',
     'bn': 'Bengali',
+    'gu': 'Gujarati',
+    'kn': 'Kannada',
+    'ml': 'Malayalam',
   };
 
   static const _nativeNames = {
     'en': 'English',
     'hi': 'हिन्दी',
-    'pa': 'ਪੰਜਾਬी',
+    'pa': 'ਪੰਜਾਬੀ',
     'mr': 'मराठी',
     'te': 'తెలుగు',
     'ta': 'தமிழ்',
     'bn': 'বাংলা',
+    'gu': 'ગુજરાતી',
+    'kn': 'ಕನ್ನಡ',
+    'ml': 'മലയാളം',
   };
 
   @override
@@ -54,7 +60,7 @@ class _LanguageSelectScreenState extends ConsumerState<LanguageSelectScreen> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const languageCodes = ['en', 'hi', 'pa', 'mr', 'te', 'ta', 'bn'];
+    const languageCodes = ['en', 'hi', 'mr', 'te', 'ta', 'gu', 'bn', 'kn', 'ml', 'pa'];
 
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
     final subColor =

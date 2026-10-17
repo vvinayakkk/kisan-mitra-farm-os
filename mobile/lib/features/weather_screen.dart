@@ -212,11 +212,13 @@ class _WeatherBody extends StatelessWidget {
           Row(children: [
             Icon(weatherIcon(current['weather_code'] as num?), size: 46, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
             const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(v(current['temperature_2m'], '°C'), style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: ink)),
-              Text('fos.farm.condition_feels'.tr(namedArgs: {'condition': weatherLabel(current['weather_code'] as num?), 'temp': v(current['apparent_temperature'], '°')}),
-                  style: TextStyle(color: mutedColor(context))),
-            ]),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(v(current['temperature_2m'], '°C'), style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: ink)),
+                Text('fos.farm.condition_feels'.tr(namedArgs: {'condition': weatherLabel(current['weather_code'] as num?), 'temp': v(current['apparent_temperature'], '°')}),
+                    style: TextStyle(color: mutedColor(context))),
+              ]),
+            ),
           ]),
           const SizedBox(height: 8),
           Wrap(spacing: 14, runSpacing: 6, children: [

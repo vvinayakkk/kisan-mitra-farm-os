@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api.dart';
+import '../../core/offline.dart';
 import '../../ui/kit.dart';
 import '../../utils/constants.dart';
 import '../../voice/voice_button.dart';
@@ -43,6 +44,14 @@ class ComposerState extends ConsumerState<Composer> {
   Future<void> _send() async {
     final text = _text.text.trim();
     if (text.isEmpty && _attached.isEmpty) return;
+    // No network: keep the words safely and send them when signal returns.
+    if (ref.read(offlineProvider).value == true) {
+      if (text.isEmpty) return;
+      _text.clear();
+      await ref.read(assistantProvider.notifier).queue(text);
+      if (mounted) showNotice(context, 'fos.offline.queued'.tr());
+      return;
+    }
     final ids = _attached.map((a) => a.id).toList();
     final names = _attached.map((a) => a.name).join(', ');
     _text.clear();
@@ -102,7 +111,9 @@ class ComposerState extends ConsumerState<Composer> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assistantProvider);
-    final locked = !state.ready || state.busy || state.pending != null;
+    final offline = ref.watch(offlineProvider).value == true;
+    // Offline, typing still works (messages wait in the outbox).
+    final locked = (!state.ready && !offline) || state.busy || state.pending != null;
     final dark = context.isDark;
     // Original input bar: one rounded glass pill floating over the gradient.
     return SafeArea(
@@ -136,7 +147,7 @@ class ComposerState extends ConsumerState<Composer> {
             child: Row(children: [
               IconButton(
                 tooltip: 'fos.assistant.attach_tooltip'.tr(),
-                onPressed: locked || _uploading ? null : _attach,
+                onPressed: locked || offline || _uploading ? null : _attach,
                 icon: Icon(Icons.add_rounded, color: mutedColor(context)),
               ),
               Expanded(

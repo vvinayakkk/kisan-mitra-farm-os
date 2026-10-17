@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api.dart';
 import 'config.dart';
+import 'offline.dart';
 
 /// Backend lane reported by `GET /`. Only the canonical lanes are supported.
 enum BackendMode { demo, live, unsupported, unknown }
@@ -205,6 +206,7 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> expire() async {
     if (state.session == null) return;
     await _vault.clear();
+    await OfflineStore.clearAll();
     state = AuthState(
         status: AuthStatus.signedOut,
         mode: state.mode,
@@ -226,6 +228,7 @@ class AuthController extends StateNotifier<AuthState> {
       }
     }
     await _vault.clear();
+    await OfflineStore.clearAll();
     state = AuthState(status: AuthStatus.signedOut, mode: state.mode);
   }
 }
@@ -236,11 +239,17 @@ final authProvider = StateNotifierProvider<AuthController, AuthState>(
   (ref) => AuthController(ref.read(sessionVaultProvider)),
 );
 
+/// Saved copies belong to one session; a new sign-in starts empty.
+final offlineStoreProvider = Provider<OfflineStore?>((ref) {
+  final id = ref.watch(authProvider.select((s) => s.session?.id));
+  return id == null ? null : OfflineStore(id);
+});
+
 /// API client bound to the current session. Rebuilt (and the old one closed)
 /// whenever the session changes, so stale responses cannot cross accounts.
 final apiProvider = Provider<ApiClient>((ref) {
   final session = ref.watch(authProvider.select((s) => s.session));
-  final api = ApiClient(session: session);
+  final api = ApiClient(session: session, offline: session == null ? null : ref.watch(offlineStoreProvider));
   api.onUnauthorized = () => ref.read(authProvider.notifier).expire();
   ref.onDispose(api.close);
   return api;

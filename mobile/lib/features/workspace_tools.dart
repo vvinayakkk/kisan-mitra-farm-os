@@ -23,6 +23,7 @@ class WorkspaceTools {
           '/api/assistant/sessions/${session.id}/inspect/$tool',
           body: args,
           timeout: Duration(seconds: tool == 'diagnose_crop' ? 95 : 25),
+          saveCopy: _cached.contains(tool),
         ));
     if (!_cached.contains(tool)) return load();
     final key = 'inspect:$tool:${jsonEncode(Map.fromEntries(args.entries.toList()..sort((a, b) => a.key.compareTo(b.key))))}';

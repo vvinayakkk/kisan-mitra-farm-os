@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 
 import 'config.dart';
+import 'offline.dart';
 
 /// Server-issued assistant session capability. The farmer identity behind it is
 /// resolved by the backend; the app never sends a farmer id.
@@ -66,12 +67,15 @@ String _detail(String body, int status) {
 /// Thin JSON client. One instance per session capability so a request started
 /// for one farmer can never complete into another farmer's state.
 class ApiClient {
-  ApiClient({this.session, http.Client? client, String? baseUrl})
+  ApiClient({this.session, http.Client? client, String? baseUrl, this.offline})
       : _client = client ?? http.Client(),
         base = (baseUrl ?? AppConfig.apiBaseUrl).replaceAll(RegExp(r'/$'), '');
 
   final SessionCapability? session;
   final http.Client _client;
+
+  /// Saved copies for a few read screens; used only when the network fails.
+  final OfflineStore? offline;
   final String base;
 
   /// Called when the server rejects the capability; the app signs out.
@@ -93,11 +97,36 @@ class ApiClient {
 
   Future<dynamic> get(String path,
           {Map<String, Object?>? query, Duration timeout = const Duration(seconds: 25)}) =>
-      _send(() => _client.get(uri(path, query), headers: headers()), timeout);
+      _withSavedCopy(
+        OfflineStore.cacheable(path) ? uri(path, query).toString() : null,
+        () => _send(() => _client.get(uri(path, query), headers: headers()), timeout),
+      );
+
+  /// Live result is saved; with no network the last saved copy is returned
+  /// (and [OfflineStore.servedSavedAt] tells the UI how old it is).
+  Future<dynamic> _withSavedCopy(String? key, Future<dynamic> Function() load) async {
+    final store = offline;
+    if (store == null || key == null) return load();
+    try {
+      final data = await load();
+      unawaited(store.save(key, data));
+      return data;
+    } on ApiException catch (e) {
+      if (!e.offline) rethrow;
+      final saved = await store.load(key);
+      if (saved == null) rethrow;
+      return saved.data;
+    }
+  }
 
   Future<dynamic> post(String path,
-          {Object? body, Map<String, String>? extraHeaders, Duration timeout = const Duration(seconds: 30)}) =>
-      _send(
+          {Object? body,
+          Map<String, String>? extraHeaders,
+          Duration timeout = const Duration(seconds: 30),
+          bool saveCopy = false}) =>
+      saveCopy
+          ? _withSavedCopy('$path ${jsonEncode(body)}', () => post(path, body: body, extraHeaders: extraHeaders, timeout: timeout))
+          : _send(
           () => _client.post(uri(path),
               headers: {...headers(), ...?extraHeaders},
               body: body == null ? null : jsonEncode(body)),

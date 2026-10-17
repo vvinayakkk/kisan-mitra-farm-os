@@ -21,7 +21,7 @@ const kAppLanguages = <(String, String)>[
 ];
 
 /// Interface translations shipped in assets/translations.
-const kUiLocales = {'en', 'hi'};
+const kUiLocales = {'en', 'hi', 'mr', 'te', 'ta', 'gu', 'bn', 'kn', 'ml', 'pa'};
 
 String? normalizeLanguage(String? value) {
   final prefix = value?.toLowerCase().replaceAll('_', '-').split('-').first;

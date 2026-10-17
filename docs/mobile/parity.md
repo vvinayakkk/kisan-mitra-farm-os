@@ -77,7 +77,7 @@ Status: **Parity**: same contract and behaviour, with a phone layout. **Adapted*
 | Page helpers | `MitraHelper` + `suggestions.ts` | "Ask Mitra" sheet on each screen with the same four prompts, showing only turns started there | Parity |
 | Suggestion chips | — | Original outlined chip style kept. Prompt chips send real prompts; feature chips open Farm OS screens | Adapted |
 | Classic-only pages (`/accelerator`, `/reports`, `/trends`, FPGA) | classic routes | Removed from mobile; covered by Station, Notebook files and Markets | Gap by design (not part of Farm OS) |
-| Offline use | snapshot fallback on web | none: reads need the server; a bounded in-memory cache smooths navigation | Gap (no offline claim) |
+| Offline use | snapshot fallback on web | Saved copies of key reads with an offline banner and their time; chat outbox sends when the network returns; writes need a connection | Parity (reads), Gap (offline writes) |
 
 ## Backend contract changes made for mobile
 

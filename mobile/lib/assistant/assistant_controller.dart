@@ -4,10 +4,12 @@ import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api.dart';
 import '../core/config.dart';
 import '../core/language.dart';
+import '../core/offline.dart';
 import '../core/session.dart';
 import '../core/workspace_cache.dart';
 import 'models.dart';
@@ -29,6 +31,7 @@ class AssistantState {
     this.catalog = const Catalog(),
     this.error,
     this.status = '',
+    this.outbox = const [],
   });
 
   final bool ready;
@@ -47,6 +50,9 @@ class AssistantState {
   final Catalog catalog;
   final String? error;
   final String status;
+
+  /// Messages typed with no network; sent in order when it returns.
+  final List<String> outbox;
 
   bool get busy => running || recovering;
 
@@ -67,6 +73,7 @@ class AssistantState {
     String? error,
     bool clearError = false,
     String? status,
+    List<String>? outbox,
   }) =>
       AssistantState(
         ready: ready ?? this.ready,
@@ -83,6 +90,7 @@ class AssistantState {
         catalog: catalog ?? this.catalog,
         error: clearError ? null : error ?? this.error,
         status: status ?? this.status,
+        outbox: outbox ?? this.outbox,
       );
 }
 
@@ -106,11 +114,15 @@ class RunContext {
 
 class AssistantController extends StateNotifier<AssistantState> {
   AssistantController(this._api, this._language, this._invalidate,
-      {http.Client Function()? streamClient, void Function(String?)? onPreferredLanguage})
+      {http.Client Function()? streamClient, void Function(String?)? onPreferredLanguage, bool Function()? isOnline})
       : _streamClient = streamClient ?? http.Client.new,
         _onPreferredLanguage = onPreferredLanguage,
+        _isOnline = isOnline ?? (() => true),
         super(const AssistantState()) {
-    if (_api.session != null) load();
+    if (_api.session != null) {
+      _restoreOutbox();
+      load();
+    }
   }
 
   final ApiClient _api;
@@ -118,6 +130,7 @@ class AssistantController extends StateNotifier<AssistantState> {
   final void Function() _invalidate;
   final http.Client Function() _streamClient;
   final void Function(String?)? _onPreferredLanguage;
+  final bool Function() _isOnline;
   http.Client? _active;
   bool _stopRequested = false;
   int _localIds = 0;
@@ -133,6 +146,7 @@ class AssistantController extends StateNotifier<AssistantState> {
       final snapshot = await _sync();
       if (!mounted) return;
       _onPreferredLanguage?.call(snapshot.preferredLanguage);
+      if (state.outbox.isNotEmpty && _isOnline()) unawaited(Future(flushOutbox));
       state = state.copyWith(ready: true, loading: false, catalog: catalog);
       final last = snapshot.messages.isEmpty ? null : snapshot.messages.last;
       if (last != null && last.working && last.serverId != null) unawaited(_recover(last));
@@ -388,6 +402,49 @@ class AssistantController extends StateNotifier<AssistantState> {
     await _sync(replaceMessages: false);
   }
 
+  String get _outboxKey => 'outbox_${_api.session?.id}';
+
+  Future<void> _restoreOutbox() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_outboxKey) ?? const [];
+    if (mounted && saved.isNotEmpty) state = state.copyWith(outbox: saved);
+  }
+
+  Future<void> _persistOutbox() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_outboxKey, state.outbox);
+  }
+
+  /// Keeps a message typed without network; nothing is sent yet.
+  Future<void> queue(String message) async {
+    if (message.trim().isEmpty) return;
+    state = state.copyWith(outbox: [...state.outbox, message.trim()]);
+    await _persistOutbox();
+  }
+
+  Future<void> removeQueued(int index) async {
+    state = state.copyWith(outbox: [...state.outbox]..removeAt(index));
+    await _persistOutbox();
+  }
+
+  /// Sends waiting messages one by one; stops at a question/approval card
+  /// so nothing answers it on the farmer's behalf.
+  Future<void> flushOutbox() async {
+    while (mounted && state.outbox.isNotEmpty && state.ready && !state.busy && state.pending == null) {
+      final next = state.outbox.first;
+      state = state.copyWith(outbox: state.outbox.sublist(1));
+      await _persistOutbox();
+      await send(next);
+      final last = state.messages.isEmpty ? null : state.messages.last;
+      if (last?.status == 'error' && last?.error != null && mounted) {
+        // Network dropped again: put it back at the front and wait.
+        state = state.copyWith(outbox: [next, ...state.outbox]);
+        await _persistOutbox();
+        return;
+      }
+    }
+  }
+
   @override
   void dispose() {
     _active?.close();
@@ -397,10 +454,16 @@ class AssistantController extends StateNotifier<AssistantState> {
 
 final assistantProvider = StateNotifierProvider<AssistantController, AssistantState>((ref) {
   final api = ref.watch(apiProvider);
-  return AssistantController(
+  final controller = AssistantController(
     api,
     () => ref.read(languageProvider).code,
     () => ref.read(workspaceCacheProvider).invalidate(),
     onPreferredLanguage: ref.read(languageProvider.notifier).adoptServerPreference,
+    isOnline: () => ref.read(offlineProvider).value != true,
   );
+  // Signal is back: send what the farmer typed while offline.
+  ref.listen(offlineProvider, (_, next) {
+    if (next.value == false) controller.flushOutbox();
+  });
+  return controller;
 });
