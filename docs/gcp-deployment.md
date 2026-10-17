@@ -25,7 +25,8 @@ For Firebase Hosting, `firebase.json` serves `frontend/dist` with SPA rewrites. 
 
 Current origins:
 
-- Website: `https://project-0b9b4009-1644-4477-aec.web.app`
+- Website: `https://growwithmitra.web.app`
+- Original Hosting address remains available: `https://project-0b9b4009-1644-4477-aec.web.app`
 - API: `https://kisan-mitra-api-344920654513.asia-south1.run.app`
 - Scheduled refresh: `kisan-mitra-refresh` in `asia-south1`, every two hours, with a dedicated OIDC identity.
 - WhatsApp queue: `kisan-mitra-whatsapp` in `asia-south1`, one dispatch per second and one concurrent request.
@@ -46,3 +47,20 @@ The current Twilio One Console limited trial accepts a custom inbound webhook fo
 4. Enable and test scheduled refreshes and Cloud Tasks, then configure Twilio webhooks. Exercise text, photo, document, and voice-note paths and delivery receipts.
 5. Build the Android application against the same HTTPS API, use a private release keystore, and attach the APK to a GitHub Release. An installation check and a physical-phone smoke test are advisable before submission.
 6. Inspect budget alerts, Cloud Run scale settings, image cleanup, Neon storage usage, failed jobs, and provider quotas. Roll back by redeploying the prior Cloud Run revision and Hosting release if required.
+
+
+### Branded Firebase Hosting site
+
+The primary public address is `https://growwithmitra.web.app` (Firebase site ID `growwithmitra` in the existing project). The site also has `https://growwithmitra.firebaseapp.com`. These are Firebase-provided subdomains, not a purchased custom domain. Hosting usage still counts against the existing project quotas and billing.
+
+`firebase.json` targets the branded site. With the REST deployment helper, use:
+
+```bash
+.venv/bin/python infra/deploy_firebase_hosting.py \
+  --project project-0b9b4009-1644-4477-aec \
+  --site growwithmitra --directory frontend/dist
+```
+
+To update the original address as well, run the same helper with `--site project-0b9b4009-1644-4477-aec`. Each site has its own release history. Both new hostnames are registered in Firebase Authentication's authorized domains and the backend's exact-origin CORS list, while the original origins remain allowed. `FRONTEND_URL` points to the branded address. The API URL and Android package remain unchanged.
+
+Browser sign-in state, caches and unfinished local drafts are scoped to each origin. Users may need to sign in once at the new address; saved server-side profiles and records remain attached to the same account. Keep the original address available for users with unfinished local drafts.

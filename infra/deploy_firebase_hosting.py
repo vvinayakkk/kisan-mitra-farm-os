@@ -29,9 +29,9 @@ def request(method, url, token, **kwargs):
     return response.json() if response.content else {}
 
 
-def publish(project, directory):
+def publish(project, directory, site=None):
     token = access_token()
-    site = project
+    site = site or project
     headers = {"x-goog-user-project": project}
     config = {
         "rewrites": [{"glob": "**", "path": "/index.html"}],
@@ -92,6 +92,7 @@ def publish(project, directory):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", required=True)
+    parser.add_argument("--site", help="Hosting site ID; defaults to the project ID")
     parser.add_argument("--directory", type=Path, default=Path("frontend/dist"))
     arguments = parser.parse_args()
-    publish(arguments.project, arguments.directory)
+    publish(arguments.project, arguments.directory, arguments.site)

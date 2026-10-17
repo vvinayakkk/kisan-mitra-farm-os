@@ -7,8 +7,8 @@
 ---
 
 [![AI Builder Cup](https://img.shields.io/badge/AI%20Builder%20Cup-init.io-355B3C?style=for-the-badge)](https://github.com/vvinayakkk/kisan-mitra-farm-os)
-[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Live%20deployment-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://project-0b9b4009-1644-4477-aec.web.app/workspace)
-[![Firebase](https://img.shields.io/badge/Firebase-Hosting%20%2B%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://project-0b9b4009-1644-4477-aec.web.app/workspace)
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Live%20deployment-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://growwithmitra.web.app/workspace)
+[![Firebase](https://img.shields.io/badge/Firebase-Hosting%20%2B%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://growwithmitra.web.app/workspace)
 [![Web](https://img.shields.io/badge/Web-Farm%20OS%20%2B%20Classic-50784C?style=for-the-badge&logo=react&logoColor=white)](frontend/)
 [![Mobile](https://img.shields.io/badge/Mobile-Flutter-638C56?style=for-the-badge&logo=flutter&logoColor=white)](mobile/)
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Connected%20channel-77A966?style=for-the-badge&logo=whatsapp&logoColor=white)](docs/api/websocket-and-webhooks.md)
@@ -16,7 +16,7 @@
 
 **Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. **Firebase and Google Cloud provide its live web delivery, identity, API runtime, scheduled work and message queue.** Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
 
-**Explore the live deployment:** [Open Farm OS](https://project-0b9b4009-1644-4477-aec.web.app/workspace) · [Open Classic SkyView](https://project-0b9b4009-1644-4477-aec.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/latest) · [Administration](https://project-0b9b4009-1644-4477-aec.web.app/control)
+**Explore the live deployment:** [Open Farm OS](https://growwithmitra.web.app/workspace) · [Open Classic SkyView](https://growwithmitra.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/latest) · [Administration](https://growwithmitra.web.app/control)
 
 > **A question is the beginning of a workflow, not the end of a chat.** Ask what needs doing; Mitra finds the relevant farm context, shows its work, asks for missing details and returns an answer, chart, file or action ready to approve.
 
@@ -26,12 +26,12 @@
 
 | **Website · the full farm workspace** | **Flutter app · help in the field** |
 | :--- | :--- |
-| [![Illustration of the Kisan Mitra web workspace and a prepared farm checklist](docs/media/channels/web.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of the Kisan Mitra Flutter app with voice and farm actions](docs/media/channels/app.svg)](mobile/) |
+| [![Illustration of the Kisan Mitra web workspace and a prepared farm checklist](docs/media/channels/web.svg)](https://growwithmitra.web.app/workspace) | [![Illustration of the Kisan Mitra Flutter app with voice and farm actions](docs/media/channels/app.svg)](mobile/) |
 | Firebase Hosting delivers Farm OS and Classic; Cloud Run connects both to Mitra. | Firebase phone sign-in connects the Flutter companion to the same farmer account and API. |
 
 | **Voice & call · speak naturally** | **WhatsApp · send a question or crop photo** |
 | :--- | :--- |
-| [![Illustration of Kisan Mitra browser live voice and the website call control](docs/media/channels/voice.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of a WhatsApp crop question entering the signed Kisan Mitra webhook](docs/media/channels/whatsapp.svg)](docs/api/websocket-and-webhooks.md) |
+| [![Illustration of Kisan Mitra browser live voice and the website call control](docs/media/channels/voice.svg)](https://growwithmitra.web.app/workspace) | [![Illustration of a WhatsApp crop question entering the signed Kisan Mitra webhook](docs/media/channels/whatsapp.svg)](docs/api/websocket-and-webhooks.md) |
 | Browser live voice reaches Mitra on Cloud Run; the separate call control opens the configured support line. | Twilio receives the message; a signed Cloud Run webhook and Cloud Tasks process the inbound request. |
 
 *The four channel cards illustrate product flows; explore captured screens in the [Farm OS gallery](#-farm-os-design-system) and [Flutter app gallery](#flutter-app-screenshots).*
@@ -290,7 +290,7 @@ Starter routines are editable suggestions for a morning farm walk, crop observat
 
 ## Administration workspace
 
-[Open Mitra administration](https://project-0b9b4009-1644-4477-aec.web.app/control) · [Capabilities, access and deployment notes](docs/releases/admin-workspace.md)
+[Open Mitra administration](https://growwithmitra.web.app/control) · [Capabilities, access and deployment notes](docs/releases/admin-workspace.md)
 
 A web workspace for authorized administrators to look after farmers, farm records, markets, crop guidance, weather and service data. **43 registered resources** include **34 editable resources and 9 read-only views**. Viewer, editor and owner permissions are verified on the server.
 
