@@ -1,3 +1,5 @@
+import { GuidedTour } from "@/components/tour/GuidedTour";
+import { companionTour } from "@/components/tour/tours";
 import { useEffect, useRef, useState } from "react";
 import { AudioLines, Check, ChevronRight, FileText, Loader2, MessageCircle, Moon, Pause, Play, Settings2, Sparkles, Sprout, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiClient";
@@ -67,7 +69,7 @@ export function CompanionPanel({ open, onClose, onVoice }: { open: boolean; onCl
   return <aside id="saathi-companion" className="saathi-panel" aria-label="Your farm companion">
     <button ref={close} className="saathi-close" aria-label="Close companion" onClick={onClose}><X size={16}/></button>
     <header className="saathi-identity"><CompanionAvatar/><div><h2 key={data?.name}>{data?.name || "Saathi"}</h2><p key={data?.status || "connecting"}><span className={`saathi-status ${data?.status === "watching" ? "active" : ""}`}/>{data ? statusLabels[data.status] || "Connecting" : "Connecting…"}</p></div></header>
-    <div className="saathi-actions"><button onClick={onVoice}><AudioLines size={16}/> Talk</button><button onClick={() => { setDraft(data?.settings || null); setEditing(value => !value); }} disabled={!data}><Settings2 size={16}/> Personalize</button></div>
+    <GuidedTour scope="companion" steps={companionTour}/><div className="saathi-actions"><button onClick={onVoice}><AudioLines size={16}/> Talk</button><button onClick={() => { setDraft(data?.settings || null); setEditing(value => !value); }} disabled={!data}><Settings2 size={16}/> Personalize</button></div>
     {error && <p className="saathi-error" role="alert">{error}</p>}
     {editing && draft && <form className="saathi-settings" onSubmit={event => { event.preventDefault(); void save(draft); }}>
       <label>Name<input maxLength={40} required value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })}/></label>

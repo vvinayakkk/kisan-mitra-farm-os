@@ -1,3 +1,5 @@
+import { GuidedTour } from "@/components/tour/GuidedTour";
+import { onboardingTour } from "@/components/tour/tours";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, Leaf, Mic, Square, Sprout, Volume2 } from "lucide-react";
@@ -85,7 +87,7 @@ export default function Onboarding(){
   if(loading)return <main className="mitra-onboarding onboarding-loading" role="status"><span className="onboarding-orb"><i/><i/></span><p>Mitra is getting your place ready…</p></main>;
   if(!profile)return <main className="mitra-onboarding onboarding-loading"><p role="alert">{error}</p><button onClick={()=>setRevision(r=>r+1)}>Try again</button><button onClick={leave}>Skip for now</button></main>;
   return <main className="mitra-onboarding">
-    <header className="onboarding-top"><a href="/workspace" onClick={e=>{e.preventDefault();if(!busy)leave();}}><Leaf size={21}/>kisan mitra<span>MAKE YOURSELF AT HOME</span></a><nav aria-label="Setup progress">{steps.map((label,index)=><button key={label} aria-current={index===step?"step":undefined} disabled={busy||done||index>step} onClick={()=>move(index)}><span>{index<step||done?<Check size={13}/>:index+1}</span>{label}</button>)}</nav><button className="onboarding-skip" disabled={busy} onClick={leave}>{done?"Open workspace":"Skip for now"}<ArrowRight size={15}/></button></header>
+    <header className="onboarding-top"><a href="/workspace" onClick={e=>{e.preventDefault();if(!busy)leave();}}><Leaf size={21}/>kisan mitra<span>MAKE YOURSELF AT HOME</span></a><nav aria-label="Setup progress">{steps.map((label,index)=><button key={label} aria-current={index===step?"step":undefined} disabled={busy||done||index>step} onClick={()=>move(index)}><span>{index<step||done?<Check size={13}/>:index+1}</span>{label}</button>)}</nav>{!done&&<GuidedTour key={step} scope={`onboarding-${step}`} steps={onboardingTour(step)}/>}<button className="onboarding-skip" disabled={busy} onClick={leave}>{done?"Open workspace":"Skip for now"}<ArrowRight size={15}/></button></header>
     <div className="onboarding-layout">
       <aside className="onboarding-companion"><div className={`onboarding-orb ${recording?"is-listening":""}`} aria-hidden="true"><Sprout/><i/><i/><b/></div><span className="onboarding-eyebrow">YOUR LITTLE FARM COMPANION</span><h2>We can just <br/>talk this through.</h2><p>{done?"You’re all set. Your saved details will be there on your phone and laptop.":prompts[step]}</p><SpeechPlayback key={step} text={done?"Your farm is ready. Welcome to Kisan Mitra.":prompts[step]} language={form.language}/>
         {!done&&step<3&&<div className="onboarding-voice">

@@ -31,3 +31,13 @@ The dedicated page follows the staged layout of [Onboarding for DOMO by Adrian K
 Voice is an inline primary action with optional typing. Recording uses the existing speech hook, transcript review precedes field extraction, and final confirmation precedes database writes. Read-aloud reads generic guidance only, not saved personal profile details. Browser voice availability and live provider audio require real-device acceptance; screenshots and tests do not prove microphone accuracy or audible TTS.
 
 Validation for this follow-up: 236 web tests, TypeScript checking, production build, and controlled browser walkthrough of login to onboarding (no mounted chat), reload/resume, review/save to workspace, plus desktop and 390px layouts. No additional backend schema/API change or APK rebuild is needed for this web UI; deploy with the previously prepared backend rollout.
+
+## Website guided tours
+
+The website now has contextual, read-only tours for each onboarding step, all ten workspace views, all seven notebook sections, and Saathi. First visits start a short guide; Back, Next, Skip tour, Done and Escape provide explicit control. “Take a tour” replays the current page’s guide. This is a frontend-only addition; no backend migration or APK rebuild is required for the tours.
+
+Tour progress is versioned and scoped to the signed-in Firebase UID (session owner fallback) in local browser storage. Interrupted guides resume on the same browser. Completion and skip suppress repeat automatic prompts for that page; replay remains available. This preference does not sync across devices. Setup draft/profile saving remains unchanged.
+
+Highlights use the visible control’s live bounding rectangle, follow scrolling and resizing, and never guess an unavailable target’s position. Lazy targets have a bounded wait, then unavailable steps are skipped. The dialog traps keyboard focus, makes background content inert, restores focus, uses 44px controls, and respects reduced motion. Guides never click controls, write farm data, enable location, or activate recording.
+
+Validation: 245 frontend tests, TypeScript and production build; browser walkthroughs on 1440px desktop and 390px phone layouts. Browser reviews use controlled local API responses, not production farm data. All nine chat stops, main page entry anchors, notebook plan action, companion Escape behavior, missing weather-target recovery, replay and responsive alignment checked. Existing large bundle warnings remain. Deployment is pending the coordinated web/backend rollout.
