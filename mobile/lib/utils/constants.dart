@@ -1,35 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   AppColors._();
 
-  static const Color primaryGreen = Color(0xFF10B981);
-  static const Color primary        = Color(0xFF10B981);
-  static const Color primaryDark    = Color(0xFF047857);
-  static const Color primaryLight   = Color(0xFF34D399);
-  static const Color primarySurface = Color(0xFFD1FAE5);
+  static const Color primaryGreen = Color(0xFF52734D);
+  static const Color primary = Color(0xFF52734D);
+  static const Color primaryDark = Color(0xFF365333);
+  static const Color primaryLight = Color(0xFFA9C49A);
+  static const Color primarySurface = Color(0xFFE9EFDF);
 
-  static const Color accent         = Color(0xFF10B981);
-  static const Color accentDim      = Color(0xFFA7F3D0);
+  static const Color accent = Color(0xFF52734D);
+  static const Color accentDim = Color(0xFFA7F3D0);
 
-  static const Color darkBg         = Color(0xFF0A0A0C);
-  static const Color darkSurface    = Color(0xFF141417);
-  static const Color darkCard       = Color(0xFF1A1A1E);
-  static const Color lightBg        = Color(0xFFC8E6C9);
-  static const Color lightSurface   = Color(0xFFF6F7F9);
-  static const Color lightCard      = Color(0xFFFFFFFF);
+  static const Color darkBg = Color(0xFF0A0A0C);
+  static const Color darkSurface = Color(0xFF141417);
+  static const Color darkCard = Color(0xFF1A1A1E);
+  static const Color lightBg = Color(0xFFF7F6F2);
+  static const Color lightSurface = Color(0xFFF7F6F2);
+  static const Color lightCard = Color(0xFFFFFFFF);
 
-  static const Color success        = Color(0xFF10B981);
-  static const Color warning        = Color(0xFFF59E0B);
-  static const Color error          = Color(0xFFEF4444);
-  static const Color info           = Color(0xFF3B82F6);
+  static const Color success = Color(0xFF52734D);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error = Color(0xFFEF4444);
+  static const Color info = Color(0xFF3B82F6);
 
-  static const Color textDark       = Color(0xFF064E3B);
-  static const Color textMuted      = Color(0xFF6B7280);
+  static const Color textDark = Color(0xFF222822);
+  static const Color textMuted = Color(0xFF59665A);
 
-  static const Color brandPrimary = Color(0xFF10B981);
-  static const Color brandPrimaryLight = Color(0xFF34D399);
+  static const Color brandPrimary = Color(0xFF52734D);
+  static const Color brandPrimaryLight = Color(0xFFA9C49A);
   static const Color brandPrimaryDark = Color(0xFF059669);
   static const Color darkPrimary = Color(0xFFFFFFFF);
   static const Color darkPrimaryLight = Color(0xFFFFFFFF);
@@ -38,15 +37,15 @@ class AppColors {
   static const Color brandSuccess = Color(0xFF22C55E);
   static const Color danger = Color(0xFFFF5722);
   static const Color brandInfo = Color(0xFF16A34A);
-  static const Color brandAccent = Color(0xFF34D399);
+  static const Color brandAccent = Color(0xFFA9C49A);
   static const Color darkSuccess = Color(0xFFFFFFFF);
   static const Color darkWarning = Color(0xFFFFFFFF);
   static const Color darkInfo = Color(0xFFFFFFFF);
   static const Color darkAccent = Color(0xFFFFFFFF);
 
-  static const Color lightBackground = Color(0xFFC8E6C9);
+  static const Color lightBackground = Color(0xFFF7F6F2);
   static const Color lightText = Color(0xFF111827);
-  static const Color lightTextSecondary = Color(0xFF6B7280);
+  static const Color lightTextSecondary = Color(0xFF59665A);
   static const Color lightBorder = Color(0xFFE2E8F0);
 
   static const Color darkBackground = Color(0xFF0A0A0C);
@@ -105,8 +104,10 @@ extension ThemeX on BuildContext {
 
 /// Glass surfaces from the original app: translucent white over the green
 /// gradient (light) or near-opaque card (dark), with a soft white rim.
-Color glassFill(bool dark) => dark ? AppColors.darkCard.withValues(alpha: 0.96) : Colors.white.withValues(alpha: 0.56);
-Color glassBorder(bool dark) => dark ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.8);
+Color glassFill(bool dark) =>
+    dark ? AppColors.darkCard.withValues(alpha: 0.96) : Colors.white;
+Color glassBorder(bool dark) =>
+    dark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE8E8DF);
 
 ThemeData buildAppTheme({bool dark = false}) {
   const primary = AppColors.primary;
@@ -120,10 +121,15 @@ ThemeData buildAppTheme({bool dark = false}) {
     surface: dark ? AppColors.darkSurface : AppColors.lightSurface,
     surfaceContainerHighest: dark ? AppColors.darkCard : AppColors.lightSurface,
   );
-  final base = ThemeData(useMaterial3: true, colorScheme: cs, brightness: dark ? Brightness.dark : Brightness.light);
-  final text = GoogleFonts.poppinsTextTheme(base.textTheme).apply(bodyColor: ink, displayColor: ink);
+  final base = ThemeData(
+      fontFamily: 'Poppins',
+      useMaterial3: true,
+      colorScheme: cs,
+      brightness: dark ? Brightness.dark : Brightness.light);
+  final text = base.textTheme.apply(bodyColor: ink, displayColor: ink);
   final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(14));
-  final label = GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14);
+  final label = TextStyle(
+      fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 14);
 
   return base.copyWith(
     textTheme: text,
@@ -135,14 +141,18 @@ ThemeData buildAppTheme({bool dark = false}) {
       surfaceTintColor: Colors.transparent,
       centerTitle: true,
       foregroundColor: ink,
-      titleTextStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 18, color: ink),
+      titleTextStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+          color: ink),
     ),
     // Buttons are filled (no outline-only styles anywhere).
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: primary,
         foregroundColor: Colors.white,
-        minimumSize: const Size(48, 46),
+        minimumSize: const Size(48, 48),
         shape: shape,
         textStyle: label,
       ),
@@ -152,7 +162,7 @@ ThemeData buildAppTheme({bool dark = false}) {
         backgroundColor: primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        minimumSize: const Size(48, 46),
+        minimumSize: const Size(48, 48),
         shape: shape,
         textStyle: label,
       ),
@@ -162,7 +172,7 @@ ThemeData buildAppTheme({bool dark = false}) {
         backgroundColor: primary.withValues(alpha: dark ? 0.18 : 0.12),
         foregroundColor: dark ? AppColors.primaryLight : AppColors.primaryDark,
         side: BorderSide.none,
-        minimumSize: const Size(48, 44),
+        minimumSize: const Size(48, 48),
         shape: shape,
         textStyle: label,
       ),
@@ -170,24 +180,31 @@ ThemeData buildAppTheme({bool dark = false}) {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: dark ? AppColors.primaryLight : AppColors.primaryDark,
+        minimumSize: const Size(48, 48),
         shape: shape,
         textStyle: label,
       ),
     ),
-    iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(foregroundColor: ink)),
+    iconButtonTheme:
+        IconButtonThemeData(style: IconButton.styleFrom(foregroundColor: ink, minimumSize: const Size(48, 48), tapTargetSize: MaterialTapTargetSize.padded)),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primary,
       foregroundColor: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      extendedTextStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+      extendedTextStyle: TextStyle(
+          fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 14),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: glassFill(dark),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: glassBorder(dark))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: glassBorder(dark))),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: glassBorder(dark))),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: glassBorder(dark))),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
@@ -199,25 +216,32 @@ ThemeData buildAppTheme({bool dark = false}) {
       backgroundColor: primary.withValues(alpha: dark ? 0.18 : 0.1),
       selectedColor: primary.withValues(alpha: 0.3),
       side: BorderSide.none,
-      labelStyle: GoogleFonts.poppins(fontSize: 13, color: dark ? AppColors.primaryLight : AppColors.primaryDark),
+      labelStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 13,
+          color: dark ? AppColors.primaryLight : AppColors.primaryDark),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     cardTheme: CardThemeData(
       color: glassFill(dark),
       margin: const EdgeInsets.symmetric(vertical: 5),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: glassBorder(dark), width: 1.2)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: glassBorder(dark), width: 1.2)),
     ),
     tabBarTheme: TabBarThemeData(
       labelColor: dark ? AppColors.primaryLight : AppColors.primaryDark,
       unselectedLabelColor: dark ? Colors.white60 : AppColors.textMuted,
       indicatorColor: AppColors.primary,
       dividerColor: Colors.transparent,
-      labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+      labelStyle: TextStyle(
+          fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 14),
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: dark ? AppColors.darkSurface : AppColors.lightSurface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       showDragHandle: true,
     ),
     snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),

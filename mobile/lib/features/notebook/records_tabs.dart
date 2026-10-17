@@ -112,7 +112,7 @@ class _LedgerTabState extends ConsumerState<LedgerTab> {
         final items = asMaps(d['items']);
         final s = asMap(d['summary']);
         return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
-          const DemoBanner(),
+
           FarmCard(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (s['includes_demo_fixtures'] == true) Padding(padding: const EdgeInsets.only(bottom: 8), child: Tag('fos.notebook.sample'.tr(), color: AppColors.warning)),

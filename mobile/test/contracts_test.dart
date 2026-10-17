@@ -18,6 +18,46 @@ import 'l10n.dart';
 void main() {
   setUpAll(loadEnglish);
 
+  test('speech chunks preserve natural text within provider limits', () {
+    final text = List.filled(25, 'Check the field. Record what changed.').join(' ');
+    final chunks = speechChunks(text);
+    expect(chunks.join(' '), text);
+    expect(chunks.every((chunk) => chunk.length <= 320), isTrue);
+    expect(speechChunks(''), isEmpty);
+  });
+
+  test('API read cache is invalidated after a successful write', () async {
+    var reads = 0;
+    final api = ApiClient(baseUrl: 'http://t', cacheReads: true,
+      client: MockClient((request) async {
+        if (request.method == 'GET') reads++;
+        return http.Response('{"value":$reads}', 200, request: request);
+      }));
+    await api.get('/api/profile');
+    await api.get('/api/profile');
+    expect(reads, 1);
+    await api.post('/api/profile/save', body: {'name': 'Farmer'});
+    await api.get('/api/profile');
+    expect(reads, 2);
+    api.close();
+  });
+
+  test('market inspections do not erase prefetched profile data', () async {
+    var reads = 0;
+    final api = ApiClient(baseUrl: 'http://t', cacheReads: true, client: MockClient((r) async {
+      if (r.method == 'GET') reads++;
+      return http.Response('{}', 200, request: r);
+    }));
+    await api.get('/api/profile');
+    await api.post('/api/assistant/sessions/${'a' * 32}/inspect/market_prices', body: {});
+    await api.get('/api/profile');
+    expect(reads, 1);
+    await api.post('/api/profile/save', body: {'name': 'Ravi'});
+    await api.get('/api/profile');
+    expect(reads, 2);
+    api.close();
+  });
+
   group('session capability', () {
     test('accepts only server-shaped ids', () {
       expect(SessionCapability.tryParse({'id': 'a' * 32, 'token': 't'}), isNotNull);

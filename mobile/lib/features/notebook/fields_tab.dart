@@ -159,7 +159,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
           for (final c in d.cycles)
             Card(
               child: ListTile(
-                title: Text('${cropName(str(c['crop_name'], 'fos.notebook.crop'.tr()))} · ${str(c['season'])}'),
+                title: Text('${cropName(str(c['crop_name'], 'fos.notebook.crop'.tr()))} · ${str(c['season']).toLowerCase() == 'demo current' ? 'Current season' : str(c['season'])}'),
                 subtitle: Text('${statusLabel(c['status'])} · ${'fos.notebook.sown'.tr(namedArgs: {'date': displayDate(str(c['sowing_date']))})}'
                     '${c['expected_harvest_date'] != null ? ' · ${'fos.notebook.harvest_est'.tr(namedArgs: {'date': displayDate(str(c['expected_harvest_date']))})}' : ''}'),
                 onTap: () => _cycle(d, c),

@@ -17,6 +17,8 @@ import 'run_events.dart';
 
 class AssistantState {
   const AssistantState({
+    this.syncing = false,
+    this.outboxNeedsReview = false,
     this.ready = false,
     this.loading = false,
     this.running = false,
@@ -34,6 +36,7 @@ class AssistantState {
     this.outbox = const [],
   });
 
+  final bool syncing, outboxNeedsReview;
   final bool ready;
   final bool loading;
   final bool running;
@@ -57,6 +60,8 @@ class AssistantState {
   bool get busy => running || recovering;
 
   AssistantState copyWith({
+    bool? syncing,
+    bool? outboxNeedsReview,
     bool? ready,
     bool? loading,
     bool? running,
@@ -76,6 +81,8 @@ class AssistantState {
     List<String>? outbox,
   }) =>
       AssistantState(
+        syncing: syncing ?? this.syncing,
+        outboxNeedsReview: outboxNeedsReview ?? this.outboxNeedsReview,
         ready: ready ?? this.ready,
         loading: loading ?? this.loading,
         running: running ?? this.running,
@@ -96,7 +103,11 @@ class AssistantState {
 
 /// Page context sent with a run so the assistant knows where the farmer is.
 class RunContext {
-  const RunContext({this.view = 'assistant', this.selectedDate, this.weatherCity, this.missionId});
+  const RunContext(
+      {this.view = 'assistant',
+      this.selectedDate,
+      this.weatherCity,
+      this.missionId});
 
   /// assistant | station | calendar | crops | markets | schemes | records | weather
   final String view;
@@ -107,21 +118,23 @@ class RunContext {
   Map<String, Object?> toJson() => {
         'workspace_view': view,
         if (selectedDate != null) 'selected_date': selectedDate,
-        if (weatherCity != null && weatherCity!.isNotEmpty) 'weather_city': weatherCity,
+        if (weatherCity != null && weatherCity!.isNotEmpty)
+          'weather_city': weatherCity,
         if (missionId != null) 'mission_id': missionId,
       };
 }
 
 class AssistantController extends StateNotifier<AssistantState> {
   AssistantController(this._api, this._language, this._invalidate,
-      {http.Client Function()? streamClient, void Function(String?)? onPreferredLanguage, bool Function()? isOnline})
+      {http.Client Function()? streamClient,
+      void Function(String?)? onPreferredLanguage,
+      bool Function()? isOnline})
       : _streamClient = streamClient ?? http.Client.new,
         _onPreferredLanguage = onPreferredLanguage,
         _isOnline = isOnline ?? (() => true),
         super(const AssistantState()) {
     if (_api.session != null) {
-      _restoreOutbox();
-      load();
+      _startup = _initialize();
     }
   }
 
@@ -134,32 +147,82 @@ class AssistantController extends StateNotifier<AssistantState> {
   http.Client? _active;
   bool _stopRequested = false;
   int _localIds = 0;
+  bool _flushing = false, _reconnecting = false, _lastSendAcknowledged = false;
+  Future<void> _outboxWrites = Future.value();
 
   String get _sid => _api.session!.id;
-  String _localId() => 'local-${DateTime.now().microsecondsSinceEpoch}-${_localIds++}';
+  String _localId() =>
+      'local-${DateTime.now().microsecondsSinceEpoch}-${_localIds++}';
+
+  Future<void>? _startup;
+  Future<void> _initialize() async {
+    state = state.copyWith(loading: true);
+    await _restoreOutbox();
+    await _restoreSnapshot();
+    if (!mounted) return;
+    state = state.copyWith(loading: false);
+    await load();
+  }
+
+  Future<void> _restoreSnapshot() async {
+    final saved = await _api.offline
+        ?.load(_api.uri('/api/assistant/sessions/$_sid').toString());
+    if (!mounted || saved == null) return;
+    final snapshot = SessionSnapshot.fromJson(saved.data);
+    state = state.copyWith(
+        ready: true,
+        messages: snapshot.messages,
+        conversations: snapshot.conversations,
+        tasks: snapshot.tasks,
+        pending: snapshot.pending,
+        artifacts: snapshot.artifacts,
+        attachments: snapshot.attachments);
+  }
 
   Future<void> load() async {
     if (_api.session == null || state.loading) return;
     state = state.copyWith(loading: true, clearError: true);
     try {
-      final catalog = Catalog.fromJson(await _api.get('/api/assistant/catalog'));
-      final snapshot = await _sync();
+      final loaded = await Future.wait<Object?>([
+        _sync(), _api.get('/api/assistant/catalog'),
+      ]);
+      final snapshot = loaded[0] as SessionSnapshot;
+      final catalog = Catalog.fromJson(loaded[1]);
       if (!mounted) return;
       _onPreferredLanguage?.call(snapshot.preferredLanguage);
-      if (state.outbox.isNotEmpty && _isOnline()) unawaited(Future(flushOutbox));
+      if (state.outbox.isNotEmpty && _isOnline()) {
+        unawaited(Future(reconnect));
+      }
       state = state.copyWith(ready: true, loading: false, catalog: catalog);
       final last = snapshot.messages.isEmpty ? null : snapshot.messages.last;
-      if (last != null && last.working && last.serverId != null) unawaited(_recover(last));
+      if (last != null && last.working && last.serverId != null) {
+        unawaited(_recover(last));
+      }
     } on ApiException catch (e) {
       if (mounted) state = state.copyWith(loading: false, error: e.message);
     }
   }
 
   Future<SessionSnapshot> _sync({bool replaceMessages = true}) async {
-    final snapshot = SessionSnapshot.fromJson(await _api.get('/api/assistant/sessions/$_sid'));
+    final snapshot = SessionSnapshot.fromJson(
+        await _api.get('/api/assistant/sessions/$_sid'));
     if (!mounted) return snapshot;
     state = state.copyWith(
-      messages: replaceMessages ? snapshot.messages : null,
+      messages: replaceMessages
+          ? [
+              for (final m in snapshot.messages)
+                if (m.role == Role.assistant && m.activities.isEmpty)
+                  m.copyWith(
+                      activities: state.messages
+                          .where((old) =>
+                              old.serverId != null &&
+                              old.serverId == m.serverId)
+                          .firstOrNull
+                          ?.activities)
+                else
+                  m
+            ]
+          : null,
       pending: snapshot.pending,
       clearPending: snapshot.pending == null,
       tasks: snapshot.tasks,
@@ -183,7 +246,8 @@ class AssistantController extends StateNotifier<AssistantState> {
   /// After a restart the server may still be finishing (or have just marked
   /// the run stopped). Replay its persisted events instead of guessing.
   Future<void> _recover(ChatMessage message) async {
-    state = state.copyWith(recovering: true, status: 'fos.assistant.reconnecting'.tr());
+    state = state.copyWith(
+        recovering: true, status: 'fos.assistant.reconnecting'.tr());
     var after = 0;
     var current = message.copyWith(text: '', activities: const []);
     final deadline = DateTime.now().add(const Duration(seconds: 90));
@@ -192,7 +256,8 @@ class AssistantController extends StateNotifier<AssistantState> {
         final data = await _api.get('/api/assistant/sessions/$_sid/events',
             query: {'run_id': message.serverId, 'after_sequence': after});
         var terminal = false;
-        for (final raw in (data is Map ? data['events'] as List? : null) ?? const []) {
+        for (final raw
+            in (data is Map ? data['events'] as List? : null) ?? const []) {
           if (raw is! Map) continue;
           final event = raw.map((k, v) => MapEntry('$k', v));
           after = (event['sequence'] as num?)?.toInt() ?? after;
@@ -214,7 +279,8 @@ class AssistantController extends StateNotifier<AssistantState> {
 
   void _replace(String id, ChatMessage Function(ChatMessage) change) {
     if (!mounted) return;
-    state = state.copyWith(messages: [for (final m in state.messages) m.id == id ? change(m) : m]);
+    state = state.copyWith(
+        messages: [for (final m in state.messages) m.id == id ? change(m) : m]);
   }
 
   /// Sends a farmer turn (or an answer/approval for the pending card).
@@ -230,8 +296,10 @@ class AssistantController extends StateNotifier<AssistantState> {
     String? pendingId,
   }) async {
     if (state.busy || _api.session == null) return;
+    if (!state.ready && _startup != null) await _startup;
     if (!state.ready) await load();
     if (!state.ready) return;
+    _lastSendAcknowledged = false;
     final assistantId = _localId();
     _stopRequested = false;
     state = state.copyWith(
@@ -249,32 +317,42 @@ class AssistantController extends StateNotifier<AssistantState> {
     _active = client;
     var terminal = false;
     try {
-      final response = await _api.stream('/api/assistant/sessions/$_sid/run', {
-        'message': message,
-        'station_id': AppConfig.stationId,
-        'language': _language(),
-        ...context.toJson(),
-        if (attachmentIds.isNotEmpty) 'attachment_ids': attachmentIds,
-        if (answers != null) 'answers': answers,
-        if (approval != null) 'approval': approval,
-        if (pendingId != null) 'pending_id': pendingId,
-      }, client);
-      await for (final event in ndjsonEvents(response.stream).timeout(const Duration(seconds: 190))) {
+      final response = await _api.stream(
+          '/api/assistant/sessions/$_sid/run',
+          {
+            'message': message,
+            'station_id': AppConfig.stationId,
+            'language': _language(),
+            ...context.toJson(),
+            if (attachmentIds.isNotEmpty) 'attachment_ids': attachmentIds,
+            if (answers != null) 'answers': answers,
+            if (approval != null) 'approval': approval,
+            if (pendingId != null) 'pending_id': pendingId,
+          },
+          client);
+      await for (final event in ndjsonEvents(response.stream)
+          .timeout(const Duration(seconds: 190))) {
         if (!mounted) return;
         final current = state.messages.firstWhere((m) => m.id == assistantId);
         final folded = foldEvent(current, event);
         _replace(assistantId, (_) => folded.message);
-        if (folded.status != null) state = state.copyWith(status: folded.status);
-        if (folded.pending != null) state = state.copyWith(pending: folded.pending);
+        if (folded.status != null) {
+          state = state.copyWith(status: folded.status);
+        }
+        if (folded.pending != null) {
+          state = state.copyWith(pending: folded.pending);
+        }
         if (event['type'] == 'tool_completed') _invalidate();
         if (folded.artifact != null) {
-          state = state.copyWith(artifacts: [folded.artifact!, ...state.artifacts]);
+          state =
+              state.copyWith(artifacts: [folded.artifact!, ...state.artifacts]);
         }
         terminal = terminal || folded.terminal;
       }
       if (!terminal) {
         throw ApiException(0, 'fos.assistant.response_stopped'.tr());
       }
+      _lastSendAcknowledged = true;
       await _sync();
     } catch (e) {
       if (!mounted) return;
@@ -321,13 +399,16 @@ class AssistantController extends StateNotifier<AssistantState> {
       send('Approved', approval: true, pendingId: pending.id);
 
   Future<void> decline(Pending pending) => send(
-      pending.kind == PendingKind.approval ? 'Do not save this' : 'Skip these details',
+      pending.kind == PendingKind.approval
+          ? 'Do not save this'
+          : 'Skip these details',
       approval: false,
       pendingId: pending.id);
 
   Future<void> answer(Pending pending, Map<String, String> values) {
     final summary = pending.fields
-        .map((f) => '${f.prompt}: ${f.type == 'photo' ? 'Photo attached' : values[f.id] ?? ''}')
+        .map((f) =>
+            '${f.prompt}: ${f.type == 'photo' ? 'Photo attached' : values[f.id] ?? ''}')
         .join(' · ');
     return send(summary, answers: values, pendingId: pending.id);
   }
@@ -337,7 +418,8 @@ class AssistantController extends StateNotifier<AssistantState> {
     try {
       await _api.post('/api/assistant/sessions/$_sid/reset');
       _invalidate();
-      state = state.copyWith(messages: const [], clearPending: true, clearError: true);
+      state = state
+          .copyWith(messages: const [], clearPending: true, clearError: true);
       await _sync();
     } on ApiException catch (e) {
       state = state.copyWith(error: e.message);
@@ -358,11 +440,19 @@ class AssistantController extends StateNotifier<AssistantState> {
     if (bytes.length > 5 * 1024 * 1024) {
       throw ApiException(413, 'fos.assistant.file_too_big'.tr());
     }
-    final data = await _api.post('/api/assistant/sessions/$_sid/attachments-json',
-        body: {'filename': filename.length > 120 ? filename.substring(0, 120) : filename, 'content': base64Encode(bytes)},
-        timeout: const Duration(seconds: 45));
-    final attachment = Attachment.fromJson((data as Map).map((k, v) => MapEntry('$k', v)));
-    if (mounted) state = state.copyWith(attachments: [attachment, ...state.attachments]);
+    final data =
+        await _api.post('/api/assistant/sessions/$_sid/attachments-json',
+            body: {
+              'filename':
+                  filename.length > 120 ? filename.substring(0, 120) : filename,
+              'content': base64Encode(bytes)
+            },
+            timeout: const Duration(seconds: 45));
+    final attachment =
+        Attachment.fromJson((data as Map).map((k, v) => MapEntry('$k', v)));
+    if (mounted) {
+      state = state.copyWith(attachments: [attachment, ...state.attachments]);
+    }
     return attachment;
   }
 
@@ -371,17 +461,26 @@ class AssistantController extends StateNotifier<AssistantState> {
         '/api/assistant/sessions/$_sid/answers/${Uri.encodeComponent(message.serverId ?? message.id)}/rewrite',
         timeout: const Duration(seconds: 50));
     final text = data is Map ? data['text'] : null;
-    if (text is! String || text.isEmpty) throw ApiException(503, 'fos.assistant.no_alternative'.tr());
+    if (text is! String || text.isEmpty) {
+      throw ApiException(503, 'fos.assistant.no_alternative'.tr());
+    }
     return text;
   }
 
   /// Edit / delete / restore a saved task with optimistic-concurrency checks.
-  Future<void> changeTask(FarmTask task, {bool delete = false, bool restore = false}) async {
-    if (state.busy) throw ApiException(409, 'fos.assistant.finish_current'.tr());
+  Future<void> changeTask(FarmTask task,
+      {bool delete = false, bool restore = false}) async {
+    if (state.busy) {
+      throw ApiException(409, 'fos.assistant.finish_current'.tr());
+    }
     // Deleting bumps the row version; restore with the server's latest copy.
-    if (restore) task = state.deletedTasks.where((t) => t.id == task.id).firstOrNull ?? task;
+    if (restore) {
+      task =
+          state.deletedTasks.where((t) => t.id == task.id).firstOrNull ?? task;
+    }
     final path = '/api/assistant/sessions/$_sid/tasks/${task.id}';
-    final ifMatch = task.rowVersion == null ? null : {'If-Match': '${task.rowVersion}'};
+    final ifMatch =
+        task.rowVersion == null ? null : {'If-Match': '${task.rowVersion}'};
     try {
       if (delete) {
         await _api.delete(path, extraHeaders: ifMatch);
@@ -407,15 +506,20 @@ class AssistantController extends StateNotifier<AssistantState> {
   Future<void> _restoreOutbox() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getStringList(_outboxKey) ?? const [];
-    if (mounted && saved.isNotEmpty) state = state.copyWith(outbox: saved);
+    if (mounted && saved.isNotEmpty) state = state.copyWith(outbox: saved, outboxNeedsReview: prefs.getBool('${_outboxKey}_uncertain') ?? false);
   }
 
-  Future<void> _persistOutbox() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_outboxKey, state.outbox);
+  Future<void> _persistOutbox() {
+    final words = [...state.outbox];
+    final uncertain = state.outboxNeedsReview;
+    _outboxWrites = _outboxWrites.catchError((Object _) {}).then((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      if (!await prefs.setStringList(_outboxKey, words)) throw StateError('Could not save message');
+      await prefs.setBool('${_outboxKey}_uncertain', uncertain);
+    });
+    return _outboxWrites;
   }
 
-  /// Keeps a message typed without network; nothing is sent yet.
   Future<void> queue(String message) async {
     if (message.trim().isEmpty) return;
     state = state.copyWith(outbox: [...state.outbox, message.trim()]);
@@ -423,26 +527,61 @@ class AssistantController extends StateNotifier<AssistantState> {
   }
 
   Future<void> removeQueued(int index) async {
-    state = state.copyWith(outbox: [...state.outbox]..removeAt(index));
+    if (_flushing || index < 0 || index >= state.outbox.length) return;
+    state = state.copyWith(outbox: [...state.outbox]..removeAt(index),
+        outboxNeedsReview: index == 0 ? false : state.outboxNeedsReview);
     await _persistOutbox();
   }
 
-  /// Sends waiting messages one by one; stops at a question/approval card
-  /// so nothing answers it on the farmer's behalf.
-  Future<void> flushOutbox() async {
-    while (mounted && state.outbox.isNotEmpty && state.ready && !state.busy && state.pending == null) {
-      final next = state.outbox.first;
-      state = state.copyWith(outbox: state.outbox.sublist(1));
-      await _persistOutbox();
-      await send(next);
-      final last = state.messages.isEmpty ? null : state.messages.last;
-      if (last?.status == 'error' && last?.error != null && mounted) {
-        // Network dropped again: put it back at the front and wait.
-        state = state.copyWith(outbox: [next, ...state.outbox]);
-        await _persistOutbox();
-        return;
-      }
+  /// Explicit retry only: an interrupted run may already exist on the server.
+  Future<void> retryQueued() async {
+    if (_flushing || !_isOnline()) return;
+    state = state.copyWith(outboxNeedsReview: false);
+    await _persistOutbox();
+    await reconnect();
+  }
+
+  /// Verify API reachability, not just a Wi-Fi connection, before syncing.
+  Future<bool> reconnect() async {
+    if (_api.session == null || _reconnecting || !_isOnline() || state.busy) return false;
+    _reconnecting = true;
+    state = state.copyWith(syncing: true);
+    try {
+      await _api.get('/api/assistant/catalog', fresh: true, allowSaved: false,
+          timeout: const Duration(seconds: 5));
+      if (!mounted) return false;
+      _api.invalidateReads();
+      _invalidate();
+      if (!state.ready) { await load(); } else { await refresh(); }
+      await flushOutbox();
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      _reconnecting = false;
+      if (mounted) state = state.copyWith(syncing: false);
     }
+  }
+
+  /// Keep the first item on disk until acknowledgement. Never silently replay
+  /// an uncertain send after a process kill or an interrupted response.
+  Future<void> flushOutbox() async {
+    if (_flushing || state.outboxNeedsReview || !_isOnline()) return;
+    _flushing = true;
+    try {
+      while (mounted && _isOnline() && state.outbox.isNotEmpty &&
+          state.ready && !state.busy && state.pending == null) {
+        final next = state.outbox.first;
+        state = state.copyWith(outboxNeedsReview: true);
+        await _persistOutbox();
+        if (!mounted) return;
+        _lastSendAcknowledged = false;
+        await send(next);
+        if (!mounted || !_lastSendAcknowledged) return;
+        state = state.copyWith(outbox: state.outbox.sublist(1), outboxNeedsReview: false);
+        await _persistOutbox();
+      }
+    } finally { _flushing = false; }
   }
 
   @override
@@ -452,18 +591,16 @@ class AssistantController extends StateNotifier<AssistantState> {
   }
 }
 
-final assistantProvider = StateNotifierProvider<AssistantController, AssistantState>((ref) {
+final assistantProvider =
+    StateNotifierProvider<AssistantController, AssistantState>((ref) {
   final api = ref.watch(apiProvider);
   final controller = AssistantController(
     api,
     () => ref.read(languageProvider).code,
     () => ref.read(workspaceCacheProvider).invalidate(),
-    onPreferredLanguage: ref.read(languageProvider.notifier).adoptServerPreference,
+    onPreferredLanguage:
+        ref.read(languageProvider.notifier).adoptServerPreference,
     isOnline: () => ref.read(offlineProvider).value != true,
   );
-  // Signal is back: send what the farmer typed while offline.
-  ref.listen(offlineProvider, (_, next) {
-    if (next.value == false) controller.flushOutbox();
-  });
   return controller;
 });

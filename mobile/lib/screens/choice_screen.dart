@@ -1,292 +1,269 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../assistant/assistant_controller.dart';
 import '../core/session.dart';
-import '../services/theme_service.dart';
 import '../ui/kit.dart';
 import '../ui/loader.dart';
+import '../ui/mitra_orb.dart';
 import '../utils/constants.dart';
 import '../voice/live_voice.dart';
+import '../voice/speech.dart';
+import '../features/workspace_tools.dart';
+import '../core/workspace_cache.dart';
+import '../features/saathi.dart';
 
-/// Home: voice or text, plus quick services (the original app layout).
+const _destinations = <(String, String, IconData, String)>[
+  ('Weather', 'Plan around the sky', Icons.wb_sunny_outlined, '/weather'),
+  (
+    'My tasks',
+    'One thing at a time',
+    Icons.event_available_outlined,
+    '/calendar'
+  ),
+  ('Crop doctor', 'A closer look at your crop', Icons.eco_outlined, '/crops'),
+  ('Mandi prices', 'Know your market', Icons.show_chart_rounded, '/markets'),
+  ('Notebook', 'Your farm, remembered', Icons.menu_book_outlined, '/notebook'),
+  (
+    'Farm station',
+    'Know what your field feels',
+    Icons.sensors_outlined,
+    '/station'
+  ),
+  (
+    'Farmer exchange',
+    'Grow with your neighbours',
+    Icons.handshake_outlined,
+    '/exchange'
+  ),
+  (
+    'Schemes',
+    'Support worth exploring',
+    Icons.account_balance_outlined,
+    '/schemes'
+  ),
+];
+
 class ChoiceScreen extends ConsumerStatefulWidget {
   const ChoiceScreen({super.key});
-
   @override
   ConsumerState<ChoiceScreen> createState() => _ChoiceScreenState();
 }
 
 class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
-  String? _location;
-
+  Map<String, dynamic> _profile = {};
   @override
   void initState() {
     super.initState();
-    _loadLocation();
+    _prepare();
   }
 
-  // The farm location comes from the server profile, not the device GPS.
-  Future<void> _loadLocation() async {
+  Future<void> _prepare() async {
+    final api = ref.read(apiProvider);
+    // Warm the assistant immediately; it stays alive while routes change.
+    ref.read(assistantProvider);
+    unawaited(ref
+        .read(speechCapabilitiesProvider.future)
+        .then((_) {}, onError: (Object _) {}));
     try {
-      final profile = asMap(asMap(await ref.read(apiProvider).get('/api/profile'))['profile']);
-      final place = '${profile['location'] ?? profile['state'] ?? ''}';
-      if (mounted && place.isNotEmpty) setState(() => _location = place);
+      final p = asMap(asMap(await api.get('/api/profile'))['profile']);
+      if (!mounted) return;
+      setState(() => _profile = p);
     } catch (_) {}
+    if (!mounted) return;
+    final tools = ref.read(workspaceToolsProvider);
+    final args = <String, Object?>{'commodity': (_profile['crops'] as List? ?? ['Wheat']).firstOrNull ?? 'Wheat', 'state': str(_profile['state']), 'observed_only': ref.read(authProvider).mode != BackendMode.demo};
+    unawaited(Future.wait([
+      tools.inspect('market_prices', args).catchError((_) => <String,dynamic>{}),
+      tools.inspect('market_trend', args).catchError((_) => <String,dynamic>{}),
+    ]));
+    unawaited(ref.cachedGet('/api/mandi/catalogue', query: {'limit': 200}).then((_) {}, onError: (_) {}));
+    unawaited(_warmPlans());
+    // Bounded read prefetch continues even if a particular source is offline.
+    for (final group in [
+      ['/api/farm-workspace/today', '/api/farm-workspace/missions'],
+      ['/api/weather/dashboard', '/api/companion'],
+      ['/api/farms', '/api/plots'],
+      ['/api/crop-cycles', '/api/onboarding/options'],
+      ['/api/farm-workspace/ledger', '/api/farm-workspace/cases'],
+      ['/api/exchange/listings', '/api/sensors/stations'],
+    ]) {
+      if (!mounted) return;
+      await Future.wait(group.map((path) async {
+        try {
+          await api.get(path);
+        } catch (_) {}
+      }));
+    }
+  }
+
+  Future<void> _warmPlans() async {
+    final api = ref.read(apiProvider);
+    for (final area in ['today', 'markets', 'schemes', 'records', 'crops', 'exchange']) {
+      if (!mounted) return;
+      try {
+        final data = asMap(await api.get('/api/companion/proposals', query: {'area': area}));
+        final job = asMap(data['job']);
+        if (asMaps(data['proposals']).isEmpty && !{'queued', 'running', 'failed'}.contains(job['state'])) {
+          await api.post('/api/companion/prepare', body: {'area': area, 'research': false});
+        }
+      } catch (_) {}
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final dark = context.isDark;
-    final ink = inkColor(context);
-    final iconColor = _iconGreen(context);
+    final assistant = ref.watch(assistantProvider);
+    final name = str(_profile['name']).split(' ').first;
     return Scaffold(
-      body: FarmBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(children: [
-              const SizedBox(height: 12),
-              Row(children: [
-                if (_location != null)
-                  SizedBox(
-                    width: 170,
-                    child: GestureDetector(
-                      onTap: () => context.push('/profile'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: glassFill(dark),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: glassBorder(dark)),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.location_on_outlined, size: 18, color: ink),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(_location!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ink)),
-                          ),
-                        ]),
-                      ),
-                    ),
-                  ),
-                const Spacer(),
-                _TopIcon(dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, ink,
-                    () => ref.read(themeProvider.notifier).toggle()),
-                const SizedBox(width: 8),
-                _TopIcon(Icons.person_outline_rounded, ink, () => context.push('/profile')),
-                const SizedBox(width: 8),
-                _TopIcon(Icons.logout_rounded, AppColors.error, () => ref.read(authProvider.notifier).signOut()),
-              ]),
-              const SizedBox(height: 30),
-              SizedBox(
-                height: 210,
-                width: 210,
-                child: ClipOval(child: Image.asset(dark ? 'assets/logo_light.png' : 'assets/logo.png', fit: BoxFit.contain)),
-              ),
-              const SizedBox(height: 16),
-              Text('choice.title'.tr(),
-                  textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: ink)),
-              const SizedBox(height: 24),
-              const _VoiceHero(),
-              const SizedBox(height: 20),
-              Row(children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('choice.or'.tr(), style: TextStyle(fontWeight: FontWeight.w600, color: mutedColor(context))),
-                ),
-                const Expanded(child: Divider()),
-              ]),
-              const SizedBox(height: 20),
-              _ModeCard(
-                icon: Icons.edit_note_rounded,
-                iconColor: iconColor,
-                title: 'choice.chat_title'.tr(),
-                subtitle: 'choice.chat_subtitle'.tr(),
-                onTap: () => context.push('/chat'),
-              ),
-              const SizedBox(height: 24),
-              Text('choice.quick_services'.tr(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: ink)),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                  child: _QuickCard(Icons.shopping_bag_outlined, 'choice.marketplace_title'.tr(),
-                      'choice.marketplace_subtitle'.tr(), () => context.push('/exchange')),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _QuickCard(Icons.trending_up_rounded, 'choice.mandi_title'.tr(), 'choice.mandi_subtitle'.tr(),
-                      () => context.push('/markets')),
-                ),
-              ]),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                  child: _QuickCard(Icons.health_and_safety_outlined, 'fos.assistant.quick_crop_doctor'.tr(),
-                      'fos.assistant.quick_crop_doctor_sub'.tr(), () => context.push('/crops')),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _QuickCard(Icons.sensors_rounded, 'fos.assistant.quick_station'.tr(),
-                      'fos.assistant.quick_station_sub'.tr(), () => context.push('/station')),
-                ),
-              ]),
-              const SizedBox(height: 32),
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-Color _tint(BuildContext context) =>
-    context.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06);
-
-Color _iconGreen(BuildContext context) => context.isDark ? AppColors.primaryLight : const Color(0xFF2E7D32);
-
-class _TopIcon extends StatelessWidget {
-  const _TopIcon(this.icon, this.color, this.onTap);
-
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: glassFill(context.isDark),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: glassBorder(context.isDark)),
-        ),
-        child: IconButton(
-          icon: Icon(icon, color: color, size: 20),
-          onPressed: () {
-            HapticFeedback.selectionClick();
-            onTap();
-          },
-        ),
-      );
-}
-
-/// Voice is the main way in: one big, filled, easy target.
-class _VoiceHero extends StatelessWidget {
-  const _VoiceHero();
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(22),
-        elevation: 0,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            openLiveVoice(context);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-            child: Row(children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), shape: BoxShape.circle),
-                child: const Icon(Icons.mic_rounded, color: Colors.white, size: 36),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('choice.voice_title'.tr(),
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 19, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text('fos.label.voice_hint'.tr(), style: const TextStyle(fontSize: 14, color: Colors.white)),
-                ]),
-              ),
-            ]),
-          ),
-        ),
-      );
-}
-
-class _ModeCard extends StatelessWidget {
-  const _ModeCard({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => FarmCard(
-        padding: const EdgeInsets.all(20),
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          onTap();
-        },
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: _tint(context), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: iconColor, size: 28),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: inkColor(context))),
-              const SizedBox(height: 4),
-              Text(subtitle, style: TextStyle(fontSize: 12, color: mutedColor(context))),
-            ]),
-          ),
-          Icon(Icons.chevron_right_rounded, color: mutedColor(context)),
-        ]),
-      );
-}
-
-class _QuickCard extends StatelessWidget {
-  const _QuickCard(this.icon, this.title, this.subtitle, this.onTap);
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => FarmCard(
-        padding: const EdgeInsets.all(12),
-        onTap: onTap,
-        child: SizedBox(
-          height: 96,
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: _tint(context), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: _iconGreen(context), size: 20),
-            ),
-            const SizedBox(height: 8),
-            Text(title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: inkColor(context))),
-            Text(subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 10, color: mutedColor(context))),
+        body: FarmBackground(
+            child: SafeArea(
+                child: ListView(
+                  key: const PageStorageKey('home'),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                    children: [
+          Row(children: [
+            const Icon(Icons.eco_rounded, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('kisan mitra',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    letterSpacing: -.5)),
+            const Spacer(),
+            IconButton(
+                tooltip: 'Your profile',
+                onPressed: () => context.push('/profile'),
+                icon: const Icon(Icons.person_outline_rounded)),
           ]),
-        ),
-      );
+          const SizedBox(height: 28),
+          Text(
+              name.isEmpty
+                  ? 'A little help.\nA better farm day.'
+                  : 'Hello, $name.\nLet’s grow something good.',
+              style: const TextStyle(
+                  fontSize: 30,
+                  height: 1.2,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -1)),
+          const SizedBox(height: 12),
+          Text(str(_profile['location'], 'Your farm companion, always close.'),
+              style: TextStyle(color: mutedColor(context), fontSize: 14)),
+          const SizedBox(height: 28),
+          FarmCard(
+              color:
+                  context.isDark ? AppColors.darkCard : const Color(0xFFEAEEDD),
+              padding: const EdgeInsets.fromLTRB(22, 12, 12, 20),
+              onTap: () => openLiveVoice(context),
+              child: Row(children: [
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      const Text('A FRIEND IN YOUR FIELD',
+                          style: TextStyle(
+                              fontSize: 9,
+                              letterSpacing: 1.4,
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 18),
+                      const Text('Talk to Mitra',
+                          style: TextStyle(
+                              fontSize: 23, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('Speak freely, in your language.',
+                          style: TextStyle(
+                              color: mutedColor(context), height: 1.5)),
+                      const SizedBox(height: 18),
+                      const Row(children: [
+                        Icon(Icons.graphic_eq, size: 18),
+                        SizedBox(width: 8),
+                        Flexible(
+                            child: Text('Start a conversation',
+                                style: TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.w600)))
+                      ]),
+                    ])),
+                const MitraOrb(size: 130),
+              ])),
+          const SizedBox(height: 12),
+          FarmCard(
+              onTap: () => context.push('/chat'),
+              child: Row(children: [
+                const Icon(Icons.edit_note_rounded),
+                const SizedBox(width: 14),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      const Text('Prefer to type?',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                          assistant.busy
+                              ? 'Mitra is working. Open your conversation.'
+                              : 'Your thoughts, questions and plans.',
+                          style: TextStyle(
+                              fontSize: 12, color: mutedColor(context))),
+                    ])),
+                const Icon(Icons.arrow_forward_rounded, size: 18),
+              ])),
+          const SizedBox(height: 22),
+          const PreparedBySaathi(area: 'today'),
+          SectionTitle('A little ahead of your day',
+              eyebrow: 'SAATHI',
+              trailing: IconButton(
+                  tooltip: 'Open Saathi',
+                  onPressed: () => context.push('/saathi'),
+                  icon: const Icon(Icons.arrow_outward))),
+          FarmCard(
+              onTap: () => context.push('/calendar'),
+              child: Row(children: [
+                const Icon(Icons.event_available_outlined),
+                const SizedBox(width: 14),
+                Expanded(
+                    child: Text(assistant.tasks.isEmpty
+                        ? 'Build your first farm routine with Mitra.'
+                        : '${assistant.tasks.length} saved tasks. Pick up where you left off.'))
+              ])),
+          const SizedBox(height: 14),
+          const SectionTitle('Everything for your farm',
+              eyebrow: 'YOUR TOOLSHED'),
+          LayoutBuilder(
+              builder: (context, box) =>
+                  Wrap(spacing: 12, runSpacing: 12, children: [
+                    for (final (title, subtitle, icon, path) in _destinations)
+                      SizedBox(
+                          width: (box.maxWidth - 12) / 2,
+                          child: FarmCard(
+                              padding: const EdgeInsets.all(16),
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                context.push(path);
+                              },
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(icon,
+                                        color: accentColor(context), size: 25),
+                                    const SizedBox(height: 18),
+                                    Text(title,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14)),
+                                    const SizedBox(height: 5),
+                                    Text(subtitle,
+                                        style: TextStyle(
+                                            color: mutedColor(context),
+                                            fontSize: 11,
+                                            height: 1.5)),
+                                  ]))),
+                  ])),
+          const SizedBox(height: 24),
+          TextButton.icon(
+              onPressed: () => context.push('/onboarding'),
+              icon: const Icon(Icons.tune_rounded, size: 18),
+              label: const Text('Make this farm yours')),
+        ]))));
+  }
 }

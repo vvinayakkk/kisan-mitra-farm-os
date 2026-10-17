@@ -689,6 +689,20 @@ def weather_dashboard(owner: Owner, farm_key: str = Query("", max_length=100)):
     return dashboard(owner, farm_key)
 
 
+@router.get("/api/weather/location-dashboard")
+def weather_location_dashboard(
+    owner: Owner,
+    latitude: float = Query(..., ge=-90, le=90, allow_inf_nan=False),
+    longitude: float = Query(..., ge=-180, le=180, allow_inf_nan=False),
+):
+    """Coarse device-area forecast, deliberately separate from saved farm data."""
+    from skyview.api.weather_dashboard import location_dashboard
+    try:
+        return location_dashboard(round(latitude, 2), round(longitude, 2))
+    except (httpx.HTTPError, ValueError, KeyError, TypeError):
+        raise HTTPException(503, "Nearby forecast is temporarily unavailable") from None
+
+
 @router.get("/api/weather/cities")
 def weather_cities(owner: Owner, q: str = Query("", max_length=100)):
     from skyview.api.weather_dashboard import search_cities

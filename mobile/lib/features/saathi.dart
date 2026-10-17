@@ -14,6 +14,7 @@ import '../core/workspace_cache.dart';
 import '../ui/kit.dart';
 import '../ui/loader.dart';
 import '../utils/constants.dart';
+import 'starter_plans.dart';
 
 /// Saathi's prepared suggestion for one area. It is a draft until the farmer
 /// approves it; approval saves a plan in the notebook (no field work implied).
@@ -58,12 +59,13 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
 
   void _schedule(Duration after) {
     _poll?.cancel();
-    _poll = Timer(after, _load);
+    _poll = Timer(after, () => _load(fresh: true));
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool fresh = false}) async {
     try {
-      final data = asMap(await _api.get('/api/companion/proposals', query: {'area': widget.area}));
+      final data = asMap(await _api
+          .get('/api/companion/proposals', query: {'area': widget.area}, fresh: fresh));
       final proposals = asMaps(data['proposals']);
       if (!mounted) return;
       setState(() {
@@ -71,12 +73,14 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
         _job = data['job'] == null ? null : asMap(data['job']);
         _error = null;
       });
-      if (proposals.isEmpty && _job == null && !_autoPrepared) {
+      if (proposals.isEmpty && !_working && _job?['state'] != 'failed' && !_autoPrepared) {
         _autoPrepared = true;
         await _prepare();
         return;
       }
-      _schedule(_working ? const Duration(milliseconds: 2500) : const Duration(seconds: 60));
+      _schedule(_working
+          ? const Duration(milliseconds: 2500)
+          : const Duration(seconds: 60));
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
@@ -87,7 +91,8 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
   Future<void> _prepare({bool research = false}) async {
     setState(() => _busy = true);
     try {
-      await _api.post('/api/companion/prepare', body: {'area': widget.area, 'research': research});
+      await _api.post('/api/companion/prepare',
+          body: {'area': widget.area, 'research': research});
       if (!mounted) return;
       setState(() => _job = {'state': 'queued'});
       _schedule(const Duration(milliseconds: 1500));
@@ -102,21 +107,32 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
     final p = _proposal!;
     setState(() => _busy = true);
     try {
-      final body = <String, Object?>{'action': action, 'row_version': p['row_version']};
+      final body = <String, Object?>{
+        'action': action,
+        'row_version': p['row_version']
+      };
       if (_editing && action != 'dismiss') {
         body['title'] = _title.text.trim();
-        body['steps'] = _steps.text.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        body['steps'] = _steps.text
+            .split('\n')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
       }
-      final result = asMap(await _api.post('/api/companion/proposals/${p['id']}/review', body: body));
+      final result = asMap(await _api
+          .post('/api/companion/proposals/${p['id']}/review', body: body));
       ref.read(workspaceCacheProvider).invalidate();
       final saved = asMap(result['proposal']);
-      if (action == 'approve' && (saved['status'] != 'approved' || result['mission_id'] == null)) {
+      if (action == 'approve' &&
+          (saved['status'] != 'approved' || result['mission_id'] == null)) {
         throw ApiException(500, 'fos.farm.plan_not_confirmed'.tr());
       }
       if (!mounted) return;
       setState(() {
         _editing = false;
-        _proposal = action == 'dismiss' ? null : {...saved, 'mission_id': result['mission_id']};
+        _proposal = action == 'dismiss'
+            ? null
+            : {...saved, 'mission_id': result['mission_id']};
       });
       if (action == 'approve') showNotice(context, 'fos.farm.plan_saved'.tr());
     } on ApiException catch (e) {
@@ -129,11 +145,6 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
     }
   }
 
-  String _headline() => switch (widget.area) {
-        'today' || 'markets' || 'schemes' || 'crops' || 'records' || 'exchange' => 'fos.farm2.saathi_head_${widget.area}'.tr(),
-        _ => 'fos.farm2.saathi_head_default'.tr(),
-      };
-
   @override
   Widget build(BuildContext context) {
     final p = _proposal;
@@ -143,29 +154,43 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
     final evidence = asMaps(p?['evidence']);
     final research = asMap(p?['research']);
     // Nothing prepared: stay out of the way unless it failed.
-    if (p == null && !_working && _error == null && _job?['state'] != 'failed') {
+    if (p == null &&
+        !_working &&
+        _error == null &&
+        _job?['state'] != 'failed') {
       return const SizedBox.shrink();
     }
     if (p == null && _working) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Row(children: [
-          Icon(Icons.spa_outlined, size: 16, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
+          Icon(Icons.spa_outlined,
+              size: 16,
+              color: context.isDark
+                  ? AppColors.primaryLight
+                  : AppColors.primaryDark),
           const SizedBox(width: 8),
-          Text('fos.farm.saathi_preparing'.tr(), style: TextStyle(fontSize: 13, color: mutedColor(context))),
+          Text('fos.farm.saathi_preparing'.tr(),
+              style: TextStyle(fontSize: 13, color: mutedColor(context))),
         ]),
       );
     }
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: FarmCard(
-        color: context.isDark ? AppColors.darkCard : const Color(0xFFF1F8E9),
+        color: context.isDark ? AppColors.darkCard : const Color(0xFFF0EEE7),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (p == null)
             Row(children: [
-              Icon(Icons.spa_outlined, size: 16, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
+              Icon(Icons.spa_outlined,
+                  size: 16,
+                  color: context.isDark
+                      ? AppColors.primaryLight
+                      : AppColors.primaryDark),
               const SizedBox(width: 8),
-              Expanded(child: Text('fos.farm.saathi_could_not_prepare'.tr(), style: TextStyle(color: mutedColor(context)))),
+              Expanded(
+                  child: Text('fos.farm.saathi_could_not_prepare'.tr(),
+                      style: TextStyle(color: mutedColor(context)))),
               FilledButton.tonal(
                 onPressed: _busy || _working ? null : () => _prepare(),
                 child: Text('fos.farm.retry'.tr()),
@@ -173,16 +198,36 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
             ])
           else if (!_open && !_editing)
             Row(children: [
-              Icon(Icons.spa_outlined, size: 20, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
+              Icon(Icons.spa_outlined,
+                  size: 20,
+                  color: context.isDark
+                      ? AppColors.primaryLight
+                      : AppColors.primaryDark),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_headline(),
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: ink)),
-                  Text(approved ? 'fos.farm2.saathi_saved'.tr() : 'fos.farm2.saathi_not_saved'.tr(),
-                      style: TextStyle(fontSize: 13, color: approved ? (context.isDark ? AppColors.primaryLight : AppColors.primaryDark) : mutedColor(context))),
-                  Text('fos.farm2.saathi_hint'.tr(), style: TextStyle(fontSize: 12, color: mutedColor(context))),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Prepared by Mitra',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: ink)),
+                      Text(
+                          approved
+                              ? 'fos.farm2.saathi_saved'.tr()
+                              : 'fos.farm2.saathi_not_saved'.tr(),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: approved
+                                  ? (context.isDark
+                                      ? AppColors.primaryLight
+                                      : AppColors.primaryDark)
+                                  : mutedColor(context))),
+                      Text(str(p['title']), style: TextStyle(fontSize: 15, height: 1.4, color: ink)),
+                      if (str(p['summary']).isNotEmpty) Text(str(p['summary']), style: TextStyle(fontSize: 12, height: 1.5, color: mutedColor(context))),
+                      for (final step in steps.take(2)) Padding(padding: const EdgeInsets.only(top: 6), child: Text('• ${str(step['title'])}', style: TextStyle(fontSize: 12, height: 1.5, color: ink))),
+                    ]),
               ),
               const SizedBox(width: 8),
               FilledButton.tonal(
@@ -194,16 +239,24 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
               ),
             ])
           else if (_editing) ...[
-            TextField(controller: _title, maxLength: 160, decoration: InputDecoration(labelText: 'fos.farm.title'.tr())),
+            TextField(
+                controller: _title,
+                maxLength: 160,
+                decoration: InputDecoration(labelText: 'fos.farm.title'.tr())),
             TextField(
               controller: _steps,
               minLines: 3,
               maxLines: 8,
-              decoration: InputDecoration(labelText: 'fos.farm.steps_one_per_line'.tr()),
+              decoration: InputDecoration(
+                  labelText: 'fos.farm.steps_one_per_line'.tr()),
             ),
           ] else ...[
             Row(children: [
-              Icon(Icons.spa_outlined, size: 16, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
+              Icon(Icons.spa_outlined,
+                  size: 16,
+                  color: context.isDark
+                      ? AppColors.primaryLight
+                      : AppColors.primaryDark),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(str(p['title'], 'fos.farm.next_step'.tr()),
@@ -212,7 +265,10 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
             ]),
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(approved ? 'fos.farm2.saathi_saved'.tr() : 'fos.farm2.saathi_not_saved'.tr(),
+              child: Text(
+                  approved
+                      ? 'fos.farm2.saathi_saved'.tr()
+                      : 'fos.farm2.saathi_not_saved'.tr(),
                   style: TextStyle(fontSize: 13, color: mutedColor(context))),
             ),
             if (str(p['summary']).isNotEmpty)
@@ -224,36 +280,54 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
             for (final s in steps)
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.radio_button_unchecked, size: 14, color: mutedColor(context)),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(str(s['title']), style: TextStyle(color: ink))),
-                ]),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.radio_button_unchecked,
+                          size: 14, color: mutedColor(context)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                          child: Text(str(s['title']),
+                              style: TextStyle(color: ink))),
+                    ]),
               ),
             if (evidence.isNotEmpty)
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 shape: const Border(),
-                title: Text('fos.farm.based_on_records'.tr(namedArgs: {'count': '${evidence.length}'}), style: const TextStyle(fontSize: 13)),
+                title: Text(
+                    'fos.farm.based_on_records'
+                        .tr(namedArgs: {'count': '${evidence.length}'}),
+                    style: const TextStyle(fontSize: 13)),
                 children: [
                   for (final e in evidence)
                     ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(str(e['label'])),
-                      subtitle: str(e['detail']).isEmpty ? null : Text(str(e['detail'])),
-                      trailing: str(e['url']).startsWith('http') ? const Icon(Icons.open_in_new, size: 16) : null,
+                      subtitle: str(e['detail']).isEmpty
+                          ? null
+                          : Text(str(e['detail'])),
+                      trailing: str(e['url']).startsWith('http')
+                          ? const Icon(Icons.open_in_new, size: 16)
+                          : null,
                       onTap: str(e['url']).startsWith('http')
-                          ? () => launchUrl(Uri.parse(str(e['url'])), mode: LaunchMode.externalApplication)
+                          ? () => launchUrl(Uri.parse(str(e['url'])),
+                              mode: LaunchMode.externalApplication)
                           : null,
                     ),
                 ],
               ),
-            if (research.isNotEmpty && research['status'] != 'not_requested') ResearchSources(research),
-            if (asMap(research['preparation'])['translation_status'] == 'unavailable')
+            if (research.isNotEmpty && research['status'] != 'not_requested')
+              ResearchSources(research),
+            if (asMap(research['preparation'])['translation_status'] ==
+                'unavailable')
               Text('fos.farm.translation_unavailable'.tr(),
                   style: TextStyle(fontSize: 12, color: mutedColor(context))),
-            Text('fos.farm.prepared_on'.tr(namedArgs: {'date': displayDate(str(p['created_at'] ?? p['updated_at']))}),
+            Text(
+                'fos.farm.prepared_on'.tr(namedArgs: {
+                  'date': displayDate(str(p['created_at'] ?? p['updated_at']))
+                }),
                 style: TextStyle(fontSize: 12, color: mutedColor(context))),
           ],
           if (_error != null) ErrorView(_error!, onRetry: _load),
@@ -277,11 +351,14 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
                       : () => setState(() {
                             _editing = true;
                             _title.text = str(p['title']);
-                            _steps.text = steps.map((s) => str(s['title'])).join('\n');
+                            _steps.text =
+                                steps.map((s) => str(s['title'])).join('\n');
                           }),
                   child: Text('fos.farm.edit'.tr()),
                 ),
-                TextButton(onPressed: _busy ? null : () => _review('dismiss'), child: Text('fos.farm.dismiss'.tr())),
+                TextButton(
+                    onPressed: _busy ? null : () => _review('dismiss'),
+                    child: Text('fos.farm.dismiss'.tr())),
               ],
               if (_editing) ...[
                 FilledButton(
@@ -292,7 +369,9 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
                             _review('edit');
                           },
                     child: Text('fos.farm.save_changes'.tr())),
-                TextButton(onPressed: () => setState(() => _editing = false), child: Text('fos.farm.cancel'.tr())),
+                TextButton(
+                    onPressed: () => setState(() => _editing = false),
+                    child: Text('fos.farm.cancel'.tr())),
               ],
               if (approved)
                 FilledButton.tonal(
@@ -303,11 +382,15 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
                 TextButton.icon(
                   onPressed: _busy || _working ? null : () => _prepare(),
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: Text(_working ? 'fos.farm.preparing'.tr() : 'fos.farm.refresh'.tr()),
+                  label: Text(_working
+                      ? 'fos.farm.preparing'.tr()
+                      : 'fos.farm.refresh'.tr()),
                 ),
-              if (!_editing && (widget.area == 'markets' || widget.area == 'schemes'))
+              if (!_editing &&
+                  (widget.area == 'markets' || widget.area == 'schemes'))
                 TextButton.icon(
-                  onPressed: _busy || _working ? null : () => _prepare(research: true),
+                  onPressed:
+                      _busy || _working ? null : () => _prepare(research: true),
                   icon: const Icon(Icons.travel_explore, size: 18),
                   label: Text('fos.farm.research'.tr()),
                 ),
@@ -344,7 +427,8 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
     168: 'fos.farm.freq_week'
   };
 
-  Future<void> _savePrefs(Map<String, dynamic> settings, Map<String, Object?> patch) async {
+  Future<void> _savePrefs(
+      Map<String, dynamic> settings, Map<String, Object?> patch) async {
     try {
       await ref.read(apiProvider).patch('/api/companion/preferences', body: {
         'row_version': settings['row_version'],
@@ -359,7 +443,8 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
       if (mounted) showNotice(context, 'fos.farm.saathi_settings_saved'.tr());
     } on ApiException catch (e) {
       if (mounted) {
-        showNotice(context, e.conflict ? 'fos.farm.settings_changed'.tr() : e.message);
+        showNotice(
+            context, e.conflict ? 'fos.farm.settings_changed'.tr() : e.message);
       }
     }
     _loader.currentState?.reload();
@@ -377,13 +462,16 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
           context: context,
           builder: (c) => AlertDialog(
             title: Text('fos.farm.link_whatsapp'.tr()),
-            content: SelectableText(
-                'fos.farm.whatsapp_code_intro'.tr(namedArgs: {'message': str(link['message'])})),
+            content: SelectableText('fos.farm.whatsapp_code_intro'
+                .tr(namedArgs: {'message': str(link['message'])})),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(c), child: Text('fos.farm.close'.tr())),
+              TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: Text('fos.farm.close'.tr())),
               if (str(link['url']).startsWith('https://'))
                 FilledButton(
-                  onPressed: () => launchUrl(Uri.parse(str(link['url'])), mode: LaunchMode.externalApplication),
+                  onPressed: () => launchUrl(Uri.parse(str(link['url'])),
+                      mode: LaunchMode.externalApplication),
                   child: Text('fos.farm.open_whatsapp'.tr()),
                 ),
             ],
@@ -405,7 +493,8 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
         child: Loader<Map<String, dynamic>>(
           key: _loader,
           loading: 'fos.farm.connecting_saathi'.tr(),
-          load: () async => asMap(await ref.read(apiProvider).get('/api/companion')),
+          load: () async =>
+              asMap(await ref.read(apiProvider).get('/api/companion')),
           builder: (context, data) {
             final settings = asMap(data['settings']);
             final activity = asMaps(data['activity']).take(6).toList();
@@ -413,35 +502,62 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
             final enabled = settings['enabled'] == true;
             return RefreshIndicator(
               onRefresh: () async => _loader.currentState?.reload(),
-              child: ListView(padding: const EdgeInsets.all(16), children: [
+              child: ListView(padding: const EdgeInsets.all(24), children: [
+                const FeatureIntro(
+                    eyebrow: 'SAATHI',
+                    title: 'Thoughtful help,\na little ahead.',
+                    detail:
+                        'Your farm check-ins, suggested plans and follow-ups in one calm place.',
+                    icon: Icons.spa_outlined),
                 FarmCard(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(str(data['name'], 'Saathi'),
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
-                    Text((_status[data['status']] ?? 'fos.farm.connecting').tr(), style: TextStyle(color: mutedColor(context))),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text('fos.farm.background_followups'.tr()),
-                      value: enabled,
-                      onChanged: (v) => _savePrefs(settings, {'enabled': v}),
-                    ),
-                    DropdownButtonFormField<int>(
-                      initialValue: _frequencies.containsKey(settings['frequency_hours'])
-                          ? settings['frequency_hours'] as int
-                          : null,
-                      decoration: InputDecoration(labelText: 'fos.farm.how_often'.tr()),
-                      items: [
-                        for (final e in _frequencies.entries) DropdownMenuItem(value: e.key, child: Text(e.value.tr()))
-                      ],
-                      onChanged: (v) => v == null ? null : _savePrefs(settings, {'frequency_hours': v}),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('fos.farm.quiet_hours_range'.tr(namedArgs: {'start': '${settings['quiet_start']}', 'end': '${settings['quiet_end']}'}),
-                        style: TextStyle(fontSize: 12, color: mutedColor(context))),
-                  ]),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(str(data['name'], 'Saathi'),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: ink)),
+                        Text(
+                            (_status[data['status']] ?? 'fos.farm.connecting')
+                                .tr(),
+                            style: TextStyle(color: mutedColor(context))),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text('fos.farm.background_followups'.tr()),
+                          value: enabled,
+                          onChanged: (v) =>
+                              _savePrefs(settings, {'enabled': v}),
+                        ),
+                        DropdownButtonFormField<int>(
+                          initialValue: _frequencies
+                                  .containsKey(settings['frequency_hours'])
+                              ? settings['frequency_hours'] as int
+                              : null,
+                          decoration: InputDecoration(
+                              labelText: 'fos.farm.how_often'.tr()),
+                          items: [
+                            for (final e in _frequencies.entries)
+                              DropdownMenuItem(
+                                  value: e.key, child: Text(e.value.tr()))
+                          ],
+                          onChanged: (v) => v == null
+                              ? null
+                              : _savePrefs(settings, {'frequency_hours': v}),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                            'fos.farm.quiet_hours_range'.tr(namedArgs: {
+                              'start': '${settings['quiet_start']}',
+                              'end': '${settings['quiet_end']}'
+                            }),
+                            style: TextStyle(
+                                fontSize: 12, color: mutedColor(context))),
+                      ]),
                 ),
                 SectionTitle('fos.farm.prepared_for_you'.tr()),
                 const PreparedBySaathi(area: 'today'),
+                if (activity.isEmpty) const StarterPlans(),
                 SectionTitle('fos.farm.recent_activity'.tr()),
                 if (activity.isEmpty)
                   EmptyView(title: 'fos.farm.no_activity'.tr())
@@ -453,14 +569,24 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                         onTap: str(a['href']).contains('view=records')
                             ? () => context.push('/notebook?tab=missions')
                             : null,
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(str(a['title'], 'fos.farm.farm_checkin'.tr()),
-                              style: TextStyle(fontWeight: FontWeight.w600, color: ink)),
-                          Text(str(a['detail'], 'fos.farm.review_notebook'.tr()),
-                              style: TextStyle(color: mutedColor(context))),
-                          Text(displayDate(str(a['created_at']), withTime: true),
-                              style: TextStyle(fontSize: 12, color: mutedColor(context))),
-                        ]),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  str(a['title'], 'fos.farm.farm_checkin'.tr()),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600, color: ink)),
+                              Text(
+                                  str(a['detail'],
+                                      'fos.farm.review_notebook'.tr()),
+                                  style: TextStyle(color: mutedColor(context))),
+                              Text(
+                                  displayDate(str(a['created_at']),
+                                      withTime: true),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: mutedColor(context))),
+                            ]),
                       ),
                     ),
                 SectionTitle('fos.farm.whatsapp'.tr()),
@@ -471,12 +597,18 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                       : Row(children: [
                           Expanded(
                             child: Text(
-                                whatsapp['connected'] == true ? str(whatsapp['masked_number'], 'fos.farm.linked'.tr()) : 'fos.farm.not_linked'.tr(),
+                                whatsapp['connected'] == true
+                                    ? str(whatsapp['masked_number'],
+                                        'fos.farm.linked'.tr())
+                                    : 'fos.farm.not_linked'.tr(),
                                 style: TextStyle(color: ink)),
                           ),
                           FilledButton.tonal(
-                            onPressed: () => _whatsapp(whatsapp['connected'] == true),
-                            child: Text(whatsapp['connected'] == true ? 'fos.farm.unlink'.tr() : 'fos.farm.link_whatsapp'.tr()),
+                            onPressed: () =>
+                                _whatsapp(whatsapp['connected'] == true),
+                            child: Text(whatsapp['connected'] == true
+                                ? 'fos.farm.unlink'.tr()
+                                : 'fos.farm.link_whatsapp'.tr()),
                           ),
                         ]),
                 ),

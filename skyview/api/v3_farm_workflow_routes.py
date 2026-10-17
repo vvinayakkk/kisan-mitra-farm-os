@@ -546,7 +546,7 @@ def today(owner: Owner):
             ).scalar(),
             "missions": connection.execute(
                 text(
-                    "SELECT count(*) FROM sv3.farm_missions WHERE status IN ('active','paused')"
+                    "SELECT count(*) FROM sv3.farm_missions WHERE status IN ('draft','active','paused')"
                 )
             ).scalar(),
         }

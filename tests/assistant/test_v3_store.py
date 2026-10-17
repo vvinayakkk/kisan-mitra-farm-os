@@ -682,7 +682,7 @@ def test_reconcile_missing_file_metadata_preserves_ids_bytes_and_is_repeat_safe(
             row["id"] == artifact_id
             and row["checksum"] == hashlib.sha256(payload).hexdigest()
         )
-        assert row["object_uri"] == str(destination / "files" / (file_id + ".docx"))
+        assert row["object_uri"] == (destination / "files" / (file_id + ".docx")).resolve().as_uri()
         assert row["bytes"] == len(payload)
         row = (
             conn.execute(
@@ -824,3 +824,34 @@ def test_retired_files_remain_hidden_and_are_never_recreated_by_reconciliation(
             ).scalar_one()
             == "local_review_fixture"
         )
+
+
+def test_renewed_device_session_keeps_owner_history(pg):
+    sid = pg['id']
+    state = store.load(sid)
+    state['messages'] = [{'role': 'user', 'content': 'Remember this field walk'}]
+    store.save(sid, state)
+    cid = state['conversation_id']
+    renewed = v3_store.create_session_for_farmer(store.farmer_id(sid))
+    assert any(row['id'] == cid for row in store.conversations(renewed['id']))
+    assert store.conversation(renewed['id'], cid)['messages'] == state['messages']
+    # Repeated renewals must not duplicate/replace previously archived state.
+    again = v3_store.create_session_for_farmer(store.farmer_id(sid))
+    assert store.conversation(again['id'], cid)['messages'] == state['messages']
+
+
+def test_reviewed_starter_plans_are_drafts_and_retry_does_not_overwrite(pg):
+    from skyview.api.v3_onboarding_routes import StarterPlanReview, starter_plans
+    fid = store.farmer_id(pg['id'])
+    first = starter_plans(StarterPlanReview(approved=True), fid)
+    identifier = first['mission_ids'][0]
+    with database.connection(fid, write=True) as conn:
+        rows = conn.execute(text('SELECT status,steps FROM sv3.farm_missions WHERE id=ANY(CAST(:ids AS uuid[]))'), {'ids': first['mission_ids']}).mappings().all()
+        assert len(rows) == 3
+        assert all(row['status'] == 'draft' and all(not step['done'] for step in row['steps']) for row in rows)
+        conn.execute(text("UPDATE sv3.farm_missions SET title='My customised morning walk' WHERE id=:id"), {'id': identifier})
+    from skyview.api.v3_farm_workflow_routes import today
+    assert today(fid)['counts']['missions'] >= 3
+    assert starter_plans(StarterPlanReview(approved=True), fid) == first
+    with database.connection(fid) as conn:
+        assert conn.execute(text('SELECT title FROM sv3.farm_missions WHERE id=:id'), {'id': identifier}).scalar_one() == 'My customised morning walk'

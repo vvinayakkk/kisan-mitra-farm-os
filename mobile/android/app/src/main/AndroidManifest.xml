@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <application
         android:label="Kisan Mitra"
         android:name="${applicationName}"
@@ -48,6 +50,7 @@
     </application>
 
     <queries>
+        <intent><action android:name="android.speech.RecognitionService" /></intent>
         <!-- Open downloaded files, links and the dialer/WhatsApp from the app. -->
         <intent>
             <action android:name="android.intent.action.VIEW" />

@@ -26,9 +26,15 @@ class MemoryVault extends SessionVault {
 
 class TestPhoneIdentity implements PhoneIdentityProvider {
   String? sentTo;
+  String? restored;
+  @override
+  Future<String?> restoredToken() async => restored;
 
   @override
-  Future<void> sendCode(String phone, {required void Function(String) onCodeSent, required Future<void> Function(String) onVerified, required void Function(String) onError}) async {
+  Future<void> sendCode(String phone,
+      {required void Function(String) onCodeSent,
+      required Future<void> Function(String) onVerified,
+      required void Function(String) onError}) async {
     sentTo = phone;
     onCodeSent('verification-1');
   }
@@ -44,26 +50,41 @@ class TestPhoneIdentity implements PhoneIdentityProvider {
   Future<void> signOut() async {}
 }
 
-ApiClient Function() server(String mode, {bool demoChallenge = true}) => () => ApiClient(
-      baseUrl: 'http://t',
-      client: MockClient((r) async {
-        switch (r.url.path) {
-          case '/':
-            return http.Response(jsonEncode({'data_mode': mode}), 200);
-          case '/api/auth/send-otp':
-            return demoChallenge
-                ? http.Response(jsonEncode({'status': 'success', 'demo_bypass': true, 'otp': '999999'}), 200)
-                : http.Response('{"detail":"Real OTP login needs a configured verification provider."}', 503);
-          case '/api/auth/verify-otp':
-            expect(jsonDecode(r.body)['otp'], '999999');
-            return http.Response(jsonEncode({'status': 'success', 'session': {'id': 'e' * 32, 'token': 'tok'}}), 200);
-          case '/api/assistant/sessions':
-            expect(r.headers['authorization'], 'Bearer firebase-id-token');
-            return http.Response(jsonEncode({'id': 'e' * 32, 'token': 'tok'}), 200);
-        }
-        return http.Response('{}', 404);
-      }),
-    );
+ApiClient Function() server(String mode, {bool demoChallenge = true}) =>
+    () => ApiClient(
+          baseUrl: 'http://t',
+          client: MockClient((r) async {
+            switch (r.url.path) {
+              case '/':
+                return http.Response(jsonEncode({'data_mode': mode}), 200);
+              case '/api/auth/send-otp':
+                return demoChallenge
+                    ? http.Response(
+                        jsonEncode({
+                          'status': 'success',
+                          'demo_bypass': true,
+                          'otp': '999999'
+                        }),
+                        200)
+                    : http.Response(
+                        '{"detail":"Real OTP login needs a configured verification provider."}',
+                        503);
+              case '/api/auth/verify-otp':
+                expect(jsonDecode(r.body)['otp'], '999999');
+                return http.Response(
+                    jsonEncode({
+                      'status': 'success',
+                      'session': {'id': 'e' * 32, 'token': 'tok'}
+                    }),
+                    200);
+              case '/api/assistant/sessions':
+                expect(r.headers['authorization'], 'Bearer firebase-id-token');
+                return http.Response(
+                    jsonEncode({'id': 'e' * 32, 'token': 'tok'}), 200);
+            }
+            return http.Response('{}', 404);
+          }),
+        );
 
 Future<void> settle(AuthController c) async {
   for (var i = 0; i < 50 && c.state.status == AuthStatus.loading; i++) {
@@ -89,12 +110,14 @@ void main() {
     await settle(c);
     await c.signInDemo();
     expect(c.state.isAuthenticated, isFalse);
-    expect(c.state.error, contains('demo server'));
+    expect(c.state.error, contains('Use phone sign-in'));
   });
 
-  test('live phone code is verified before the backend issues a session', () async {
+  test('live phone code is verified before the backend issues a session',
+      () async {
     final identity = TestPhoneIdentity();
-    final c = AuthController(MemoryVault(), anonymous: server('v3_live'), phoneIdentity: identity);
+    final c = AuthController(MemoryVault(),
+        anonymous: server('v3_live'), phoneIdentity: identity);
     await settle(c);
     await c.sendPhoneCode('+919999999999');
     expect(identity.sentTo, '+919999999999');
@@ -104,20 +127,48 @@ void main() {
   });
 
   test('server refusal of the demo challenge is shown, not bypassed', () async {
-    final c = AuthController(MemoryVault(), anonymous: server('v3_demo', demoChallenge: false));
+    final c = AuthController(MemoryVault(),
+        anonymous: server('v3_demo', demoChallenge: false));
     await settle(c);
     await c.signInDemo();
     expect(c.state.isAuthenticated, isFalse);
     expect(c.state.error, contains('verification provider'));
   });
 
-  test('an expired capability is erased and the farmer is signed out', () async {
-    final vault = MemoryVault(const SessionCapability(id: 'f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0', token: 'old'));
+  test('an expired capability is erased and the farmer is signed out',
+      () async {
+    final vault = MemoryVault(const SessionCapability(
+        id: 'f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0', token: 'old'));
     final c = AuthController(vault, anonymous: server('v3_demo'));
     await settle(c);
     expect(c.state.isAuthenticated, isTrue);
     await c.expire();
     expect(c.state.isAuthenticated, isFalse);
     expect(vault.value, isNull);
+  });
+  test(
+      'live session expiry silently renews with the remembered Firebase identity',
+      () async {
+    final identity = TestPhoneIdentity()..restored = 'firebase-id-token';
+    final vault = MemoryVault(const SessionCapability(
+        id: 'ffffffffffffffffffffffffffffffff', token: 'old'));
+    final c = AuthController(vault,
+        anonymous: server('v3_live'), phoneIdentity: identity);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await Future.wait([c.expire(), c.expire()]);
+    expect(c.state.isAuthenticated, isTrue);
+    expect(vault.value?.token, 'tok');
+    c.dispose();
+  });
+
+  test('restores Firebase identity when the app capability is missing',
+      () async {
+    final identity = TestPhoneIdentity()..restored = 'firebase-id-token';
+    final c = AuthController(MemoryVault(),
+        anonymous: server('v3_live'), phoneIdentity: identity);
+    await settle(c);
+    expect(c.state.isAuthenticated, isTrue);
+    expect(identity.sentTo, isNull);
+    c.dispose();
   });
 }

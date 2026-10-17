@@ -64,6 +64,19 @@ def create_session_for_farmer(fid):
             },
         ).scalar_one_or_none():
             raise ValueError("Verified farmer account not found")
+        # Preserve completed conversations when a device renews its 30-day
+        # capability. The verified owner and RLS scope both constrain this copy.
+        db.execute(
+            text("""INSERT INTO sv3.assistant_archives(id,farmer_id,session_id,title,state)
+                SELECT DISTINCT ON (conversation_id) conversation_id,farmer_id,id,
+                  left(coalesce(state->'messages'->0->>'content','Conversation'),80),state
+                FROM sv3.assistant_sessions
+                WHERE farmer_id=:f AND jsonb_array_length(coalesce(state->'messages','[]'::jsonb))>0
+                  AND (run_expires_at IS NULL OR run_expires_at<=now())
+                ORDER BY conversation_id,created_at DESC
+                ON CONFLICT(id) DO NOTHING"""),
+            {"f": fid},
+        )
         db.execute(
             text(
                 "INSERT INTO sv3.conversations(id,farmer_id,title) VALUES(:id,:f,'New conversation')"
@@ -671,9 +684,9 @@ def conversations(sid):
             }
             for r in db.execute(
                 text(
-                    "SELECT id,title,created_at FROM sv3.assistant_archives WHERE session_id=:sid ORDER BY created_at DESC LIMIT 50"
+                    "SELECT id,title,created_at FROM sv3.assistant_archives WHERE farmer_id=:fid ORDER BY created_at DESC LIMIT 50"
                 ),
-                {"sid": sid},
+                {"fid": farmer_id(sid)},
             ).mappings()
         ]
 
@@ -682,9 +695,9 @@ def conversation(sid, cid):
     with database.connection(farmer_id(sid)) as db:
         return db.execute(
             text(
-                "SELECT state FROM sv3.assistant_archives WHERE session_id=:sid AND id=:cid"
+                "SELECT state FROM sv3.assistant_archives WHERE farmer_id=:fid AND id=:cid"
             ),
-            {"sid": sid, "cid": uuid.UUID(cid)},
+            {"fid": farmer_id(sid), "cid": uuid.UUID(cid)},
         ).scalar_one_or_none()
 
 

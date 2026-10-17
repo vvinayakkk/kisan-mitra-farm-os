@@ -13,7 +13,6 @@ import '../../ui/form_sheet.dart';
 import '../../ui/kit.dart';
 import '../../ui/labels.dart';
 import '../../ui/loader.dart';
-import '../../ui/provenance.dart';
 import '../../utils/constants.dart';
 import '../saathi.dart';
 import 'exchange_mitra.dart';
@@ -43,7 +42,8 @@ class ExchangeScreen extends ConsumerStatefulWidget {
   ConsumerState<ExchangeScreen> createState() => _ExchangeScreenState();
 }
 
-class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTickerProviderStateMixin {
+class _ExchangeScreenState extends ConsumerState<ExchangeScreen>
+    with SingleTickerProviderStateMixin {
   late final _tabs = TabController(length: 3, vsync: this);
   final _browse = GlobalKey<LoaderState<Map<String, dynamic>>>();
   final _mine = GlobalKey<LoaderState<Map<String, dynamic>>>();
@@ -58,27 +58,64 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
     super.dispose();
   }
 
-  Future<void> _edit([Map<String, dynamic>? listing, Map<String, Object?>? draft]) async {
+  Future<void> _edit(
+      [Map<String, dynamic>? listing, Map<String, Object?>? draft]) async {
     final l = listing ?? draft ?? const {};
     final v = await showFormSheet(context,
-        title: listing == null ? 'fos.market.new_notice'.tr() : 'fos.market.edit_notice'.tr(),
+        title: listing == null
+            ? 'fos.market.new_notice'.tr()
+            : 'fos.market.edit_notice'.tr(),
         submit: 'fos.market.save'.tr(),
         note: 'fos.market.publish_note'.tr(),
         fields: [
-          FieldSpec('kind', 'fos.market.i_am'.tr(), kind: FieldKind.select, required: true, initial: l['kind'] ?? 'offer',
-              options: {'offer': 'fos.market.offering'.tr(), 'request': 'fos.market.looking_for'.tr()}),
-          FieldSpec('category', 'fos.market.category'.tr(), kind: FieldKind.select, required: true, initial: l['category'] ?? 'equipment', options: {for (final c in kExchangeCategories.entries) c.key: c.value.tr()}),
-          FieldSpec('title', 'fos.market.f_title'.tr(), required: true, initial: l['title'], maxLength: 160),
-          FieldSpec('description', 'fos.market.f_description'.tr(), kind: FieldKind.multiline, required: true, initial: l['description'], maxLength: 2000),
-          FieldSpec('quantity', 'fos.market.f_quantity'.tr(), kind: FieldKind.number, required: true, initial: l['quantity']),
-          FieldSpec('unit', 'fos.market.f_unit'.tr(), required: true, initial: l['unit'], maxLength: 40, help: 'fos.market.unit_help'.tr()),
-          FieldSpec('state', 'fos.market.f_state'.tr(), required: true, initial: l['state'], maxLength: 100),
-          FieldSpec('district', 'fos.market.district'.tr(), required: true, initial: l['district'], maxLength: 100),
-          FieldSpec('available_on', 'fos.market.available_from'.tr(), kind: FieldKind.date, initial: l['available_on']),
-          FieldSpec('exchange_for', 'fos.market.in_exchange'.tr(), initial: l['exchange_for'], maxLength: 500),
-          FieldSpec('status', 'fos.market.visibility'.tr(), kind: FieldKind.select, required: true, initial: listing?['status'] ?? 'draft',
-              options: {'draft': 'fos.market.vis_draft'.tr(), 'published': 'fos.market.vis_published'.tr(), 'withdrawn': 'fos.market.vis_withdrawn'.tr()}),
-          FieldSpec('consent', 'fos.market.consent'.tr(), kind: FieldKind.check),
+          FieldSpec('kind', 'fos.market.i_am'.tr(),
+              kind: FieldKind.select,
+              required: true,
+              initial: l['kind'] ?? 'offer',
+              options: {
+                'offer': 'fos.market.offering'.tr(),
+                'request': 'fos.market.looking_for'.tr()
+              }),
+          FieldSpec('category', 'fos.market.category'.tr(),
+              kind: FieldKind.select,
+              required: true,
+              initial: l['category'] ?? 'equipment',
+              options: {
+                for (final c in kExchangeCategories.entries) c.key: c.value.tr()
+              }),
+          FieldSpec('title', 'fos.market.f_title'.tr(),
+              required: true, initial: l['title'], maxLength: 160),
+          FieldSpec('description', 'fos.market.f_description'.tr(),
+              kind: FieldKind.multiline,
+              required: true,
+              initial: l['description'],
+              maxLength: 2000),
+          FieldSpec('quantity', 'fos.market.f_quantity'.tr(),
+              kind: FieldKind.number, required: true, initial: l['quantity']),
+          FieldSpec('unit', 'fos.market.f_unit'.tr(),
+              required: true,
+              initial: l['unit'],
+              maxLength: 40,
+              help: 'fos.market.unit_help'.tr()),
+          FieldSpec('state', 'fos.market.f_state'.tr(),
+              required: true, initial: l['state'], maxLength: 100),
+          FieldSpec('district', 'fos.market.district'.tr(),
+              required: true, initial: l['district'], maxLength: 100),
+          FieldSpec('available_on', 'fos.market.available_from'.tr(),
+              kind: FieldKind.date, initial: l['available_on']),
+          FieldSpec('exchange_for', 'fos.market.in_exchange'.tr(),
+              initial: l['exchange_for'], maxLength: 500),
+          FieldSpec('status', 'fos.market.visibility'.tr(),
+              kind: FieldKind.select,
+              required: true,
+              initial: listing?['status'] ?? 'draft',
+              options: {
+                'draft': 'fos.market.vis_draft'.tr(),
+                'published': 'fos.market.vis_published'.tr(),
+                'withdrawn': 'fos.market.vis_withdrawn'.tr()
+              }),
+          FieldSpec('consent', 'fos.market.consent'.tr(),
+              kind: FieldKind.check),
         ]);
     if (v == null || !mounted) return;
     if (v['status'] == 'published' && v['consent'] != true) {
@@ -95,10 +132,17 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
       if (listing == null) {
         await api.post('/api/exchange/listings', body: body);
       } else {
-        await api.patch('/api/exchange/listings/${listing['id']}', body: {...body, 'row_version': listing['row_version']});
+        await api.patch('/api/exchange/listings/${listing['id']}',
+            body: {...body, 'row_version': listing['row_version']});
       }
       ref.read(workspaceCacheProvider).invalidate();
-      if (mounted) showNotice(context, v['status'] == 'published' ? 'fos.market.published'.tr() : 'fos.market.saved_dot'.tr());
+      if (mounted) {
+        showNotice(
+            context,
+            v['status'] == 'published'
+                ? 'fos.market.published'.tr()
+                : 'fos.market.saved_dot'.tr());
+      }
     } on ApiException catch (e) {
       if (mounted) showNotice(context, e.message);
     }
@@ -106,7 +150,9 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
     _mine.currentState?.reload();
   }
 
-  Widget _list({required bool mine, required GlobalKey<LoaderState<Map<String, dynamic>>> key}) {
+  Widget _list(
+      {required bool mine,
+      required GlobalKey<LoaderState<Map<String, dynamic>>> key}) {
     final api = ref.read(apiProvider);
     return Loader<Map<String, dynamic>>(
       key: key,
@@ -118,41 +164,63 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
       })),
       builder: (context, d) {
         final items = asMaps(d['items']);
-        return ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
-          if (!mine) ...[
-            const DemoBanner(),
-            const PreparedBySaathi(area: 'exchange'),
-            TextField(
-              controller: _query,
-              decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'fos.market.search_resources'.tr()),
-              onChanged: (_) {
-                _debounce?.cancel();
-                _debounce = Timer(const Duration(milliseconds: 300), () => _browse.currentState?.reload());
-              },
-            ),
-            const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: [
-              OutlineChip(label: 'fos.market.all'.tr(), selected: _category == null, onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _category = null);
-                _browse.currentState?.reload();
-              }),
-              for (final e in kExchangeCategories.entries)
-                OutlineChip(label: e.value.tr(), selected: _category == e.key, onTap: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _category = e.key);
-                  _browse.currentState?.reload();
-                }),
-            ]),
-            const SizedBox(height: 8),
-          ],
-          if (items.isEmpty)
-            EmptyView(
-              title: mine ? 'fos.market.no_notices'.tr() : 'fos.market.nothing_found'.tr(),
-              action: FilledButton.tonal(onPressed: _edit, child: Text('fos.market.new_notice'.tr())),
-            ),
-          for (final l in items) _ListingCard(listing: l, mine: mine, onEdit: () => _edit(l)),
-        ]);
+        return ListView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 96),
+            children: [
+              if (!mine) ...[
+                const FeatureIntro(
+                    eyebrow: 'YOUR FARMING COMMUNITY',
+                    title: 'Better, together.',
+                    detail:
+                        'Find equipment, share resources and work with farmers around you.',
+                    icon: Icons.handshake_outlined),
+
+                const PreparedBySaathi(area: 'exchange'),
+                TextField(
+                  controller: _query,
+                  decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: 'fos.market.search_resources'.tr()),
+                  onChanged: (_) {
+                    _debounce?.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 300),
+                        () => _browse.currentState?.reload());
+                  },
+                ),
+                const SizedBox(height: 8),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  OutlineChip(
+                      label: 'fos.market.all'.tr(),
+                      selected: _category == null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _category = null);
+                        _browse.currentState?.reload();
+                      }),
+                  for (final e in kExchangeCategories.entries)
+                    OutlineChip(
+                        label: e.value.tr(),
+                        selected: _category == e.key,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _category = e.key);
+                          _browse.currentState?.reload();
+                        }),
+                ]),
+                const SizedBox(height: 8),
+              ],
+              if (items.isEmpty)
+                EmptyView(
+                  title: mine
+                      ? 'fos.market.no_notices'.tr()
+                      : 'fos.market.nothing_found'.tr(),
+                  action: FilledButton.tonal(
+                      onPressed: _edit,
+                      child: Text('fos.market.new_notice'.tr())),
+                ),
+              for (final l in items)
+                _ListingCard(listing: l, mine: mine, onEdit: () => _edit(l)),
+            ]);
       },
     );
   }
@@ -166,7 +234,8 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
           IconButton(
             tooltip: 'fos.market.ask_mitra_draft'.tr(),
             icon: const Icon(Icons.auto_awesome),
-            onPressed: () => showExchangeMitra(context, intent: 'prepare_listing', onDraft: (d) {
+            onPressed: () => showExchangeMitra(context,
+                intent: 'prepare_listing', onDraft: (d) {
               if (d['kind'] == 'listing') _edit(null, asMap(d['fields']));
             }),
           ),
@@ -175,7 +244,11 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
           controller: _tabs,
           labelColor: AppColors.primaryDark,
           unselectedLabelColor: mutedColor(context),
-          tabs: [Tab(text: 'fos.market.tab_browse'.tr()), Tab(text: 'fos.market.tab_mine'.tr()), Tab(text: 'fos.market.tab_chats'.tr())],
+          tabs: [
+            Tab(text: 'fos.market.tab_browse'.tr()),
+            Tab(text: 'fos.market.tab_mine'.tr()),
+            Tab(text: 'fos.market.tab_chats'.tr())
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -196,7 +269,8 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
 }
 
 class _ListingCard extends ConsumerWidget {
-  const _ListingCard({required this.listing, required this.mine, required this.onEdit});
+  const _ListingCard(
+      {required this.listing, required this.mine, required this.onEdit});
 
   final Map<String, dynamic> listing;
   final bool mine;
@@ -214,78 +288,145 @@ class _ListingCard extends ConsumerWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text((l['kind'] == 'request' ? 'fos.market2.needed' : 'fos.market2.available_offer').tr(),
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark)),
+              child: Text(
+                  (l['kind'] == 'request'
+                          ? 'fos.market2.needed'
+                          : 'fos.market2.available_offer')
+                      .tr(),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: context.isDark
+                          ? AppColors.primaryLight
+                          : AppColors.primaryDark)),
             ),
-            if (sample) Tag('fos.market.sample'.tr(), color: AppColors.warning) else Tag('fos.market.farmer_reported'.tr(), color: context.isDark ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED)),
-            if (mine) ...[const SizedBox(width: 6), Tag(const {'draft': 'fos.market.vis_draft', 'published': 'fos.market.vis_published', 'withdrawn': 'fos.market.vis_withdrawn'}[l['status']]?.tr() ?? statusLabel(l['status']))],
+            if (sample)
+              const Tooltip(message: 'Reference listing from the local dataset', child: Icon(Icons.info_outline, size: 16))
+            else
+              Tag('fos.market.farmer_reported'.tr(),
+                  color: context.isDark
+                      ? const Color(0xFFA78BFA)
+                      : const Color(0xFF7C3AED)),
+            if (mine) ...[
+              const SizedBox(width: 6),
+              Tag(const {
+                    'draft': 'fos.market.vis_draft',
+                    'published': 'fos.market.vis_published',
+                    'withdrawn': 'fos.market.vis_withdrawn'
+                  }[l['status']]
+                      ?.tr() ??
+                  statusLabel(l['status']))
+            ],
           ]),
           const SizedBox(height: 2),
-          Text(str(l['title']), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ink)),
+          Text(str(l['title']),
+              style: TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.w700, color: ink)),
           const SizedBox(height: 4),
           Text(
               str(l['exchange_for']).isNotEmpty
-                  ? 'fos.market2.in_exchange_for'.tr(namedArgs: {'text': str(l['exchange_for'])})
+                  ? 'fos.market2.in_exchange_for'
+                      .tr(namedArgs: {'text': str(l['exchange_for'])})
                   : 'fos.market2.terms_talk'.tr(),
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
+              style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
           const SizedBox(height: 4),
-          Text('${_category(l['category'])} · ${qty(l['quantity'])} ${str(l['unit'])}'.trim(), style: TextStyle(fontSize: 13, color: mutedColor(context))),
-          Text(_place(l), style: TextStyle(fontSize: 13, color: mutedColor(context))),
-          if (!mine) Text(str(l['owner_name'], str(l['display_name'], 'fos.market.member_listing'.tr())), style: TextStyle(fontSize: 13, color: mutedColor(context))),
+          Text(
+              '${_category(l['category'])} · ${qty(l['quantity'])} ${str(l['unit'])}'
+                  .trim(),
+              style: TextStyle(fontSize: 13, color: mutedColor(context))),
+          Text(_place(l),
+              style: TextStyle(fontSize: 13, color: mutedColor(context))),
+          if (!mine)
+            Text(
+                str(l['owner_name'],
+                    str(l['display_name'], 'fos.market.member_listing'.tr())),
+                style: TextStyle(fontSize: 13, color: mutedColor(context))),
           if (mine && l['status'] == 'published')
-            FilledButton.tonal(onPressed: () => _showMatches(context, ref, l), child: Text('fos.market.matches'.tr())),
+            FilledButton.tonal(
+                onPressed: () => _showMatches(context, ref, l),
+                child: Text('fos.market.matches'.tr())),
         ]),
       ),
     );
   }
 
-  void _showListing(BuildContext context, WidgetRef ref, Map<String, dynamic> l) {
-    final swap = str(l['exchange_for']).isNotEmpty ? 'fos.market2.in_exchange_for'.tr(namedArgs: {'text': str(l['exchange_for'])}) : 'fos.market2.terms_talk'.tr();
+  void _showListing(
+      BuildContext context, WidgetRef ref, Map<String, dynamic> l) {
+    final swap = str(l['exchange_for']).isNotEmpty
+        ? 'fos.market2.in_exchange_for'
+            .tr(namedArgs: {'text': str(l['exchange_for'])})
+        : 'fos.market2.terms_talk'.tr();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (c) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(str(l['title']), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: inkColor(c))),
-          const SizedBox(height: 6),
-          Text(str(l['description']), style: TextStyle(color: inkColor(c))),
-          const SizedBox(height: 6),
-          Text(swap, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: inkColor(c))),
-          const SizedBox(height: 6),
-          Text(
-              '${qty(l['quantity'])} ${str(l['unit'])} · ${_place(l)}'
-              '${l['available_on'] != null ? ' · ${'fos.market.from_date'.tr(namedArgs: {'date': displayDate(str(l['available_on']))})}' : ''}',
-              style: TextStyle(color: inkColor(c))),
-          const SizedBox(height: 12),
-          Text('fos.market.chat_shares_name'.tr(), style: TextStyle(fontSize: 13, color: mutedColor(c))),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () async {
-              HapticFeedback.selectionClick();
-              try {
-                final t = asMap(await ref.read(apiProvider).post('/api/exchange/conversations',
-                    body: {'listing_id': l['id'], 'consent_to_share_display_name': true}));
-                if (c.mounted) Navigator.pop(c);
-                if (context.mounted) context.push('/exchange/thread/${t['id']}');
-              } on ApiException catch (e) {
-                if (c.mounted) showNotice(c, e.message);
-              }
-            },
-            icon: const Icon(Icons.forum_outlined),
-            label: Text('fos.market.discuss'.tr()),
-          ),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(str(l['title']),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: inkColor(c))),
+              const SizedBox(height: 6),
+              Text(str(l['description']), style: TextStyle(color: inkColor(c))),
+              const SizedBox(height: 6),
+              Text(swap,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: inkColor(c))),
+              const SizedBox(height: 6),
+              Text(
+                  '${qty(l['quantity'])} ${str(l['unit'])} · ${_place(l)}'
+                  '${l['available_on'] != null ? ' · ${'fos.market.from_date'.tr(namedArgs: {
+                          'date': displayDate(str(l['available_on']))
+                        })}' : ''}',
+                  style: TextStyle(color: inkColor(c))),
+              const SizedBox(height: 12),
+              Text('fos.market.chat_shares_name'.tr(),
+                  style: TextStyle(fontSize: 13, color: mutedColor(c))),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: () async {
+                  HapticFeedback.selectionClick();
+                  try {
+                    final t = asMap(await ref
+                        .read(apiProvider)
+                        .post('/api/exchange/conversations', body: {
+                      'listing_id': l['id'],
+                      'consent_to_share_display_name': true
+                    }));
+                    if (c.mounted) Navigator.pop(c);
+                    if (context.mounted) {
+                      context.push('/exchange/thread/${t['id']}');
+                    }
+                  } on ApiException catch (e) {
+                    if (c.mounted) showNotice(c, e.message);
+                  }
+                },
+                icon: const Icon(Icons.forum_outlined),
+                label: Text('fos.market.discuss'.tr()),
+              ),
+            ]),
       ),
     );
   }
 
-  String _category(Object? c) => kExchangeCategories[c]?.tr() ?? humanize('${c ?? ''}');
+  String _category(Object? c) =>
+      kExchangeCategories[c]?.tr() ?? humanize('${c ?? ''}');
 
-  String _place(Map<String, dynamic> l) => [l['district'], l['state']].where((e) => str(e).isNotEmpty).map(phrase).join(', ');
+  String _place(Map<String, dynamic> l) => [l['district'], l['state']]
+      .where((e) => str(e).isNotEmpty)
+      .map(phrase)
+      .join(', ');
 
-  void _showMatches(BuildContext context, WidgetRef ref, Map<String, dynamic> l) {
+  void _showMatches(
+      BuildContext context, WidgetRef ref, Map<String, dynamic> l) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -294,11 +435,19 @@ class _ListingCard extends ConsumerWidget {
         height: MediaQuery.sizeOf(c).height * 0.7,
         child: Loader<Map<String, dynamic>>(
           loading: 'fos.market.loading'.tr(),
-          load: () async => asMap(await ref.read(apiProvider).get('/api/exchange/matches', query: {'listing_id': l['id']})),
+          load: () async => asMap(await ref
+              .read(apiProvider)
+              .get('/api/exchange/matches', query: {'listing_id': l['id']})),
           builder: (c, d) {
             final items = asMaps(d['items']);
             return ListView(padding: const EdgeInsets.all(12), children: [
-              Text('fos.market.matches_for'.tr(namedArgs: {'title': '${l['title']}'}), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: inkColor(c))),
+              Text(
+                  'fos.market.matches_for'
+                      .tr(namedArgs: {'title': '${l['title']}'}),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: inkColor(c))),
               if (items.isEmpty) EmptyView(title: 'fos.market.no_match'.tr()),
               for (final m in items)
                 _ListingCard(listing: m, mine: false, onEdit: () {}),
@@ -324,7 +473,8 @@ class _InboxState extends ConsumerState<_Inbox> {
   @override
   void initState() {
     super.initState();
-    _poll = Timer.periodic(const Duration(seconds: 12), (_) => _loader.currentState?.reload());
+    _poll = Timer.periodic(
+        const Duration(seconds: 12), (_) => _loader.currentState?.reload());
   }
 
   @override
@@ -337,18 +487,22 @@ class _InboxState extends ConsumerState<_Inbox> {
   Widget build(BuildContext context) => Loader<Map<String, dynamic>>(
         key: _loader,
         loading: 'fos.market.loading'.tr(),
-        load: () async => asMap(await ref.read(apiProvider).get('/api/exchange/conversations')),
+        load: () async => asMap(
+            await ref.read(apiProvider).get('/api/exchange/conversations')),
         builder: (context, d) {
           final items = asMaps(d['items']);
           if (items.isEmpty) {
-            return ListView(children: [EmptyView(title: 'fos.market.no_chats'.tr())]);
+            return ListView(
+                children: [EmptyView(title: 'fos.market.no_chats'.tr())]);
           }
           return ListView(padding: const EdgeInsets.all(12), children: [
             for (final t in items)
               Card(
                 child: ListTile(
-                  title: Text(str(t['listing_title'], 'fos.market.exchange'.tr())),
-                  subtitle: Text('${kThreadStatus[t['status']]?.tr() ?? statusLabel(t['status'])} · '
+                  title:
+                      Text(str(t['listing_title'], 'fos.market.exchange'.tr())),
+                  subtitle: Text(
+                      '${kThreadStatus[t['status']]?.tr() ?? statusLabel(t['status'])} · '
                       '${asMaps(t['participants']).map((p) => str(p['display_name'])).join(' & ')}'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/exchange/thread/${t['id']}'),

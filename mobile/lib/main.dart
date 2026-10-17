@@ -33,6 +33,7 @@ class KisanMitraApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
         title: 'Kisan Mitra',
+        scrollBehavior: const MitraScrollBehavior(),
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(dark: false),
         darkTheme: buildAppTheme(dark: true),
@@ -43,4 +44,11 @@ class KisanMitraApp extends ConsumerWidget {
         locale: context.locale,
         builder: (context, child) => OfflineFrame(child: child!),
       );
+}
+
+/// Dragging scrollable content dismisses the keyboard without eating taps.
+class MitraScrollBehavior extends MaterialScrollBehavior {
+  const MitraScrollBehavior();
+  @override
+  ScrollViewKeyboardDismissBehavior getKeyboardDismissBehavior(BuildContext context) => ScrollViewKeyboardDismissBehavior.onDrag;
 }

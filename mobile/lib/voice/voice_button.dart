@@ -13,7 +13,7 @@ import 'speech.dart';
 /// Tap to speak, tap again to finish. The transcript is handed back for the
 /// farmer to review/edit; it is never sent automatically.
 class VoiceButton extends ConsumerStatefulWidget {
-  const VoiceButton({super.key, required this.onTranscript, this.enabled = true, this.size = 44});
+  const VoiceButton({super.key, required this.onTranscript, this.enabled = true, this.size = 48});
 
   final void Function(String text) onTranscript;
   final bool enabled;
@@ -91,8 +91,8 @@ class _VoiceButtonState extends ConsumerState<VoiceButton> {
       child: Tooltip(
         message: label,
         child: SizedBox(
-          width: widget.size,
-          height: widget.size,
+          width: widget.size.clamp(48, double.infinity),
+          height: widget.size.clamp(48, double.infinity),
           child: _phase == _Phase.transcribing
               ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
               : AnimatedContainer(
@@ -102,6 +102,7 @@ class _VoiceButtonState extends ConsumerState<VoiceButton> {
                     color: recording ? AppColors.error.withValues(alpha: 0.15 + _level * 0.35) : null,
                   ),
                   child: IconButton(
+                    tooltip: label,
                     onPressed: widget.enabled || recording ? _toggle : null,
                     icon: Icon(recording ? Icons.stop_rounded : Icons.mic_none_rounded,
                         color: recording ? AppColors.error : (context.isDark ? AppColors.primaryLight : AppColors.primaryDark)),

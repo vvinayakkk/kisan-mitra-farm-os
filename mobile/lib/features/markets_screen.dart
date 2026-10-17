@@ -15,7 +15,6 @@ import '../ui/labels.dart';
 import '../ui/loader.dart';
 import '../ui/provenance.dart';
 import '../utils/constants.dart';
-import 'saathi.dart';
 import 'workspace_tools.dart';
 
 /// Dated mandi observations and their history. Prices are records, not offers;
@@ -37,7 +36,8 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
   Map<String, dynamic> _catalogue = const {};
   String? _error;
   bool _busy = false;
-  int _shown = 9;
+  int _shown = 9, _searchGeneration = 0;
+  String? _queryKey;
   List<String> _myCrops = const [];
   final _compare = <Map<String, dynamic>>[];
 
@@ -85,21 +85,26 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       _shown = 9;
     });
     final tools = ref.read(workspaceToolsProvider);
-    final args = {'commodity': crop, 'state': _state.text.trim(), if (market != null) 'market': market};
-    final results = await Future.wait([
-      tools.inspect('market_prices', args).then<Object>((v) => v, onError: (Object e) => e),
-      tools.inspect('market_trend', args).then<Object>((v) => v, onError: (Object e) => e),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _prices = results[0] is Map ? results[0] as Map<String, dynamic> : null;
-      _trend = results[1] is Map ? results[1] as Map<String, dynamic> : null;
-      if (_prices == null) {
-        _error =
-            results[0] is ApiException ? (results[0] as ApiException).message : 'fos.market.prices_load_failed'.tr();
+    final args = {'commodity': crop, 'state': _state.text.trim(), 'observed_only': ref.read(authProvider).mode != BackendMode.demo, if (market != null) 'market': market};
+    final generation = ++_searchGeneration;
+    final key = args.toString();
+    if (_queryKey != key) {
+      setState(() { _prices = null; _trend = null; _queryKey = key; });
+    }
+    // Prices become usable as soon as they arrive; trend is supplementary.
+    final prices = tools.inspect('market_prices', args).then((value) {
+      if (mounted && generation == _searchGeneration) {
+        setState(() { _prices = value; _busy = false; });
+      }
+    }, onError: (Object e) {
+      if (mounted && generation == _searchGeneration) {
+        setState(() { _busy = false; _error = e is ApiException ? e.message : 'fos.market.prices_load_failed'.tr(); });
       }
     });
+    final trend = tools.inspect('market_trend', args).then((value) {
+      if (mounted && generation == _searchGeneration) setState(() => _trend = value);
+    }, onError: (Object _) {});
+    await Future.wait([prices, trend]);
   }
 
   void _calculate(List<Map<String, dynamic>> rows) {
@@ -128,8 +133,13 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       floatingActionButton: const HelperButton(contextKey: 'markets'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
-          const DemoBanner(),
-          const PreparedBySaathi(area: 'markets'),
+
+          if (rows.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 16), child: FarmCard(color: context.isDark ? AppColors.darkCard : const Color(0xFFF0EEE7), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('PREPARED BY MITRA', style: TextStyle(fontSize: 10, letterSpacing: 1.3, fontWeight: FontWeight.w600, color: accentColor(context))),
+            const SizedBox(height: 8), Text('Let’s compare your ${cropName(_crop.text.trim())}.', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8), Text('${rows.length} dated records are ready. Compare matching grades and units, then include transport and market fees.', style: const TextStyle(fontSize: 13, height: 1.5)),
+            TextButton.icon(onPressed: () => _calculate(rows.take(3).toList()), icon: const Icon(Icons.calculate_outlined, size: 18), label: const Text('Compare what I take home')),
+          ]))),
           if (_myCrops.isNotEmpty) ...[
             Text('fos.market2.your_crops'.tr(),
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ink)),
@@ -294,7 +304,7 @@ class _PriceCard extends StatelessWidget {
               '${[
                 row['district'],
                 row['state']
-              ].where((e) => e != null).map(phrase).join(', ')} · ${phrase(str(row['variety'], 'fos.market.variety_not_stated'.tr()))}',
+              ].where((e) => e != null).map(phrase).join(', ')} · ${str(row['variety']).toLowerCase().startsWith('demo standard') ? 'fos.market.variety_not_stated'.tr() : phrase(str(row['variety'], 'fos.market.variety_not_stated'.tr()))}',
               style: TextStyle(fontSize: 13, color: mutedColor(context))),
           const SizedBox(height: 6),
           Text(

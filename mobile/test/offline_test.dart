@@ -75,6 +75,7 @@ void main() {
   test('messages typed offline are kept and sent in order when signal returns', () async {
     SharedPreferences.setMockInitialValues({});
     final sent = <String>[];
+    var online = false;
     final api = ApiClient(
       session: session,
       baseUrl: 'http://t',
@@ -88,7 +89,7 @@ void main() {
               return http.StreamedResponse(
                   Stream.value(utf8.encode('${jsonEncode({'type': 'done', 'status': 'completed'})}\n')), 200);
             }),
-        isOnline: () => false);
+        isOnline: () => online);
     for (var i = 0; i < 20 && !c.state.ready; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
@@ -97,8 +98,75 @@ void main() {
     expect(sent, isEmpty);
     expect((await SharedPreferences.getInstance()).getStringList('outbox_$sid'), hasLength(2));
 
+    online = true;
     await c.flushOutbox();
     expect(sent, ['kal mandi bhav?', 'baarish hogi?']);
     expect(c.state.outbox, isEmpty);
   });
+  test('known offline reads skip the network and reachability probes never use saved copies', () async {
+    final saved = store();
+    var calls = 0;
+    final api = ApiClient(session: session, baseUrl: 'http://t', offline: saved,
+      isOffline: () => true, client: MockClient((_) async { calls++; throw http.ClientException('offline'); }));
+    await saved.save(api.uri('/api/profile').toString(), {'name':'Ravi'});
+    expect(await api.get('/api/profile'), {'name':'Ravi'});
+    expect(calls, 0);
+    await expectLater(api.get('/api/profile', allowSaved:false), throwsA(isA<ApiException>()));
+    expect(calls, 1);
+  });
+
+  test('interrupted sends stay durable and are not automatically replayed after restart', () async {
+    SharedPreferences.setMockInitialValues({});
+    var online = false;
+    var sent = 0;
+    ApiClient api() => ApiClient(session:session, baseUrl:'http://t', client:MockClient((_) async => http.Response('{"messages":[],"pending":null,"skills":[],"tools":[]}',200)));
+    AssistantController controller() => AssistantController(api(),()=> 'en',(){},isOnline:()=>online,
+      streamClient:()=>MockClient.streaming((_,__)async {
+        sent++;
+        return http.StreamedResponse(Stream.value(utf8.encode('{"type":"text","text":"started"}\n')),200);
+      }));
+    var c = controller();
+    for(var i=0;i<20&&!c.state.ready;i++){await Future<void>.delayed(const Duration(milliseconds:10));}
+    await c.queue('Check my field');
+    online=true;
+    await Future.wait([c.flushOutbox(),c.flushOutbox()]);
+    expect(sent,1);
+    expect(c.state.outbox,['Check my field']);
+    expect(c.state.outboxNeedsReview,isTrue);
+    c.dispose();
+    c=controller();
+    for(var i=0;i<20&&!c.state.ready;i++){await Future<void>.delayed(const Duration(milliseconds:10));}
+    await c.reconnect();
+    expect(sent,1);
+    expect(c.state.outboxNeedsReview,isTrue);
+    await c.removeQueued(0);
+    expect(c.state.outbox,isEmpty);
+    c.dispose();
+  });
+
+  test('connected Wi-Fi with unreachable API leaves unsent messages waiting', () async {
+    SharedPreferences.setMockInitialValues({});
+    var reachable = true, online = false, sent = 0;
+    final api=ApiClient(session:session,baseUrl:'http://t',client:MockClient((_) async {
+      if(!reachable) throw http.ClientException('no internet');
+      return http.Response('{"messages":[],"pending":null,"skills":[],"tools":[]}',200);
+    }));
+    final c=AssistantController(api,()=> 'en',(){},isOnline:()=>online,
+      streamClient:()=>MockClient.streaming((_,__)async {
+        sent++;
+        return http.StreamedResponse(Stream.value(utf8.encode('{"type":"done","status":"completed"}\n')),200);
+      }));
+    for(var i=0;i<20&&!c.state.ready;i++){await Future<void>.delayed(const Duration(milliseconds:10));}
+    await c.queue('Tomorrow’s weather');
+    reachable=false; online=true;
+    expect(await c.reconnect(),isFalse);
+    expect(sent,0);
+    expect(c.state.outboxNeedsReview,isFalse);
+    reachable=true;
+    expect(await c.reconnect(),isTrue);
+    expect(sent,1);
+    expect(c.state.outbox,isEmpty);
+    c.dispose();
+  });
+
 }

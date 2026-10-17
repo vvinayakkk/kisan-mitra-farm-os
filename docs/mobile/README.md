@@ -21,7 +21,7 @@ Navigation keeps the original app: splash → language → sign in → choice sc
 2. **Demo lane (`v3_demo`)**: "Open the demo farm" requests the server's explicit demo challenge (`/api/auth/send-otp`, then `/verify-otp`). No SMS is sent. The server returns an assistant session capability.
 3. **Live lane (`v3_live`)**: Firebase Phone Authentication verifies an Indian mobile number. The Firebase ID token is sent to `POST /api/assistant/sessions`; the server verifies its project, signature and phone provider before binding the farm session to that account. The Android Firebase app is registered under `com.initio.kisanmitra`, with release-certificate fingerprints configured.
 4. Only the session capability `{id, token}` is stored, in the platform Keystore. Every private request sends `Authorization: Bearer <token>` and `X-Assistant-Session: <id>`. The app never sends a farmer ID.
-5. Any 401 erases the capability and returns to sign-in. Sign-out revokes the session on the server, preserving history, then wipes local secrets and the read cache.
+5. An expired capability can be renewed through the persisted Firebase identity; a rejected renewal returns to sign-in. Sign-out revokes the session on the server, preserving history, then wipes local secrets and the read cache.
 
 ## Run locally
 
@@ -95,6 +95,10 @@ Build outputs stay in `mobile/build/` (ignored). No APK is tracked in Git.
 - Live Firebase Phone sign-in: the controller's code and session handshake are tested, but a physical-phone SMS or Play Integrity run remains to be checked.
 - Play/store distribution and iOS builds.
 
-The interface ships in English, Hindi, Marathi, Telugu, Tamil, Gujarati, Bengali, Kannada, Malayalam and Punjabi (`assets/translations/`; a test checks every language has every key with matching placeholders). Odia, Assamese and Urdu fall back to English text, while the assistant still answers in the farmer's own language. Conversation history is scoped to a sign-in session on the server.
+The interface ships in English, Hindi, Marathi, Telugu, Tamil, Gujarati, Bengali, Kannada, Malayalam and Punjabi (`assets/translations/`; a test checks every language has every key with matching placeholders). Odia, Assamese and Urdu fall back to English text, while the assistant still answers in the farmer's own language. With the 1.1.0 backend deployed, archived conversation history is scoped to the verified farmer and remains accessible across session renewal.
 
 Weak networks: the last successful copy of the assistant session, mandi prices and trends, weather, notebook, station, profile and Saathi is kept per session on the phone (bounded, erased at sign-out). With no network those screens show the saved copy under a banner stating its time. Chat messages typed offline wait in an outbox and are sent in order when the network returns, stopping at any question or approval card. Writes (saving tasks, ledger entries, approvals, uploads) still need a connection.
+
+## Version 1.1.0
+
+See [release changes and deployment requirements](../releases/v1.1.0.md) for the updated launch, onboarding, voice, offline and interface behavior. New copy is not yet fully localized.

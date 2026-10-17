@@ -896,3 +896,31 @@ def unlink_weather(identifier: uuid.UUID, owner: Owner):
         "history_preserved": True,
         "note": "Weather-sharing consent was revoked for this account. Other linked farms need new consent before additional grid lookups.",
     }
+
+
+class StarterPlanReview(Inputs):
+    approved: Literal[True]
+
+
+STARTER_PLANS = (
+    ("morning-walk", "My morning farm walk", ["Check the local forecast", "Walk the field and note changes", "Review today’s work with Mitra"]),
+    ("crop-check", "Keep an eye on my crops", ["Photograph a few representative leaves", "Record growth or visible damage", "Ask for help when something looks unusual"]),
+    ("money-notebook", "A simple money notebook", ["Record farm expenses", "Add sales and payments received", "Review the week’s records"]),
+)
+
+
+@router.post("/api/onboarding/starter-plans")
+def starter_plans(payload: StarterPlanReview, owner: Owner):
+    """Explicitly reviewed, idempotent starter drafts; never fabricate farm work."""
+    ids = []
+    with db.connection(owner, write=True) as conn:
+        onboarded(conn, owner)
+        for key, title, steps in STARTER_PLANS:
+            identifier = uuid.uuid5(uuid.NAMESPACE_URL, f"kisan-mitra:starter:v1:{owner}:{key}")
+            sql(conn, """INSERT INTO sv3.farm_missions(id,farmer_id,title,objective,steps)
+                VALUES(:id,:owner,:title,:objective,CAST(:steps AS jsonb)) ON CONFLICT(id) DO NOTHING""",
+                id=identifier, owner=owner, title=title,
+                objective="Starter routine to customise with the farmer’s own observations and circumstances.",
+                steps=json.dumps([{"title": step, "done": False} for step in steps]))
+            ids.append(str(identifier))
+    return {"saved": True, "status": "draft", "mission_ids": ids}

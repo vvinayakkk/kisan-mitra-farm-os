@@ -5,14 +5,17 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Last successful copies of a few read-only screens (mandi, weather, tasks,
 /// notebook, station), kept per session on the phone so a farmer with no
 /// signal still sees what they last loaded — always labelled with its time.
 /// Nothing is written while offline and no data is invented.
 class OfflineStore {
-  OfflineStore(this.sessionId, {Future<Directory> Function()? root, this.maxEntries = 80})
+  OfflineStore(this.sessionId,
+      {Future<Directory> Function()? root, this.maxEntries = 80})
       : _root = root ?? getApplicationSupportDirectory;
 
   final String sessionId;
@@ -29,11 +32,18 @@ class OfflineStore {
     '/api/weather/dashboard',
     '/api/farm-workspace/',
     '/api/profile',
+    '/api/farms',
+    '/api/plots',
+    '/api/crop-cycles',
+    '/api/onboarding/options',
     '/api/mandi/catalogue',
     '/api/companion',
+    '/api/exchange/listings',
+    '/api/sensors/stations',
   ];
 
-  static bool cacheable(String path) => _paths.any(path.startsWith) && !path.contains('/events');
+  static bool cacheable(String path) =>
+      _paths.any(path.startsWith) && !path.contains('/events');
 
   Future<Directory> _dir() async {
     final dir = Directory('${(await _root()).path}/offline/$sessionId');
@@ -54,11 +64,12 @@ class OfflineStore {
   Future<void> save(String key, Object? data) async {
     try {
       final dir = await _dir();
-      await File('${dir.path}/${fileName(key)}')
-          .writeAsString(jsonEncode({'saved_at': DateTime.now().toIso8601String(), 'data': data}));
+      await File('${dir.path}/${fileName(key)}').writeAsString(jsonEncode(
+          {'saved_at': DateTime.now().toIso8601String(), 'data': data}));
       final files = dir.listSync().whereType<File>().toList()
         ..sort((a, b) => a.lastModifiedSync().compareTo(b.lastModifiedSync()));
-      for (final f in files.take((files.length - maxEntries).clamp(0, files.length))) {
+      for (final f
+          in files.take((files.length - maxEntries).clamp(0, files.length))) {
         f.deleteSync();
       }
       servedSavedAt.value = null;
@@ -83,8 +94,16 @@ class OfflineStore {
   /// Erases every saved copy on this phone (sign-out or ended session).
   static Future<void> clearAll({Future<Directory> Function()? root}) async {
     try {
-      final dir = Directory('${(await (root ?? getApplicationSupportDirectory)()).path}/offline');
+      final dir = Directory(
+          '${(await (root ?? getApplicationSupportDirectory)()).path}/offline');
       if (dir.existsSync()) await dir.delete(recursive: true);
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final key in prefs.getKeys().where(
+          (k) => k.startsWith('onboarding_draft_') || k.startsWith('onboarding_seen_') || k.startsWith('outbox_') || k.startsWith('chat_draft_'))) {
+        await prefs.remove(key);
+      }
     } catch (_) {}
   }
 }
@@ -98,3 +117,6 @@ final offlineProvider = StreamProvider<bool>((ref) async* {
   yield isOffline(await connectivity.checkConnectivity());
   yield* connectivity.onConnectivityChanged.map(isOffline);
 });
+
+/// Successful reconnect refreshes visible read screens without remounting them.
+final syncRevisionProvider = StateProvider<int>((ref) => 0);

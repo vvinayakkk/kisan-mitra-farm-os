@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'onboarding_progress.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -84,7 +86,8 @@ class SessionVault {
 }
 
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._vault, {ApiClient Function()? anonymous, PhoneIdentityProvider? phoneIdentity})
+  AuthController(this._vault,
+      {ApiClient Function()? anonymous, PhoneIdentityProvider? phoneIdentity})
       : _anonymous = anonymous ?? (() => ApiClient()),
         _phoneIdentity = phoneIdentity,
         super(const AuthState()) {
@@ -95,6 +98,8 @@ class AuthController extends StateNotifier<AuthState> {
   final ApiClient Function() _anonymous;
   PhoneIdentityProvider? _phoneIdentity;
   String? _verificationId;
+  Future<void>? _renewal;
+  int _authGeneration = 0;
 
   PhoneIdentityProvider get phoneIdentity =>
       _phoneIdentity ??= FirebasePhoneIdentity();
@@ -111,12 +116,31 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> _restore() async {
     final stored = await _vault.read();
+    final generation = _authGeneration;
+    if (stored != null && mounted) {
+      state = AuthState(status: AuthStatus.signedIn, session: stored);
+    }
     var mode = BackendMode.unknown;
     String? error;
     try {
       mode = await _detectMode();
     } on ApiException catch (e) {
       error = e.message;
+    }
+    if (!mounted || generation != _authGeneration) return;
+    if (stored == null && mode == BackendMode.live) {
+      try {
+        final token = await phoneIdentity.restoredToken();
+        if (token != null) {
+          state = state.copyWith(mode: mode);
+          await _finishPhoneSignIn(token);
+          if (state.isAuthenticated) return;
+        }
+      } catch (_) {}
+    }
+    if (state.isAuthenticated && !identical(state.session, stored)) {
+      state = state.copyWith(mode: mode);
+      return;
     }
     // A stored capability is only a candidate: the first private request
     // verifies it and [expire] signs out if the server rejects it.
@@ -137,30 +161,48 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> _adopt(SessionCapability session) async {
+  Future<void> _adopt(SessionCapability session, {String? renewedFrom}) async {
+    final generation = _authGeneration;
+    if (renewedFrom != null && renewedFrom != session.id) {
+      try {
+        await OnboardingProgress(await SharedPreferences.getInstance(), renewedFrom).transferTo(session.id);
+      } catch (_) { /* Draft storage must not prevent verified sign-in. */ }
+    }
     await _vault.write(session);
-    state = AuthState(status: AuthStatus.signedIn, mode: state.mode, session: session);
+    if (!mounted || generation != _authGeneration) {
+      await _vault.clear();
+      return;
+    }
+    state = AuthState(
+        status: AuthStatus.signedIn, mode: state.mode, session: session);
   }
 
   /// Local demo lane only: the backend issues an explicit demo challenge and
   /// rejects this path in live mode. No SMS is sent.
   Future<void> signInDemo({String phone = '9999999999'}) async {
     if (state.mode != BackendMode.demo) {
-      state = state.copyWith(error: 'Demo sign-in is only available on a demo server.');
+      state = state.copyWith(
+          error: 'Use phone sign-in for this service.');
       return;
     }
     state = state.copyWith(busy: true, clearError: true);
     final api = _anonymous();
     try {
-      final challenge = await api.post('/api/auth/send-otp', body: {'phone': phone});
+      final challenge =
+          await api.post('/api/auth/send-otp', body: {'phone': phone});
       final otp = challenge is Map ? challenge['otp'] : null;
-      if (challenge is! Map || challenge['demo_bypass'] != true || otp is! String) {
+      if (challenge is! Map ||
+          challenge['demo_bypass'] != true ||
+          otp is! String) {
         throw ApiException(503, 'This server did not issue a demo challenge.');
       }
-      final verified = await api.post('/api/auth/verify-otp', body: {'phone': phone, 'otp': otp});
+      final verified = await api
+          .post('/api/auth/verify-otp', body: {'phone': phone, 'otp': otp});
       final session = SessionCapability.tryParse(
           verified is Map ? (verified['session'] ?? verified) : null);
-      if (session == null) throw ApiException(502, 'The server returned no workspace session.');
+      if (session == null) {
+        throw ApiException(502, 'The server returned no workspace session.');
+      }
       await _adopt(session);
     } on ApiException catch (e) {
       state = state.copyWith(busy: false, error: e.message);
@@ -169,18 +211,23 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> _finishPhoneSignIn(String token) async {
+  Future<void> _finishPhoneSignIn(String token, {bool renewing = false}) async {
+    final generation = _authGeneration;
     final api = _anonymous();
     try {
       final created = await api.post('/api/assistant/sessions',
           extraHeaders: {'Authorization': 'Bearer $token'});
+      if (!mounted || generation != _authGeneration) return;
       final session = SessionCapability.tryParse(created);
-      if (session == null) throw ApiException(502, 'The server returned no workspace session.');
-      await _adopt(session);
+      if (session == null) {
+        throw ApiException(502, 'The server returned no workspace session.');
+      }
+      await _adopt(session, renewedFrom: renewing ? state.session?.id : null);
     } on ApiException catch (e) {
       state = state.copyWith(busy: false, error: e.message);
     } catch (_) {
-      state = state.copyWith(busy: false, error: 'Sign-in could not finish. Please retry.');
+      state = state.copyWith(
+          busy: false, error: 'Sign-in could not finish. Please retry.');
     } finally {
       api.close();
     }
@@ -188,7 +235,8 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> sendPhoneCode(String phone) async {
     if (state.mode != BackendMode.live) {
-      state = state.copyWith(error: 'Phone sign-in needs the live farm service.');
+      state =
+          state.copyWith(error: 'Phone sign-in needs the live farm service.');
       return;
     }
     final normalized = phone.replaceAll(RegExp(r'[\s-]'), '');
@@ -206,10 +254,12 @@ class AuthController extends StateNotifier<AuthState> {
           state = state.copyWith(busy: false, codeSent: true);
         },
         onVerified: (token) => _finishPhoneSignIn(token),
-        onError: (message) => state = state.copyWith(busy: false, error: message),
+        onError: (message) =>
+            state = state.copyWith(busy: false, error: message),
       );
     } catch (_) {
-      state = state.copyWith(busy: false, error: 'Could not send the code. Please retry.');
+      state = state.copyWith(
+          busy: false, error: 'Could not send the code. Please retry.');
     }
   }
 
@@ -221,26 +271,46 @@ class AuthController extends StateNotifier<AuthState> {
     }
     state = state.copyWith(busy: true, clearError: true);
     try {
-      await _finishPhoneSignIn(await phoneIdentity.confirmCode(verificationId, code));
+      await _finishPhoneSignIn(
+          await phoneIdentity.confirmCode(verificationId, code));
     } catch (_) {
-      state = state.copyWith(busy: false, error: 'The code could not be verified. Try again.');
+      state = state.copyWith(
+          busy: false, error: 'The code could not be verified. Try again.');
     }
   }
 
   /// Server rejected the capability (revoked, expired, other device signed out).
-  Future<void> expire() async {
+  Future<void> expire() =>
+      _renewal ??= _recoverIdentity().whenComplete(() => _renewal = null);
+
+  Future<void> _recoverIdentity() async {
+    final generation = _authGeneration;
     if (state.session == null) return;
+    if (state.mode == BackendMode.live || state.mode == BackendMode.unknown) {
+      try {
+        final token = await phoneIdentity.restoredToken();
+        if (generation != _authGeneration || !mounted) return;
+        if (token != null) {
+          await _finishPhoneSignIn(token, renewing: true);
+          return; // Keep identity on transient network/server failures.
+        }
+      } catch (_) {
+        return; // Offline is not a sign-out action.
+      }
+    }
     await _vault.clear();
-    if (state.mode == BackendMode.live) await phoneIdentity.signOut();
     await OfflineStore.clearAll();
-    state = AuthState(
-        status: AuthStatus.signedOut,
-        mode: state.mode,
-        error: 'Your session ended. Please sign in again.');
+    if (mounted && generation == _authGeneration) {
+      state = AuthState(
+          status: AuthStatus.signedOut,
+          mode: state.mode,
+          error: 'Please verify your sign-in again.');
+    }
   }
 
   /// Revokes server-side (history is preserved) then wipes local secrets.
   Future<void> signOut() async {
+    _authGeneration++;
     final session = state.session;
     if (session != null) {
       final api = ApiClient(session: session);
@@ -254,7 +324,9 @@ class AuthController extends StateNotifier<AuthState> {
       }
     }
     await _vault.clear();
-    if (state.mode == BackendMode.live) await phoneIdentity.signOut();
+    try {
+      await phoneIdentity.signOut();
+    } catch (_) {}
     await OfflineStore.clearAll();
     state = AuthState(status: AuthStatus.signedOut, mode: state.mode);
   }
@@ -276,7 +348,11 @@ final offlineStoreProvider = Provider<OfflineStore?>((ref) {
 /// whenever the session changes, so stale responses cannot cross accounts.
 final apiProvider = Provider<ApiClient>((ref) {
   final session = ref.watch(authProvider.select((s) => s.session));
-  final api = ApiClient(session: session, offline: session == null ? null : ref.watch(offlineStoreProvider));
+  final api = ApiClient(
+      session: session,
+      cacheReads: true,
+      isOffline: () => ref.read(offlineProvider).value == true,
+      offline: session == null ? null : ref.watch(offlineStoreProvider));
   api.onUnauthorized = () => ref.read(authProvider.notifier).expire();
   ref.onDispose(api.close);
   return api;

@@ -7,16 +7,18 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/api.dart';
 import '../../core/offline.dart';
+import '../../core/session.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../ui/kit.dart';
 import '../../utils/constants.dart';
 import '../../voice/voice_button.dart';
 import '../assistant_controller.dart';
 import '../models.dart';
 
-/// Text + voice + attachments. Disabled while a run is active or a card is
-/// waiting, so only one question is answered at a time.
+/// Keep drafting while a run is active; submitting stays serialized.
 class Composer extends ConsumerStatefulWidget {
-  const Composer({super.key, this.runContext = const RunContext(), this.controller});
+  const Composer(
+      {super.key, this.runContext = const RunContext(), this.controller});
 
   final RunContext runContext;
   final TextEditingController? controller;
@@ -26,13 +28,31 @@ class Composer extends ConsumerStatefulWidget {
 }
 
 class ComposerState extends ConsumerState<Composer> {
-  late final TextEditingController _text = widget.controller ?? TextEditingController();
+  late final TextEditingController _text =
+      widget.controller ?? TextEditingController();
   final _attached = <Attachment>[];
   bool _uploading = false;
+  String? _draftKey;
+  @override
+  void initState() {
+    super.initState();
+    _draftKey =
+        'chat_draft_${ref.read(authProvider).session?.id}_${widget.runContext.view}';
+    SharedPreferences.getInstance().then((prefs) {
+      if (!mounted || _text.text.isNotEmpty) return;
+      _text.text = prefs.getString(_draftKey!) ?? '';
+    });
+  }
+
+  void _saveDraft(String value) {
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setString(_draftKey!, value));
+  }
 
   void setDraft(String text) {
     _text.text = text;
     _text.selection = TextSelection.collapsed(offset: text.length);
+    _saveDraft(text);
   }
 
   @override
@@ -47,18 +67,46 @@ class ComposerState extends ConsumerState<Composer> {
     // No network: keep the words safely and send them when signal returns.
     if (ref.read(offlineProvider).value == true) {
       if (text.isEmpty) return;
+      try {
+        await ref.read(assistantProvider.notifier).queue(text);
+      } catch (_) {
+        if (mounted) showNotice(context, 'Could not save this message on your phone. Your text is kept here.');
+        return;
+      }
       _text.clear();
-      await ref.read(assistantProvider.notifier).queue(text);
+      _saveDraft('');
       if (mounted) showNotice(context, 'fos.offline.queued'.tr());
+      return;
+    }
+    final state = ref.read(assistantProvider);
+    if (state.busy) return;
+    if (state.pending != null &&
+        (state.pending!.kind == PendingKind.approval ||
+            state.pending!.fields.length != 1)) {
+      showNotice(context,
+          'Your draft is kept. Complete or skip the questions above, or review the proposed change.');
+      return;
+    }
+    if (state.pending?.kind == PendingKind.question &&
+        state.pending!.fields.length == 1 &&
+        text.isNotEmpty) {
+      _text.clear();
+      _saveDraft('');
+      await ref
+          .read(assistantProvider.notifier)
+          .answer(state.pending!, {state.pending!.fields.first.id: text});
       return;
     }
     final ids = _attached.map((a) => a.id).toList();
     final names = _attached.map((a) => a.name).join(', ');
     _text.clear();
+    _saveDraft('');
     setState(_attached.clear);
     await ref.read(assistantProvider.notifier).send(
           text.isEmpty ? 'fos.assistant.look_at_file'.tr() : text,
-          display: names.isEmpty ? null : '${text.isEmpty ? '' : '$text\n'}📎 $names',
+          display: names.isEmpty
+              ? null
+              : '${text.isEmpty ? '' : '$text\n'}📎 $names',
           context: widget.runContext,
           attachmentIds: ids,
         );
@@ -69,8 +117,14 @@ class ComposerState extends ConsumerState<Composer> {
       context: context,
       builder: (c) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: const Icon(Icons.photo_camera_outlined), title: Text('fos.assistant.take_photo'.tr()), onTap: () => Navigator.pop(c, 'camera')),
-          ListTile(leading: const Icon(Icons.photo_library_outlined), title: Text('fos.assistant.choose_photo'.tr()), onTap: () => Navigator.pop(c, 'gallery')),
+          ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text('fos.assistant.take_photo'.tr()),
+              onTap: () => Navigator.pop(c, 'camera')),
+          ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text('fos.assistant.choose_photo'.tr()),
+              onTap: () => Navigator.pop(c, 'gallery')),
           ListTile(
               leading: const Icon(Icons.attach_file),
               title: Text('fos.assistant.choose_file'.tr()),
@@ -85,21 +139,34 @@ class ComposerState extends ConsumerState<Composer> {
     if (choice == 'file') {
       final picked = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: const ['pdf', 'docx', 'xlsx', 'csv', 'txt', 'jpg', 'jpeg', 'png', 'webp'],
+        allowedExtensions: const [
+          'pdf',
+          'docx',
+          'xlsx',
+          'csv',
+          'txt',
+          'jpg',
+          'jpeg',
+          'png',
+          'webp'
+        ],
       );
       final file = picked.firstOrNull;
       name = file?.name;
       bytes = await file?.readAsBytes();
     } else {
       final image = await ImagePicker().pickImage(
-          source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery, maxWidth: 2048, imageQuality: 85);
+          source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+          maxWidth: 2048,
+          imageQuality: 85);
       name = image?.name;
       bytes = await image?.readAsBytes();
     }
     if (name == null || bytes == null) return;
     setState(() => _uploading = true);
     try {
-      final attachment = await ref.read(assistantProvider.notifier).uploadBytes(name, bytes);
+      final attachment =
+          await ref.read(assistantProvider.notifier).uploadBytes(name, bytes);
       setState(() => _attached.add(attachment));
     } on ApiException catch (e) {
       if (mounted) showNotice(context, e.message);
@@ -113,7 +180,7 @@ class ComposerState extends ConsumerState<Composer> {
     final state = ref.watch(assistantProvider);
     final offline = ref.watch(offlineProvider).value == true;
     // Offline, typing still works (messages wait in the outbox).
-    final locked = (!state.ready && !offline) || state.busy || state.pending != null;
+    final locked = (!state.ready && !offline) || state.busy;
     final dark = context.isDark;
     // Original input bar: one rounded glass pill floating over the gradient.
     return SafeArea(
@@ -128,21 +195,35 @@ class ComposerState extends ConsumerState<Composer> {
                 for (final a in _attached)
                   InputChip(
                     label: Text(a.name, overflow: TextOverflow.ellipsis),
-                    avatar: Icon(a.isPhoto ? Icons.image_outlined : Icons.description_outlined, size: 16),
+                    avatar: Icon(
+                        a.isPhoto
+                            ? Icons.image_outlined
+                            : Icons.description_outlined,
+                        size: 16),
                     onDeleted: () => setState(() => _attached.remove(a)),
                   ),
-                if (_uploading) Chip(label: Text('fos.assistant.uploading'.tr())),
+                if (_uploading)
+                  Chip(label: Text('fos.assistant.uploading'.tr())),
               ]),
             ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
-              color: dark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.92),
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: dark ? Colors.white.withValues(alpha: 0.14) : AppColors.primary.withValues(alpha: 0.25),
+                color: dark
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : AppColors.primary.withValues(alpha: 0.25),
               ),
-              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(children: [
               IconButton(
@@ -153,7 +234,8 @@ class ComposerState extends ConsumerState<Composer> {
               Expanded(
                 child: TextField(
                   controller: _text,
-                  enabled: !locked,
+                  onChanged: _saveDraft,
+                  enabled: true,
                   minLines: 1,
                   maxLines: 5,
                   maxLength: 6000,
@@ -174,20 +256,26 @@ class ComposerState extends ConsumerState<Composer> {
               ),
               VoiceButton(
                 enabled: !locked,
-                onTranscript: (t) => setDraft(_text.text.isEmpty ? t : '${_text.text} $t'),
+                onTranscript: (t) =>
+                    setDraft(_text.text.isEmpty ? t : '${_text.text} $t'),
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 2),
                 child: state.busy
                     ? IconButton.filled(
                         tooltip: 'fos.assistant.stop'.tr(),
-                        style: IconButton.styleFrom(backgroundColor: AppColors.error),
-                        onPressed: state.running ? ref.read(assistantProvider.notifier).stop : null,
+                        style: IconButton.styleFrom(
+                            backgroundColor: AppColors.error),
+                        onPressed: state.running
+                            ? ref.read(assistantProvider.notifier).stop
+                            : null,
                         icon: const Icon(Icons.stop_rounded),
                       )
                     : IconButton.filled(
                         tooltip: 'fos.assistant.send'.tr(),
-                        style: IconButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                        style: IconButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white),
                         onPressed: locked
                             ? null
                             : () {

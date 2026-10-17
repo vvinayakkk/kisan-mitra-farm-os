@@ -152,3 +152,15 @@ def test_city_weather_asks_when_exact_name_is_ambiguous(monkeypatch):
     result = weather_dashboard.city_weather("Springfield")
     assert result["requires_city_selection"] is True
     assert len(result["city_choices"]) == 2
+
+
+def test_device_weather_rounds_coordinates_and_never_claims_farm_readings(monkeypatch):
+    seen = []
+    def weather(lat, lon):
+        seen.append((lat, lon))
+        return {"source": "Open-Meteo", "captured_at": "2026-10-17", "daily": {}}
+    monkeypatch.setattr(weather_dashboard, "_public_weather", weather)
+    result = weather_dashboard.location_dashboard(19.123456, 73.987654)
+    assert seen == [(19.12, 73.99)]
+    assert result["location_kind"] == "device_area"
+    assert "not a farm" in result["forecast"]["note"]

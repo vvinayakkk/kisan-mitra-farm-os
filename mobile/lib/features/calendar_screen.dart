@@ -11,6 +11,7 @@ import '../ui/kit.dart';
 import '../utils/constants.dart';
 import '../voice/voice_button.dart';
 import 'saathi.dart';
+import 'starter_plans.dart';
 
 /// Saved farm tasks by day. A task here is a plan, not proof of work or a
 /// scheduled notification.
@@ -26,15 +27,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selected = DateUtils.dateOnly(DateTime.now());
   bool _saving = false;
 
-  Future<void> _change(FarmTask task, {bool delete = false, bool restore = false}) async {
+  Future<void> _change(FarmTask task,
+      {bool delete = false, bool restore = false}) async {
     setState(() => _saving = true);
     try {
-      await ref.read(assistantProvider.notifier).changeTask(task, delete: delete, restore: restore);
+      await ref
+          .read(assistantProvider.notifier)
+          .changeTask(task, delete: delete, restore: restore);
       if (!mounted) return;
       if (delete) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('fos.farm.task_removed'.tr()),
-          action: SnackBarAction(label: 'fos.farm.undo'.tr(), onPressed: () => _change(task, restore: true)),
+          action: SnackBarAction(
+              label: 'fos.farm.undo'.tr(),
+              onPressed: () => _change(task, restore: true)),
         ));
       }
     } on ApiException catch (e) {
@@ -54,7 +60,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (updated != null) await _change(updated);
   }
 
-  bool _monthView = false;
+  bool _monthView = true;
 
   Widget _taskCard(FarmTask t, bool locked, {bool overdue = false}) {
     final ink = inkColor(context);
@@ -63,7 +69,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       child: FarmCard(
         child: Row(children: [
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(t.title,
                   style: TextStyle(
                     fontSize: 15,
@@ -71,13 +78,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     color: ink,
                     decoration: t.completed ? TextDecoration.lineThrough : null,
                   )),
-              if (t.notes.isNotEmpty) Text(t.notes, style: TextStyle(fontSize: 13, color: mutedColor(context))),
+              if (t.notes.isNotEmpty && t.notes != 'Demo plan: no real work has been executed')
+                Text(t.notes,
+                    style: TextStyle(fontSize: 13, color: mutedColor(context))),
               const SizedBox(height: 4),
               if (overdue)
-                Tag('fos.farm2.cal_due_on'.tr(namedArgs: {'date': displayDate(t.dueDate)}), color: AppColors.warning)
+                Tag(
+                    'fos.farm2.cal_due_on'
+                        .tr(namedArgs: {'date': displayDate(t.dueDate)}),
+                    color: AppColors.warning)
               else
-                Tag(t.completed ? 'fos.farm.done'.tr() : 'fos.farm.planned'.tr(),
-                    color: t.completed ? AppColors.primaryDark : AppColors.info),
+                Tag(
+                    t.completed
+                        ? 'fos.farm.done'.tr()
+                        : 'fos.farm.planned'.tr(),
+                    color:
+                        t.completed ? AppColors.primaryDark : AppColors.info),
             ]),
           ),
           if (!t.completed)
@@ -94,10 +110,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           PopupMenuButton<String>(
             enabled: !locked,
             tooltip: 'fos.farm.task_options'.tr(),
-            onSelected: (v) => v == 'edit' ? _edit(t) : _change(t, delete: true),
+            onSelected: (v) =>
+                v == 'edit' ? _edit(t) : _change(t, delete: true),
             itemBuilder: (_) => [
               PopupMenuItem(value: 'edit', child: Text('fos.farm.edit'.tr())),
-              PopupMenuItem(value: 'delete', child: Text('fos.farm.remove'.tr())),
+              PopupMenuItem(
+                  value: 'delete', child: Text('fos.farm.remove'.tr())),
             ],
           ),
         ]),
@@ -132,10 +150,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     Widget addButton(String forKey) => FilledButton.tonalIcon(
           onPressed: locked
               ? null
-              : () => ref.read(assistantProvider.notifier).send(
-                  'Help me add a farm task for $forKey. Ask what I need to do.',
-                  context: runContext).then((_) {
-                    if (context.mounted) showHelperSheet(context, 'calendar', runContext: runContext);
+              : () => ref
+                      .read(assistantProvider.notifier)
+                      .send(
+                          'Help me add a farm task for $forKey. Ask what I need to do.',
+                          context: runContext)
+                      .then((_) {
+                    if (context.mounted) {
+                      showHelperSheet(context, 'calendar',
+                          runContext: runContext);
+                    }
                   }),
           icon: const Icon(Icons.add),
           label: Text('fos.farm.add'.tr()),
@@ -143,11 +167,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final toggle = FilledButton.tonalIcon(
       onPressed: () => setState(() => _monthView = !_monthView),
-      icon: Icon(_monthView ? Icons.view_agenda_outlined : Icons.calendar_month_outlined),
-      label: Text(_monthView ? 'fos.farm2.cal_week_view'.tr() : 'fos.farm2.cal_month_view'.tr()),
+      icon: Icon(_monthView
+          ? Icons.view_agenda_outlined
+          : Icons.calendar_month_outlined),
+      label: Text(_monthView
+          ? 'fos.farm2.cal_week_view'.tr()
+          : 'fos.farm2.cal_month_view'.tr()),
     );
 
-    final children = <Widget>[const PreparedBySaathi(area: 'today')];
+    final children = <Widget>[];
     if (_monthView) {
       children.addAll([
         _MonthGrid(
@@ -168,7 +196,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           for (final t in selectedTasks) _taskCard(t, locked),
       ]);
     } else {
-      final overdue = state.tasks.where((t) => !t.completed && t.dueDate.compareTo(todayKey) < 0).toList()
+      final overdue = state.tasks
+          .where((t) => !t.completed && t.dueDate.compareTo(todayKey) < 0)
+          .toList()
         ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
       final emptyDays = <String>[];
       final lang = context.locale.languageCode;
@@ -177,7 +207,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         final d = DateTime(today.year, today.month, today.day + i);
         final tasks = byDay[isoDate(d)] ?? const [];
         if (tasks.isEmpty) {
-          emptyDays.add(i == 0 ? 'fos.farm2.cal_today'.tr() : DateFormat.MMMEd(lang).format(d));
+          emptyDays.add(i == 0
+              ? 'fos.farm2.cal_today'.tr()
+              : DateFormat.MMMEd(lang).format(d));
           continue;
         }
         dayWidgets.add(SectionTitle(_dayName(d, today)));
@@ -185,7 +217,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       }
       children.addAll([
         SectionTitle('fos.farm2.cal_this_week'.tr()),
-        Wrap(spacing: 8, runSpacing: 8, children: [toggle, addButton(todayKey)]),
+        Wrap(
+            spacing: 8, runSpacing: 8, children: [toggle, addButton(todayKey)]),
         if (loading) LoadingView('fos.farm.loading'.tr()),
         if (!loading && overdue.isNotEmpty) ...[
           SectionTitle('fos.farm2.cal_overdue'.tr()),
@@ -196,7 +229,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: FarmCard(
-              child: Text('${'fos.farm2.cal_no_work'.tr()}: ${emptyDays.join(', ')}',
+              child: Text(
+                  '${'fos.farm2.cal_no_work'.tr()}: ${emptyDays.join(', ')}',
                   style: TextStyle(fontSize: 14, color: mutedColor(context))),
             ),
           ),
@@ -210,11 +244,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           onPressed: () => _showDeleted(context),
         ),
       ]),
-      floatingActionButton: HelperButton(contextKey: 'calendar', runContext: runContext),
+      floatingActionButton:
+          HelperButton(contextKey: 'calendar', runContext: runContext),
       body: FarmBackground(
         child: RefreshIndicator(
           onRefresh: ref.read(assistantProvider.notifier).refresh,
-          child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: children),
+          child: ListView(
+                  key: const PageStorageKey('calendar'),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 96),
+              children: [
+                const FeatureIntro(
+                    eyebrow: 'MY TASKS',
+                    title: 'Room for a good day.',
+                    detail: 'Make a little plan. Keep track of what matters.',
+                    icon: Icons.event_available_outlined),
+                ...children,
+                const SizedBox(height: 16),
+                const PreparedBySaathi(area: 'today'),
+                if (state.ready && state.tasks.isEmpty) const StarterPlans()
+              ].map((child) => Padding(padding: EdgeInsets.symmetric(horizontal: child is _MonthGrid && MediaQuery.sizeOf(context).width < 400 ? 4 : 24), child: child)).toList()),
         ),
       ),
     );
@@ -224,17 +272,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     showModalBottomSheet<void>(
       context: context,
       builder: (_) => Consumer(builder: (context, ref, _) {
-        final deleted = ref.watch(assistantProvider.select((s) => s.deletedTasks));
-        return ListView(shrinkWrap: true, padding: const EdgeInsets.all(12), children: [
-          ListTile(title: Text('fos.farm.removed_tasks'.tr(), style: const TextStyle(fontWeight: FontWeight.w700))),
-          if (deleted.isEmpty) EmptyView(title: 'fos.farm.no_deleted_tasks'.tr()),
-          for (final t in deleted)
-            ListTile(
-              title: Text(t.title),
-              subtitle: Text(displayDate(t.dueDate)),
-              trailing: TextButton(onPressed: () => _change(t, restore: true), child: Text('fos.farm.restore'.tr())),
-            ),
-        ]);
+        final deleted =
+            ref.watch(assistantProvider.select((s) => s.deletedTasks));
+        return ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(12),
+            children: [
+              ListTile(
+                  title: Text('fos.farm.removed_tasks'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700))),
+              if (deleted.isEmpty)
+                EmptyView(title: 'fos.farm.no_deleted_tasks'.tr()),
+              for (final t in deleted)
+                ListTile(
+                  title: Text(t.title),
+                  subtitle: Text(displayDate(t.dueDate)),
+                  trailing: TextButton(
+                      onPressed: () => _change(t, restore: true),
+                      child: Text('fos.farm.restore'.tr())),
+                ),
+            ]);
       }),
     );
   }
@@ -258,7 +315,8 @@ class _MonthGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final first = DateTime(month.year, month.month);
-    final start = first.subtract(Duration(days: first.weekday - 1)); // Monday first
+    final start =
+        first.subtract(Duration(days: first.weekday - 1)); // Monday first
     final today = DateUtils.dateOnly(DateTime.now());
     final ink = inkColor(context);
     final lang = context.locale.languageCode;
@@ -273,7 +331,8 @@ class _MonthGrid extends StatelessWidget {
           ),
           Expanded(
             child: Text(DateFormat.yMMMM(lang).format(month),
-                textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
           ),
           IconButton(
             tooltip: 'fos.farm.next_month'.tr(),
@@ -283,12 +342,23 @@ class _MonthGrid extends StatelessWidget {
         ]),
         Row(children: [
           for (var i = 0; i < 7; i++)
-            Expanded(child: Center(child: Text(DateFormat('EEEEE', lang).format(DateTime(2024, 1, 1 + i)), style: TextStyle(fontSize: 11, color: mutedColor(context))))),
+            Expanded(
+                child: Center(
+                    child: Text(
+                        DateFormat('EEEEE', lang)
+                            .format(DateTime(2024, 1, 1 + i)),
+                        style: TextStyle(
+                            fontSize: 11, color: mutedColor(context))))),
         ]),
         for (var week = 0; week < 6; week++)
           Row(children: [
             for (var day = 0; day < 7; day++)
-              Expanded(child: _cell(context, DateTime(start.year, start.month, start.day + week * 7 + day), today)),
+              Expanded(
+                  child: _cell(
+                      context,
+                      DateTime(
+                          start.year, start.month, start.day + week * 7 + day),
+                      today)),
           ]),
       ]),
     );
@@ -302,7 +372,10 @@ class _MonthGrid extends StatelessWidget {
     return Semantics(
       button: true,
       selected: isSelected,
-      label: 'fos.farm.day_tasks'.tr(namedArgs: {'date': displayDate(isoDate(d)), 'count': '${tasks.length}'}),
+      label: 'fos.farm.day_tasks'.tr(namedArgs: {
+        'date': displayDate(isoDate(d)),
+        'count': '${tasks.length}'
+      }),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () {
@@ -310,18 +383,24 @@ class _MonthGrid extends StatelessWidget {
           onSelect(d);
         },
         child: Container(
-          height: 44,
+          height: 48,
           margin: const EdgeInsets.all(1.5),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primary : null,
             borderRadius: BorderRadius.circular(10),
-            border: DateUtils.isSameDay(d, today) ? Border.all(color: AppColors.primaryDark) : null,
+            border: DateUtils.isSameDay(d, today)
+                ? Border.all(color: AppColors.primaryDark)
+                : null,
           ),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Text('${d.day}',
                 style: TextStyle(
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                  color: isSelected ? Colors.white : inMonth ? inkColor(context) : mutedColor(context).withValues(alpha: 0.5),
+                  color: isSelected
+                      ? Colors.white
+                      : inMonth
+                          ? inkColor(context)
+                          : mutedColor(context).withValues(alpha: 0.5),
                 )),
             if (tasks.isNotEmpty)
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -365,60 +444,80 @@ class _TaskEditorState extends State<_TaskEditor> {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('fos.farm.edit_task'.tr(), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: inkColor(context))),
-          TextField(
-            controller: _title,
-            maxLength: 200,
-            decoration: InputDecoration(
-              labelText: 'fos.farm.task'.tr(),
-              suffixIcon: VoiceButton(onTranscript: (t) => _title.text = t),
-            ),
-          ),
-          TextField(
-            controller: _notes,
-            maxLength: 2000,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'fos.farm.notes'.tr(),
-              suffixIcon: VoiceButton(onTranscript: (t) => _notes.text = '${_notes.text} $t'.trim()),
-            ),
-          ),
-          FilledButton.tonalIcon(
-            icon: const Icon(Icons.event),
-            label: Text(displayDate(_date)),
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.tryParse(_date) ?? DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) setState(() => _date = isoDate(picked));
-            },
-          ),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _done,
-            onChanged: (v) => setState(() => _done = v ?? false),
-            title: Text('fos.farm.i_have_done_this'.tr()),
-          ),
-          if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.error)),
-          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text('fos.farm.cancel'.tr())),
-            FilledButton(
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                if (_title.text.trim().isEmpty) return setState(() => _error = 'fos.farm.add_task_title'.tr());
-                Navigator.pop(
-                  context,
-                  widget.task.copyWith(title: _title.text.trim(), notes: _notes.text.trim(), dueDate: _date, completed: _done),
-                );
-              },
-              child: Text('fos.farm.save'.tr()),
-            ),
-          ]),
-        ]),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('fos.farm.edit_task'.tr(),
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: inkColor(context))),
+              TextField(
+                controller: _title,
+                maxLength: 200,
+                decoration: InputDecoration(
+                  labelText: 'fos.farm.task'.tr(),
+                  suffixIcon: VoiceButton(onTranscript: (t) => _title.text = t),
+                ),
+              ),
+              TextField(
+                controller: _notes,
+                maxLength: 2000,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'fos.farm.notes'.tr(),
+                  suffixIcon: VoiceButton(
+                      onTranscript: (t) =>
+                          _notes.text = '${_notes.text} $t'.trim()),
+                ),
+              ),
+              FilledButton.tonalIcon(
+                icon: const Icon(Icons.event),
+                label: Text(displayDate(_date)),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.tryParse(_date) ?? DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) setState(() => _date = isoDate(picked));
+                },
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _done,
+                onChanged: (v) => setState(() => _done = v ?? false),
+                title: Text('fos.farm.i_have_done_this'.tr()),
+              ),
+              if (_error != null)
+                Text(_error!, style: const TextStyle(color: AppColors.error)),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('fos.farm.cancel'.tr())),
+                FilledButton(
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    if (_title.text.trim().isEmpty) {
+                      return setState(
+                          () => _error = 'fos.farm.add_task_title'.tr());
+                    }
+                    Navigator.pop(
+                      context,
+                      widget.task.copyWith(
+                          title: _title.text.trim(),
+                          notes: _notes.text.trim(),
+                          dueDate: _date,
+                          completed: _done),
+                    );
+                  },
+                  child: Text('fos.farm.save'.tr()),
+                ),
+              ]),
+            ]),
       );
 }

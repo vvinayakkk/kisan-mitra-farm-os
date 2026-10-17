@@ -319,8 +319,8 @@ def validate_answers(pending, answers):
         value = answers[field["id"]].strip()
         if not value or len(value) > 500:
             raise ValueError("Answers must contain 1 to 500 characters.")
-        if field["type"] == "select" and value not in field["options"]:
-            raise ValueError("Choose one of the listed options.")
+        # Options are suggested answers, not a closed vocabulary. Farmer text
+        # remains untrusted input; downstream tool schemas still validate writes.
         if field["type"] == "photo":
             import re
 

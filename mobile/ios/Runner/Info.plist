@@ -62,5 +62,7 @@
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+<key>NSSpeechRecognitionUsageDescription</key><string>Show your words as you speak with Mitra.</string>
+<key>NSLocationWhenInUseUsageDescription</key><string>Find nearby weather and help set up your farm. You can skip this.</string>
 </dict>
 </plist>

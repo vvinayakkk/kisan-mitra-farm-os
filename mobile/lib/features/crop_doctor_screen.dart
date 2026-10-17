@@ -8,10 +8,10 @@ import '../assistant/assistant_controller.dart';
 import '../assistant/helper_sheet.dart';
 import '../core/api.dart';
 import '../ui/kit.dart';
+import 'saathi.dart';
 import '../ui/labels.dart';
 import '../ui/loader.dart';
 import '../utils/constants.dart';
-import 'saathi.dart';
 import 'workspace_tools.dart';
 
 /// Photo assessment. The result is a model's reading of the photo, not a lab
@@ -31,7 +31,8 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
   String? _error;
 
   Future<void> _pick(ImageSource source) async {
-    final picked = await ImagePicker().pickImage(source: source, maxWidth: 2048, imageQuality: 88);
+    final picked = await ImagePicker()
+        .pickImage(source: source, maxWidth: 2048, imageQuality: 88);
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
     setState(() {
@@ -42,7 +43,9 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
       _fileId = null;
     });
     try {
-      final attachment = await ref.read(assistantProvider.notifier).uploadBytes(picked.name, bytes);
+      final attachment = await ref
+          .read(assistantProvider.notifier)
+          .uploadBytes(picked.name, bytes);
       setState(() => _fileId = attachment.id);
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -57,7 +60,9 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
       _error = null;
     });
     try {
-      final result = await ref.read(workspaceToolsProvider).inspect('diagnose_crop', {'file_id': _fileId});
+      final result = await ref
+          .read(workspaceToolsProvider)
+          .inspect('diagnose_crop', {'file_id': _fileId});
       setState(() => _diagnostic = asMap(result['diagnostic']));
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -77,102 +82,164 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
       appBar: AppBar(title: Text('fos.farm.crop_doctor'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'crops'),
       body: FarmBackground(
-        child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
-          const PreparedBySaathi(area: 'crops'),
-          FarmCard(
-            child: Column(children: [
-              if (_image != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(_image!, height: 220, width: double.infinity, fit: BoxFit.cover, semanticLabel: 'fos.farm.selected_crop_photo'.tr()),
-                )
-              else
-                EmptyView(icon: Icons.local_florist_outlined, title: 'fos.farm.photograph_leaf'.tr()),
-              const SizedBox(height: 10),
-              Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
-                FilledButton.tonalIcon(
-                  onPressed: _phase != 'idle' ? null : () => _pick(ImageSource.camera),
-                  icon: const Icon(Icons.photo_camera_outlined),
-                  label: Text('fos.farm.take_photo'.tr()),
+        child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 96),
+            children: [
+              const PreparedBySaathi(area: 'crops'),
+              const FeatureIntro(
+                  eyebrow: 'CROP DOCTOR',
+                  title: 'Healthy crops start\nwith a closer look.',
+                  detail:
+                      'Take a clear photo of a leaf. Mitra will help you understand what to check next.',
+                  icon: Icons.eco_outlined),
+              FarmCard(
+                child: Column(children: [
+                  if (_image != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(_image!,
+                          height: 220,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          semanticLabel: 'fos.farm.selected_crop_photo'.tr()),
+                    )
+                  else
+                    EmptyView(
+                        icon: Icons.local_florist_outlined,
+                        title: 'fos.farm.photograph_leaf'.tr()),
+                  const SizedBox(height: 10),
+                  Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        FilledButton.tonalIcon(
+                          onPressed: _phase != 'idle'
+                              ? null
+                              : () => _pick(ImageSource.camera),
+                          icon: const Icon(Icons.photo_camera_outlined),
+                          label: Text('fos.farm.take_photo'.tr()),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: _phase != 'idle'
+                              ? null
+                              : () => _pick(ImageSource.gallery),
+                          icon: const Icon(Icons.photo_library_outlined),
+                          label: Text('fos.farm.choose_photo'.tr()),
+                        ),
+                        FilledButton.icon(
+                          onPressed: _fileId == null || _phase != 'idle'
+                              ? null
+                              : () {
+                                  HapticFeedback.selectionClick();
+                                  _check();
+                                },
+                          icon: const Icon(Icons.health_and_safety_outlined),
+                          label: Text(_phase == 'checking'
+                              ? 'fos.farm.checking'.tr()
+                              : _phase == 'uploading'
+                                  ? 'fos.farm.uploading'.tr()
+                                  : 'fos.farm.check_crop'.tr()),
+                        ),
+                      ]),
+                  if (_phase != 'idle')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: LoadingView(_phase == 'uploading'
+                          ? 'fos.farm.uploading'.tr()
+                          : 'fos.farm.checking_minute'.tr()),
+                    ),
+                ]),
+              ),
+              if (_error != null)
+                ErrorView(_error!, onRetry: _fileId == null ? null : _check),
+              if (d != null && d.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                FarmCard(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            str(d['crop_identified']).isEmpty
+                                ? 'fos.farm.crop_not_identified'.tr()
+                                : cropName(d['crop_identified']),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: context.isDark
+                                    ? AppColors.primaryLight
+                                    : AppColors.primaryDark,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(
+                            str(d['disease_name'],
+                                'fos.farm.unclear_photo'.tr()),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: ink)),
+                        const SizedBox(height: 4),
+                        Text(str(d['description']),
+                            style: TextStyle(color: ink)),
+                        const SizedBox(height: 8),
+                        Tag(
+                            'fos.farm2.conf_line'.tr(namedArgs: {
+                              'word': (confidence >= 70
+                                      ? 'fos.farm2.conf_high'
+                                      : confidence >= 40
+                                          ? 'fos.farm2.conf_mid'
+                                          : 'fos.farm2.conf_low')
+                                  .tr(),
+                              'value': '${confidence.round()}',
+                            }),
+                            color: confidence >= 70
+                                ? AppColors.primaryDark
+                                : AppColors.warning),
+                        if (confidence > 0) ...[
+                          if ((d['symptoms'] as List?)?.isNotEmpty == true) ...[
+                            SectionTitle('fos.farm.what_visible'.tr()),
+                            for (final s in d['symptoms'] as List)
+                              Text('• $s', style: TextStyle(color: ink)),
+                          ],
+                          if ((d['solutions'] as List?)?.isNotEmpty ==
+                              true) ...[
+                            SectionTitle('fos.farm.what_could_do'.tr()),
+                            for (final s in asMaps(d['solutions']))
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(str(s['title']),
+                                    style: TextStyle(color: ink)),
+                                subtitle: Text(
+                                    [
+                                      str(s['details']),
+                                      if (str(s['stage']).isNotEmpty)
+                                        'fos.farm.stage'.tr(namedArgs: {
+                                          'value': '${s['stage']}'
+                                        })
+                                    ].join('\n'),
+                                    style:
+                                        TextStyle(color: mutedColor(context))),
+                              ),
+                          ],
+                        ],
+                        const SizedBox(height: 6),
+                        FilledButton.tonalIcon(
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            ref.read(assistantProvider.notifier).send(
+                                  'Help me open a crop follow-up from this photo assessment: '
+                                  '${str(d['disease_name'])} on ${cropName(d['crop_identified'])}, confidence ${confidence.round()}%. '
+                                  'Ask what I observed and when, and show it for review before saving.',
+                                  context: const RunContext(view: 'crops'),
+                                );
+                            showHelperSheet(context, 'crops');
+                          },
+                          icon: const Icon(Icons.playlist_add),
+                          label: Text('fos.farm.follow_up_mitra'.tr()),
+                        ),
+                      ]),
                 ),
-                FilledButton.tonalIcon(
-                  onPressed: _phase != 'idle' ? null : () => _pick(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: Text('fos.farm.choose_photo'.tr()),
-                ),
-                FilledButton.icon(
-                  onPressed: _fileId == null || _phase != 'idle'
-                      ? null
-                      : () {
-                          HapticFeedback.selectionClick();
-                          _check();
-                        },
-                  icon: const Icon(Icons.health_and_safety_outlined),
-                  label: Text(_phase == 'checking' ? 'fos.farm.checking'.tr() : _phase == 'uploading' ? 'fos.farm.uploading'.tr() : 'fos.farm.check_crop'.tr()),
-                ),
-              ]),
-              if (_phase != 'idle')
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: LoadingView(_phase == 'uploading'
-                      ? 'fos.farm.uploading'.tr()
-                      : 'fos.farm.checking_minute'.tr()),
-                ),
+              ],
             ]),
-          ),
-          if (_error != null) ErrorView(_error!, onRetry: _fileId == null ? null : _check),
-          if (d != null && d.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            FarmCard(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(str(d['crop_identified']).isEmpty ? 'fos.farm.crop_not_identified'.tr() : cropName(d['crop_identified']),
-                    style: TextStyle(fontSize: 13, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(str(d['disease_name'], 'fos.farm.unclear_photo'.tr()),
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
-                const SizedBox(height: 4),
-                Text(str(d['description']), style: TextStyle(color: ink)),
-                const SizedBox(height: 8),
-                Tag(
-                    'fos.farm2.conf_line'.tr(namedArgs: {
-                      'word': (confidence >= 70 ? 'fos.farm2.conf_high' : confidence >= 40 ? 'fos.farm2.conf_mid' : 'fos.farm2.conf_low').tr(),
-                      'value': '${confidence.round()}',
-                    }),
-                    color: confidence >= 70 ? AppColors.primaryDark : AppColors.warning),
-                if (confidence > 0) ...[
-                  if ((d['symptoms'] as List?)?.isNotEmpty == true) ...[
-                    SectionTitle('fos.farm.what_visible'.tr()),
-                    for (final s in d['symptoms'] as List) Text('• $s', style: TextStyle(color: ink)),
-                  ],
-                  if ((d['solutions'] as List?)?.isNotEmpty == true) ...[
-                    SectionTitle('fos.farm.what_could_do'.tr()),
-                    for (final s in asMaps(d['solutions']))
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(str(s['title']), style: TextStyle(color: ink)),
-                        subtitle: Text([str(s['details']), if (str(s['stage']).isNotEmpty) 'fos.farm.stage'.tr(namedArgs: {'value': '${s['stage']}'})].join('\n'), style: TextStyle(color: mutedColor(context))),
-                      ),
-                  ],
-                ],
-                const SizedBox(height: 6),
-                FilledButton.tonalIcon(
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    ref.read(assistantProvider.notifier).send(
-                          'Help me open a crop follow-up from this photo assessment: '
-                          '${str(d['disease_name'])} on ${cropName(d['crop_identified'])}, confidence ${confidence.round()}%. '
-                          'Ask what I observed and when, and show it for review before saving.',
-                          context: const RunContext(view: 'crops'),
-                        );
-                    showHelperSheet(context, 'crops');
-                  },
-                  icon: const Icon(Icons.playlist_add),
-                  label: Text('fos.farm.follow_up_mitra'.tr()),
-                ),
-              ]),
-            ),
-          ],
-        ]),
       ),
     );
   }

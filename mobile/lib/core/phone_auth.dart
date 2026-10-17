@@ -10,10 +10,12 @@ abstract class PhoneIdentityProvider {
 
   Future<String> confirmCode(String verificationId, String code);
   Future<void> signOut();
+  Future<String?> restoredToken();
 }
 
 class FirebasePhoneIdentity implements PhoneIdentityProvider {
-  FirebasePhoneIdentity([FirebaseAuth? auth]) : _auth = auth ?? FirebaseAuth.instance;
+  FirebasePhoneIdentity([FirebaseAuth? auth])
+      : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
 
@@ -42,15 +44,35 @@ class FirebasePhoneIdentity implements PhoneIdentityProvider {
             onError('Phone sign-in could not finish. Please retry.');
           }
         },
-        verificationFailed: (error) => onError(error.message ?? 'Phone verification failed.'),
+        verificationFailed: (error) =>
+            onError(error.message ?? 'Phone verification failed.'),
         codeSent: (verificationId, _) => onCodeSent(verificationId),
         codeAutoRetrievalTimeout: (_) {},
       );
 
   @override
   Future<String> confirmCode(String verificationId, String code) => _token(
-        PhoneAuthProvider.credential(verificationId: verificationId, smsCode: code),
+        PhoneAuthProvider.credential(
+            verificationId: verificationId, smsCode: code),
       );
+
+  @override
+  Future<String?> restoredToken() async {
+    final user = await _auth.authStateChanges().first;
+    try {
+      return await user?.getIdToken(true);
+    } on FirebaseAuthException catch (e) {
+      if (const {
+        'user-disabled',
+        'user-not-found',
+        'invalid-user-token',
+        'user-token-expired'
+      }.contains(e.code)) {
+        return null;
+      }
+      rethrow;
+    }
+  }
 
   @override
   Future<void> signOut() => _auth.signOut();
