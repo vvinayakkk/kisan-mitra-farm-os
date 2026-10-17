@@ -34,7 +34,7 @@
 | [![Illustration of Kisan Mitra browser live voice and the website call control](docs/media/channels/voice.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of a WhatsApp crop question entering the signed Kisan Mitra webhook](docs/media/channels/whatsapp.svg)](docs/api/websocket-and-webhooks.md) |
 | Browser live voice reaches Mitra on Cloud Run; the separate call control opens the configured support line. | Twilio receives the message; a signed Cloud Run webhook and Cloud Tasks process the inbound request. |
 
-*The four channel cards illustrate product flows; the [Farm OS gallery](#-farm-os-design-system) shows captured website screens.*
+*The four channel cards illustrate product flows; explore captured screens in the [Farm OS gallery](#-farm-os-design-system) and [Flutter app gallery](#flutter-app-screenshots).*
 
 ---
 
@@ -62,6 +62,7 @@ The counts describe the current code and catalog. They are not latency or produc
 - [UltraCache & Background Data](#-ultracache--background-data)
 - [Backend Execution & Data Integrity](#-backend-execution--data-integrity)
 - [Farm OS Design System](#-farm-os-design-system)
+- [Flutter app screenshots](#flutter-app-screenshots)
 - [Onboarding on app and web](#onboarding-on-app-and-web)
 - [Guided tours on app and web](#guided-tours-on-app-and-web)
 - [Administration workspace](#administration-workspace)
@@ -208,6 +209,43 @@ The website has **two deliberate experiences**. Classic SkyView keeps dense dash
 | Ask in ordinary language; inspect steps and the resulting work. | Explore the Three.js station without losing the practical readings. |
 
 The visual language uses a warm, light farm palette, clear dark text, restrained borders, compact controls and page-aware help. The station gives equipment feedback on interaction; the notebook takes the form of a page-turning field journal; the exchange shows a resource journey instead of a wall of forms. Controls remain labeled and keyboard reachable, with reduced-motion handling for transitions.
+
+---
+
+## Flutter app screenshots
+
+[Download the latest Android APK](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/latest) · [Mobile setup and development](docs/mobile/README.md)
+
+The farm workspace in your pocket: speak with Mitra, review your day, explore farm conditions and keep your records close. These are captures of the implemented Flutter screens using controlled review data, not production customer records. Tap any image to open the full-resolution screenshot.
+
+| **Home** | **Chat** | **Voice & captions** |
+| :--- | :--- | :--- |
+| [![Kisan Mitra Flutter app: Home](docs/media/app/home.png)](docs/media/app/home.png) | [![Kisan Mitra Flutter app: Chat](docs/media/app/chat.png)](docs/media/app/chat.png) | [![Kisan Mitra Flutter app: Voice & captions](docs/media/app/voice.png)](docs/media/app/voice.png) |
+| A personal welcome, quick actions and work prepared by Mitra. | Farm conversations with follow-up actions. | A dedicated voice screen with caption and call controls. |
+
+| **Farm weather** | **Farm station** | **Crop Doctor** |
+| :--- | :--- | :--- |
+| [![Kisan Mitra Flutter app: Farm weather](docs/media/app/weather.png)](docs/media/app/weather.png) | [![Kisan Mitra Flutter app: Farm station](docs/media/app/station.png)](docs/media/app/station.png) | [![Kisan Mitra Flutter app: Crop Doctor](docs/media/app/crop-doctor.png)](docs/media/app/crop-doctor.png) |
+| Hourly outlook, days ahead and a suggested plan. | Field readings with their source and context. | Crop observations, photos and follow-up care. |
+
+| **Tasks & calendar** | **Notebook** | **Saved plans** |
+| :--- | :--- | :--- |
+| [![Kisan Mitra Flutter app: Tasks & calendar](docs/media/app/tasks.png)](docs/media/app/tasks.png) | [![Kisan Mitra Flutter app: Notebook](docs/media/app/notebook.png)](docs/media/app/notebook.png) | [![Kisan Mitra Flutter app: Saved plans](docs/media/app/plans.png)](docs/media/app/plans.png) |
+| Upcoming work and saved farm tasks. | Fields, money, crop checks and plans in one place. | Review and revisit plans prepared with Mitra. |
+
+| **Markets** | **Farmer exchange** | **Schemes** |
+| :--- | :--- | :--- |
+| [![Kisan Mitra Flutter app: Markets](docs/media/app/markets.png)](docs/media/app/markets.png) | [![Kisan Mitra Flutter app: Farmer exchange](docs/media/app/exchange.png)](docs/media/app/exchange.png) | [![Kisan Mitra Flutter app: Schemes](docs/media/app/schemes.png)](docs/media/app/schemes.png) |
+| Crop prices and mandi comparisons. | Community listings for resources and farm needs. | Explore support and scheme information. |
+
+| **Farmer profile** | **Saathi** | **Offline continuity** |
+| :--- | :--- | :--- |
+| [![Kisan Mitra Flutter app: Farmer profile](docs/media/app/profile.png)](docs/media/app/profile.png) | [![Kisan Mitra Flutter app: Saathi](docs/media/app/saathi.png)](docs/media/app/saathi.png) | [![Kisan Mitra Flutter app: Offline continuity](docs/media/app/offline.png)](docs/media/app/offline.png) |
+| Your details, land and farming context. | A companion for check-ins and prepared work. | Clear offline status alongside previously loaded content. |
+
+*The voice capture illustrates the caption UI; it is not evidence of measured live transcription latency or audible playback on a physical phone. Offline availability depends on cached content and the supported synchronization flow.*
+
+Continue to [app and web onboarding](#onboarding-on-app-and-web) and [guided tours](#guided-tours-on-app-and-web) for the first-run experience and in-app help.
 
 ---
 
