@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -128,10 +129,10 @@ class _Welcome extends StatelessWidget {
             const SizedBox(height: 20),
             Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10, children: [
               for (final (label, icon, color, route) in kFeatureChips)
-                OutlineChip(label: label, icon: icon, iconColor: color, onTap: () => context.push(route)),
-              OutlineChip(label: 'Skills', icon: Icons.auto_awesome, iconColor: const Color(0xFF10B981), onTap: onSkills),
+                _BorderChip(label: label, icon: icon, iconColor: color, onTap: () => context.push(route)),
+              _BorderChip(label: 'Skills', icon: Icons.auto_awesome, iconColor: const Color(0xFF10B981), onTap: onSkills),
               Builder(
-                builder: (chipContext) => OutlineChip(
+                builder: (chipContext) => _BorderChip(
                   label: 'language_select.title'.tr(),
                   icon: Icons.translate_rounded,
                   iconColor: const Color(0xFF673AB7),
@@ -142,6 +143,45 @@ class _Welcome extends StatelessWidget {
           ]),
         ),
       );
+}
+
+/// The original chat chip: transparent, thin border, circled icon.
+class _BorderChip extends StatelessWidget {
+  const _BorderChip({required this.label, required this.icon, required this.iconColor, required this.onTap});
+
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final border = context.isDark ? Colors.white60 : Colors.black87;
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: border, width: 1.1),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: border, width: 1.1)),
+            child: Icon(icon, size: 14, color: iconColor),
+          ),
+          const SizedBox(width: 7),
+          Text(label, style: TextStyle(fontSize: 12, color: border)),
+        ]),
+      ),
+    );
+  }
 }
 
 Future<void> showLanguagePicker(BuildContext context) async {
