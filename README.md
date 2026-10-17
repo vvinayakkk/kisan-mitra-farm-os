@@ -14,7 +14,7 @@
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Connected%20channel-77A966?style=for-the-badge&logo=whatsapp&logoColor=white)](docs/api/websocket-and-webhooks.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-A5C48A?style=for-the-badge)](LICENSE)
 
-**Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
+**Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. **Firebase and Google Cloud provide its live web delivery, identity, API runtime, scheduled work and message queue.** Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
 
 **Explore the live deployment:** [Open Farm OS](https://project-0b9b4009-1644-4477-aec.web.app/workspace) · [Open Classic SkyView](https://project-0b9b4009-1644-4477-aec.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/tag/v1.0.0)
 
@@ -27,6 +27,7 @@
 | Capability | What is in the repository | Why it matters |
 | :--- | :--- | :--- |
 | **Four ways to connect** | Website, Flutter app, configured WhatsApp channel and web call control | Reach farm help through the interface at hand |
+| **Google-powered platform** | Firebase Hosting and Authentication; Cloud Run, Build, Tasks, Scheduler and Secret Manager | Carry one secure farm experience from sign-in to completed work |
 | **Two web experiences** | Farm OS workspace and Classic SkyView | A conversational workspace alongside dedicated dashboards |
 | **22 farm skills** | Versioned workflows in [the assistant skill catalog](skyview/assistant/skills/) | The agent can plan, research, calculate and prepare work |
 | **52 typed tools** | Validated tool contracts in [the assistant runtime](skyview/assistant/tools.py) | Read farm context and carry out reviewed software actions |
@@ -71,6 +72,18 @@ A farmer should be able to describe a problem in their own words without first c
 
 *From a cooperative desk to a crop row, a mandi stall or an orchard: one connected farm companion, reached in the way that fits the moment.*
 
+| **Website · the full farm workspace** | **Flutter app · help in the field** |
+| :--- | :--- |
+| [![Illustration of the Kisan Mitra web workspace and a prepared farm checklist](docs/media/channels/web.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of the Kisan Mitra Flutter app with voice and farm actions](docs/media/channels/app.svg)](mobile/) |
+| Firebase Hosting delivers Farm OS and Classic; Cloud Run connects both to Mitra. | Firebase phone sign-in connects the Flutter companion to the same farmer account and API. |
+
+| **Voice & call · speak naturally** | **WhatsApp · send a question or crop photo** |
+| :--- | :--- |
+| [![Illustration of Kisan Mitra browser live voice and the website call control](docs/media/channels/voice.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of a WhatsApp crop question entering the signed Kisan Mitra webhook](docs/media/channels/whatsapp.svg)](docs/api/websocket-and-webhooks.md) |
+| Browser live voice reaches Mitra on Cloud Run; the separate call control opens the configured support line. | Twilio receives the message; a signed Cloud Run webhook and Cloud Tasks process the inbound request. |
+
+*The four channel cards illustrate product flows; the [Farm OS gallery](#-farm-os-design-system) shows captured website screens.*
+
 | Access | Where it fits | Farmer experience |
 | :--- | :--- | :--- |
 | **Website** | Reviewing the season at home or at a cooperative desk | Explore the full Farm OS or Classic workspace: chat, calendar, weather, Crop Doctor, mandi research, notebook, exchange, profile and the 3D station. |
@@ -105,18 +118,22 @@ The whole system fits in one picture:
 
 ```mermaid
 flowchart LR
-    Farmer["Farmer"] --> Web["Website"]
+    Farmer["Farmer"] --> Web["Firebase Hosting · website"]
     Farmer --> Mobile["Flutter app"]
-    Farmer --> WA["WhatsApp"]
-    Web --> API["FastAPI + Mitra"]
+    Farmer --> WA["Twilio · WhatsApp"]
+    Web --> Auth["Firebase Authentication"]
+    Mobile --> Auth
+    Web --> API["Cloud Run · FastAPI + Mitra"]
     Mobile --> API
+    Auth -. "Verified ID token" .-> API
     WA --> API
-    API --> Data[("PostgreSQL farm data")]
+    API --> Data[("Neon PostgreSQL · farm data")]
     API --> Sources["Weather, markets, guidance"]
-    API --> Files["Private files"]
+    API --> Files["Private Neon files"]
     Station["Enrolled station"] --> API
-    Worker["Leased background worker"] --> Data
-    Worker --> Sources
+    Scheduler["Cloud Scheduler"] --> API
+    API --> Tasks["Cloud Tasks · message work"]
+    Tasks --> API
     Web --> Call["Configured phone line"]
 ```
 
@@ -130,7 +147,7 @@ flowchart LR
 
 Speed matters most when a farmer moves between tasks. The [browser cache](frontend/src/lib/ultraCache.ts) deduplicates owner-scoped reads, warms likely routes after login and invalidates relevant entries after writes or a session switch. Protected server responses remain `no-store`; the cache improves navigation without becoming the record of truth.
 
-The [background worker](skyview/data/v3/worker.py) uses a PostgreSQL advisory lease to coordinate recurring jobs across API processes. Source calls have bounded requests, retries and backoff. Provider payloads retain observation and retrieval metadata; source-health records distinguish a delayed update from a current observation. The [data platform](data_platform/v3/) defines schema evolution, provider catalogs, ingestion and read functions.
+On Google Cloud, **Cloud Scheduler** initiates source refreshes and **Cloud Tasks** dispatches WhatsApp work while **Cloud Run** scales the API between requests. The [background worker](skyview/data/v3/worker.py) uses a PostgreSQL advisory lease to coordinate recurring jobs across API processes. Source calls have bounded requests, retries and backoff. Provider payloads retain observation and retrieval metadata; source-health records distinguish a delayed update from a current observation. The [data platform](data_platform/v3/) defines schema evolution, provider catalogs, ingestion and read functions.
 
 ```mermaid
 flowchart LR
@@ -149,6 +166,7 @@ An answer can distinguish a current observation, a historical record and a forec
 | :--- | :--- |
 | **Client read cache** | Keep navigation responsive and avoid duplicate reads |
 | **FastAPI routes** | Validate identity, parameters, time context and response shapes |
+| **Google Cloud execution** | Run the API on Cloud Run; schedule refreshes and queue message work with Cloud Scheduler and Cloud Tasks |
 | **PostgreSQL** | Persist owned farm data, conversations, approvals, source records and job state |
 | **Leased worker** | Refresh external data and prepare background work without duplicate runs |
 | **Private file storage** | Hold generated documents and uploads with owner-scoped metadata |

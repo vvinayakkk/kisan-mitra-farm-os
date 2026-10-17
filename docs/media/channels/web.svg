@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-label="Kisan Mitra web workspace illustration">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f5f8ee"/><stop offset="1" stop-color="#dbe9ce"/></linearGradient>
+    <linearGradient id="panel" x2="0" y2="1"><stop stop-color="#fffefa"/><stop offset="1" stop-color="#f7faf3"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#315044" flood-opacity=".16"/></filter>
+  </defs>
+  <rect width="960" height="600" rx="30" fill="url(#bg)"/>
+  <circle cx="815" cy="90" r="180" fill="#eff5e2" opacity=".8"/>
+  <circle cx="78" cy="578" r="182" fill="#c9dfa9" opacity=".55"/>
+  <text x="56" y="65" fill="#597351" font-family="Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3">01 / WEBSITE</text>
+  <text x="56" y="103" fill="#234636" font-family="Arial,sans-serif" font-size="30" font-weight="700">The whole farm, in one workspace</text>
+  <g filter="url(#shadow)"><rect x="56" y="135" width="848" height="413" rx="20" fill="url(#panel)" stroke="#c9d8c0"/></g>
+  <path d="M56 188H904" stroke="#dce6d4"/><circle cx="84" cy="162" r="7" fill="#f0b18e"/><circle cx="107" cy="162" r="7" fill="#efcf7f"/><circle cx="130" cy="162" r="7" fill="#a6ca94"/>
+  <rect x="168" y="148" width="594" height="27" rx="13" fill="#f0f4e9"/><text x="186" y="166" fill="#728a70" font-family="Arial,sans-serif" font-size="13">Kisan Mitra  /  Farm OS  /  Assistant</text>
+  <rect x="73" y="204" width="67" height="323" rx="24" fill="#f2f7ec" stroke="#d4e1cc"/>
+  <g fill="none" stroke="#5b7b50" stroke-width="3" stroke-linecap="round"><circle cx="106" cy="245" r="12"/><path d="M96 289h20m-20 8h15M95 341l9-9 8 5 8-14M96 384h20M96 426h20m-20 8h15M95 478l10 7 13-16"/></g>
+  <text x="176" y="234" fill="#6d8765" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2">MITRA · FARM COMPANION</text>
+  <text x="176" y="271" fill="#294635" font-family="Arial,sans-serif" font-size="27" font-weight="700">What needs attention this week?</text>
+  <rect x="176" y="289" width="624" height="61" rx="17" fill="#eaf2df"/><text x="198" y="315" fill="#355940" font-family="Arial,sans-serif" font-size="16">Check my farm tasks and the weather.</text><text x="198" y="337" fill="#355940" font-family="Arial,sans-serif" font-size="16">Prepare a checklist I can review.</text>
+  <rect x="176" y="370" width="414" height="124" rx="16" fill="#fff" stroke="#d4e3ca"/><text x="196" y="399" fill="#294635" font-family="Arial,sans-serif" font-size="17" font-weight="700">A plan you can act on</text><circle cx="207" cy="427" r="8" fill="#a9c88b"/><text x="226" y="433" fill="#4a6851" font-family="Arial,sans-serif" font-size="15">Scout the crop before the rain</text><circle cx="207" cy="458" r="8" fill="#a9c88b"/><text x="226" y="464" fill="#4a6851" font-family="Arial,sans-serif" font-size="15">Check soil moisture tomorrow</text>
+  <rect x="606" y="370" width="194" height="124" rx="16" fill="#edf4e8"/><text x="626" y="397" fill="#5e795b" font-family="Arial,sans-serif" font-size="13" font-weight="700">FARM CONTEXT</text><text x="626" y="427" fill="#2f523a" font-family="Arial,sans-serif" font-size="15">Weather outlook</text><text x="626" y="452" fill="#2f523a" font-family="Arial,sans-serif" font-size="15">Saved tasks</text><text x="626" y="477" fill="#2f523a" font-family="Arial,sans-serif" font-size="15">Crop records</text>
+  <rect x="176" y="507" width="624" height="26" rx="13" fill="#f5f7f2"/><text x="192" y="525" fill="#789070" font-family="Arial,sans-serif" font-size="13">Ask, research, prepare, review and save</text>
+</svg>

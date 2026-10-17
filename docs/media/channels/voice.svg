@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-label="Kisan Mitra voice and call controls illustration">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#203e35"/><stop offset="1" stop-color="#53754c"/></linearGradient><radialGradient id="glow"><stop stop-color="#d6edbd"/><stop offset="1" stop-color="#8fb77e"/></radialGradient><filter id="shadow"><feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#092417" flood-opacity=".4"/></filter></defs>
+  <rect width="960" height="600" rx="30" fill="url(#bg)"/>
+  <circle cx="485" cy="319" r="256" fill="#7ba26b" opacity=".13"/><circle cx="485" cy="319" r="191" fill="none" stroke="#a9ce99" stroke-opacity=".18" stroke-width="2"/><circle cx="485" cy="319" r="226" fill="none" stroke="#a9ce99" stroke-opacity=".12" stroke-width="2"/>
+  <text x="56" y="65" fill="#b8d9ae" font-family="Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3">03 / VOICE &amp; CALL</text><text x="56" y="105" fill="#fbfff5" font-family="Arial,sans-serif" font-size="30" font-weight="700">When speaking is easier than typing</text>
+  <g filter="url(#shadow)"><rect x="240" y="167" width="480" height="350" rx="34" fill="#f6faef"/></g>
+  <circle cx="480" cy="281" r="83" fill="url(#glow)"/><circle cx="480" cy="281" r="101" fill="none" stroke="#a7c992" stroke-width="2" opacity=".55"/>
+  <rect x="466" y="245" width="28" height="49" rx="14" fill="#305940"/><path d="M455 279a25 25 0 0 0 50 0m-25 26v17m-17 0h34" fill="none" stroke="#305940" stroke-width="5" stroke-linecap="round"/>
+  <path d="M307 284v-24m16 41v-58m16 73v-89m16 68v-47M605 287v-31m16 48v-63m16 75v-89m16 66v-44" stroke="#8bb47e" stroke-width="7" stroke-linecap="round"/>
+  <text x="384" y="402" fill="#294934" font-family="Arial,sans-serif" font-size="24" font-weight="700">Speak with confidence</text><text x="341" y="431" fill="#688063" font-family="Arial,sans-serif" font-size="15">Voice input and spoken replies in the browser</text>
+  <rect x="296" y="460" width="169" height="38" rx="19" fill="#e1ecd7"/><text x="322" y="484" fill="#365940" font-family="Arial,sans-serif" font-size="14" font-weight="700">Browser live voice</text><rect x="480" y="460" width="183" height="38" rx="19" fill="#e1ecd7"/><text x="505" y="484" fill="#365940" font-family="Arial,sans-serif" font-size="14" font-weight="700">Website call control</text>
+  <text x="56" y="565" fill="#c7dfbd" font-family="Arial,sans-serif" font-size="14">Live voice uses Mitra. The call control opens the configured phone line.</text>
+</svg>
