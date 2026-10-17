@@ -1,510 +1,647 @@
-"""
-Admin Routes — DB table browser + analytics dashboard
-GET  /admin/tables                → list all tables
-GET  /admin/tables/{table}        → paginated table data
-GET  /admin/analytics/overview    → system-wide KPIs
-GET  /admin/analytics/sensors     → per-station stats
-GET  /admin/analytics/llm         → LLM pool status
-GET  /admin/analytics/mandi       → mandi price trends
+"""Verified, explicitly scoped administration of the canonical v3 database.
+
+Never uses farmer capability sessions, arbitrary SQL, or the normal app DB role.
+Every write is a bounded, validated preview followed by an atomic audited commit.
 """
 
-from datetime import datetime
-import time
-from typing import Any, Dict, List, Optional
+import hashlib
+import json
+import os
+import uuid
+from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
+from functools import lru_cache
+from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
-from sqlalchemy import inspect, text
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import (
+    MetaData,
+    String,
+    Table,
+    and_,
+    cast,
+    create_engine,
+    func,
+    inspect,
+    or_,
+    select,
+    text,
+)
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import SQLAlchemyError
 
-from skyview.data.db import execute_query, get_session
-from skyview.utils.llm_pool import pool_status
-from skyview.utils.logger import get_logger
+from skyview.assistant.auth import AuthenticationUnavailable, verify_identity
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
-logger = get_logger(__name__)
+# Explicit product resources. Internal sessions, secrets, prompt state, provider
+# configuration, consent evidence, and device commands are deliberately excluded.
+GROUPS = {
+    "People": [
+        "farmers",
+        "farms",
+        "plots",
+        "crop_cycles",
+        "resources",
+        "expenses",
+        "tasks",
+        "field_observations",
+        "harvest_batches",
+        "sale_records",
+    ],
+    "Knowledge & markets": [
+        "crops",
+        "crop_varieties",
+        "units",
+        "regions",
+        "locations",
+        "markets",
+        "market_series",
+        "price_observations",
+        "msp_announcements",
+        "crop_guides",
+        "diseases",
+        "scheme_versions",
+    ],
+    "Weather & stations": [
+        "stations",
+        "station_sensors",
+        "weather_series",
+        "weather_daily",
+        "weather_forecasts",
+        "soil_samples",
+        "soil_indicators",
+    ],
+    "Exchange": ["exchange_listings", "resource_listings"],
+    "Plans & services": [
+        "farm_missions",
+        "companion_proposals",
+        "service_requests",
+        "ledger_entries",
+        "crop_case_notes",
+    ],
+    "Activity": [
+        "conversations",
+        "agent_runs",
+        "task_events",
+        "exchange_events",
+        "source_health",
+        "ingest_runs",
+        "datasets",
+    ],
+}
+READ_ONLY = set(GROUPS["Activity"]) | {"farm_missions", "companion_proposals"}
+RESOURCES = {name: group for group, names in GROUPS.items() for name in names}
+HIDDEN = {
+    "auth_subject",
+    "token_hash",
+    "saved_otp",
+    "password",
+    "run_token",
+    "configuration",
+    "evidence_hash",
+    "request_hash",
+    "result",
+    "before_state",
+    "after_state",
+    "cursor",
+    "summary",
+    "safe_error",
+}
+OWNERSHIP_FIELDS = {
+    "farmer_id",
+    "owner_farmer_id",
+    "owner_id",
+    "requester_id",
+    "creator_id",
+    "dataset_id",
+    "provider_id",
+}
+IMMUTABLE = {
+    "profile_key",
+    "created_at",
+    "updated_at",
+    "row_version",
+    "contact_verified_at",
+}
 
 
-EXPOSED_TABLES = [
-    "installations",
-    "installation_sensors",
-    "weather_data",
-    "alerts",
-    "user_preferences",
-    "trends",
-    "system_health",
-    "crop_calendar",
-    "government_schemes",
-    "mandi_rates_history",
-    "msp_history",
-    "emergency_resource_allocation",
-]
-
-
-def _serialize_value(value: Any) -> Any:
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-    return value
-
-
-def _get_table_columns(table: str) -> List[Dict[str, Any]]:
-    """Return JSON-friendly SQLAlchemy column metadata for the admin UI."""
-    db = get_session()
+def require_admin(response: Response, authorization: str = Header(default="")):
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Vary"] = "Authorization"
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Sign in with your authorized administrator account.")
     try:
-        inspector = inspect(db.bind)
-        if not inspector.has_table(table):
-            return []
-
-        pk_columns = set(
-            (inspector.get_pk_constraint(table) or {}).get("constrained_columns") or []
+        identity = verify_identity(authorization[7:], check_revoked=True)
+        grants = json.loads(os.getenv("ADMIN_IDENTITIES", "{}"))
+        role = (
+            grants.get(identity["auth_subject"]) if isinstance(grants, dict) else None
         )
-        columns = []
-        for col in inspector.get_columns(table):
-            columns.append(
-                {
-                    "name": col["name"],
-                    "type": str(col.get("type") or ""),
-                    "nullable": bool(col.get("nullable", True)),
-                    "default": str(col["default"])
-                    if col.get("default") is not None
-                    else None,
-                    "primary_key": col["name"] in pk_columns,
-                }
+    except AuthenticationUnavailable:
+        raise HTTPException(503, "Administrator sign-in is not configured.")
+    except (ValueError, TypeError):
+        raise HTTPException(401, "Administrator sign-in could not be verified.")
+    if role not in ("viewer", "editor", "owner"):
+        raise HTTPException(403, "This account does not have administrator access.")
+    return {"subject": identity["auth_subject"], "role": role}
+
+
+ADMIN_ACCESS = Depends(require_admin)
+
+
+router = APIRouter(
+    prefix="/admin", tags=["Administration"], dependencies=[Depends(require_admin)]
+)
+
+
+@lru_cache(maxsize=2)
+def _engine(url):
+    parsed = make_url(url)
+    if parsed.get_backend_name() != "postgresql" or parsed.database not in (
+        "skyview_v3_live",
+        "skyview_v3_demo",
+        "skyview_v3_test",
+    ):
+        raise ValueError("Invalid administrator database")
+    if parsed.host not in ("localhost", "127.0.0.1") and parsed.query.get(
+        "sslmode"
+    ) not in ("require", "verify-ca", "verify-full"):
+        raise ValueError("Administrator database requires TLS")
+    return create_engine(
+        url,
+        pool_size=2,
+        max_overflow=0,
+        pool_pre_ping=True,
+        connect_args={"connect_timeout": 5},
+    )
+
+
+@contextmanager
+def connection():
+    url = os.getenv("ADMIN_DATABASE_URL", "")
+    if not url:
+        raise HTTPException(503, "The administrator database is not configured.")
+    try:
+        with _engine(url).begin() as db:
+            db.execute(text("SET LOCAL ROLE sv3_admin"))
+            db.execute(text("SET LOCAL statement_timeout = '10s'"))
+            db.execute(text("SET LOCAL lock_timeout = '3s'"))
+            yield db
+    except HTTPException:
+        raise
+    except (SQLAlchemyError, ValueError):
+        raise HTTPException(
+            409,
+            "The operation could not be completed. Check required fields, types, unique values and linked records, then refresh. No partial batch was saved.",
+        )
+
+
+def table_for(db, name):
+    if name not in RESOURCES:
+        raise HTTPException(404, "Unknown administrator resource.")
+    if not inspect(db).has_table(name, schema="sv3"):
+        raise HTTPException(
+            503, "This resource is not installed in the current database."
+        )
+    return Table(name, MetaData(), schema="sv3", autoload_with=db)
+
+
+def clean(value):
+    if isinstance(value, dict):
+        return {
+            k: clean(v)
+            for k, v in value.items()
+            if k not in HIDDEN
+            and not any(
+                s in k.lower()
+                for s in ("password", "secret", "token", "otp", "api_key")
             )
-        return columns
-    finally:
-        db.close()
+        }
+    if isinstance(value, (list, tuple)):
+        return [clean(v) for v in value]
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
 
 
-def _count_rows(table: str) -> int:
-    rows = execute_query(f"SELECT COUNT(*) FROM {table}")
-    return int(rows[0][0]) if rows else 0
+def digest(row):
+    return hashlib.sha256(
+        json.dumps(clean(dict(row)), sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
-@router.get("/tables")
-def list_tables():
-    """Return all available admin-browsable tables with row counts."""
-    tables = []
-    counts = {}
-    for tbl in EXPOSED_TABLES:
-        columns = _get_table_columns(tbl)
-        try:
-            row_count = _count_rows(tbl) if columns else 0
-        except Exception as exc:
-            logger.warning("Could not count admin table %s: %s", tbl, exc)
-            row_count = 0
-        counts[tbl] = row_count
-        tables.append(
-            {
-                "name": tbl,
-                "row_count": row_count,
-                "columns": columns,
-                "primary_key": [c["name"] for c in columns if c["primary_key"]],
-                "sample_columns": [c["name"] for c in columns[:5]],
-            }
-        )
+def record(row):
+    return {**clean(dict(row)), "_version": digest(row)}
+
+
+def metadata(table, role):
     return {
-        "tables": tables,
-        "row_counts": counts,
-        "timestamp": datetime.utcnow().isoformat(),
+        "name": table.name,
+        "label": table.name.replace("_", " ").title(),
+        "group": RESOURCES[table.name],
+        "writable": table.name not in READ_ONLY and role != "viewer",
+        "deletable": table.name not in READ_ONLY and role == "owner",
+        "primary_key": [c.name for c in table.primary_key],
+        "columns": [
+            {
+                "name": c.name,
+                "type": str(c.type),
+                "nullable": c.nullable,
+                "default": str(getattr(c.server_default, "arg", "generated"))
+                if c.server_default
+                else None,
+                "primary_key": c.primary_key,
+                "editable": not c.computed
+                and not c.identity
+                and c.name not in IMMUTABLE
+                and not c.primary_key
+                and c.name not in OWNERSHIP_FIELDS,
+                "generated": bool(c.computed or c.identity),
+                "references": [
+                    f"{f.column.table.name}.{f.column.name}" for f in c.foreign_keys
+                ],
+            }
+            for c in table.c
+            if c.name not in HIDDEN
+        ],
     }
 
 
-@router.get("/tables/{table}")
-def browse_table(
-    table: str,
+@router.get("/me")
+def me(actor=ADMIN_ACCESS):
+    return {"role": actor["role"], "subject": actor["subject"], "max_batch": 100}
+
+
+@router.get("/overview")
+def overview(actor=ADMIN_ACCESS):
+    with connection() as db:
+        result = {}
+        for name in ("farmers", "farms", "tasks", "exchange_listings"):
+            table = table_for(db, name)
+            result[name] = db.execute(
+                select(func.count()).select_from(table)
+            ).scalar_one()
+        return {"counts": result, "checked_at": str(datetime.now(UTC))}
+
+
+@router.get("/resources")
+def resources(actor=ADMIN_ACCESS):
+    with connection() as db:
+        installed = set(inspect(db).get_table_names(schema="sv3"))
+        return {
+            "resources": [
+                metadata(table_for(db, name), actor["role"])
+                for name in RESOURCES
+                if name in installed
+            ]
+        }
+
+
+@router.get("/resources/{name}")
+def browse(
+    name: str,
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
-    search: Optional[str] = None,
-    filter_column: Optional[str] = None,
-    filter_value: Optional[str] = None,
-    order_by: Optional[str] = None,
-    desc: bool = True,
+    page_size: int = Query(25, ge=1, le=100),
+    search: str = Query("", max_length=160),
+    farmer_id: str = "",
+    actor=ADMIN_ACCESS,
 ):
-    """Paginated table browser with optional sorting."""
-    if table not in EXPOSED_TABLES:
-        raise HTTPException(403, f"Table '{table}' not in admin scope.")
-
-    offset = (page - 1) * page_size
-
-    columns = _get_table_columns(table)
-    column_names = [col["name"] for col in columns]
-    if not column_names:
-        raise HTTPException(404, f"Table '{table}' not found.")
-
-    if order_by and order_by not in column_names:
-        order_by = None
-
-    where_clauses = []
-    params: Dict[str, Any] = {"lim": page_size, "off": offset}
-
-    if search:
-        searchable = [
-            f"LOWER(CAST({col} AS TEXT)) LIKE :search" for col in column_names
-        ]
-        if searchable:
-            where_clauses.append("(" + " OR ".join(searchable) + ")")
-            params["search"] = f"%{search.lower()}%"
-
-    if filter_column and filter_value and filter_column in column_names:
-        where_clauses.append(f"LOWER(CAST({filter_column} AS TEXT)) LIKE :filter_value")
-        params["filter_value"] = f"%{filter_value.lower()}%"
-
-    where_clause = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
-
-    direction = "DESC" if desc else "ASC"
-    order_clause = f"ORDER BY {order_by} {direction}" if order_by else ""
-
-    count_rows = execute_query(
-        f"SELECT COUNT(*) FROM {table} {where_clause}",
-        {k: v for k, v in params.items() if k not in {"lim", "off"}},
-    )
-    total = int(count_rows[0][0]) if count_rows else 0
-
-    rows = execute_query(
-        f"SELECT * FROM {table} {where_clause} {order_clause} LIMIT :lim OFFSET :off",
-        params,
-    )
-
-    records = [
-        {name: _serialize_value(value) for name, value in zip(column_names, row)}
-        for row in (rows or [])
-    ]
-
-    return {
-        "table": table,
-        "columns": columns,
-        "records": records,
-        "pagination": {
+    with connection() as db:
+        table = table_for(db, name)
+        columns = [c for c in table.c if c.name not in HIDDEN]
+        conditions = []
+        if search:
+            columns_to_search = [c for c in columns if "JSON" not in str(c.type)]
+            conditions.append(
+                or_(
+                    *[
+                        cast(c, String).ilike(
+                            "%"
+                            + search.replace("\\", "\\\\")
+                            .replace("%", "\\%")
+                            .replace("_", "\\_")
+                            + "%",
+                            escape="\\",
+                        )
+                        for c in columns_to_search
+                    ]
+                )
+            )
+        if farmer_id:
+            column = (
+                table.c.get("farmer_id") if name != "farmers" else table.c.get("id")
+            )
+            if column is None:
+                raise HTTPException(422, "This resource cannot be filtered by farmer.")
+            try:
+                conditions.append(column == uuid.UUID(farmer_id))
+            except ValueError:
+                raise HTTPException(422, "Invalid farmer identifier.")
+        query = select(*columns).where(*conditions)
+        ordering = (
+            [table.c.created_at.desc()] if "created_at" in table.c else []
+        ) + list(table.primary_key)
+        rows = (
+            db.execute(
+                query.order_by(*ordering)
+                .limit(page_size)
+                .offset((page - 1) * page_size)
+            )
+            .mappings()
+            .all()
+        )
+        total = db.execute(
+            select(func.count()).select_from(table).where(*conditions)
+        ).scalar_one()
+        return {
+            "records": [record(row) for row in rows],
+            "total": total,
             "page": page,
             "page_size": page_size,
-            "total_rows": total,
-            "total_pages": max(1, (total + page_size - 1) // page_size),
-        },
-        "filters": {
-            "search": search,
-            "filter_column": filter_column,
-            "filter_value": filter_value,
-            "order_by": order_by,
-            "desc": desc,
-        },
-    }
-
-
-@router.get("/analytics/overview")
-def analytics_overview():
-    """System-wide KPIs."""
-    weather_count = (execute_query("SELECT COUNT(*) FROM weather_data") or [[0]])[0][0]
-    station_count = (
-        execute_query("SELECT COUNT(*) FROM installations WHERE status='active'")
-        or [[0]]
-    )[0][0]
-    alert_count = (
-        execute_query("SELECT COUNT(*) FROM alerts WHERE acknowledged = FALSE") or [[0]]
-    )[0][0]
-    mandi_count = (execute_query("SELECT COUNT(*) FROM mandi_rates_history") or [[0]])[
-        0
-    ][0]
-    scheme_count = (
-        execute_query("SELECT COUNT(*) FROM government_schemes WHERE status='Active'")
-        or [[0]]
-    )[0][0]
-
-    latest_reading = execute_query(
-        "SELECT station_id, timestamp, temperature, humidity, soil_moisture "
-        "FROM weather_data ORDER BY timestamp DESC LIMIT 1"
-    )
-    last_seen = {}
-    if latest_reading:
-        r = latest_reading[0]
-        last_seen = {
-            "station_id": r[0],
-            "timestamp": r[1].isoformat() if hasattr(r[1], "isoformat") else str(r[1]),
-            "temperature": r[2],
-            "humidity": r[3],
-            "soil_moisture": r[4],
         }
 
-    return {
-        "kpis": {
-            "total_sensor_readings": weather_count,
-            "active_stations": station_count,
-            "unacknowledged_alerts": alert_count,
-            "mandi_price_records": mandi_count,
-            "active_govt_schemes": scheme_count,
-        },
-        "latest_reading": last_seen,
-        "llm_pool": pool_status(),
-        "timestamp": datetime.utcnow().isoformat(),
-    }
+
+class Operation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["create", "update", "delete"]
+    key: dict[str, Any] = Field(default_factory=dict)
+    values: dict[str, Any] = Field(default_factory=dict)
+    version: str | None = None
 
 
-@router.get("/analytics/sensors")
-def analytics_sensors():
-    """Per-station summary statistics."""
-    rows = (
-        execute_query("""
-        SELECT station_id,
-               COUNT(*) as readings,
-               ROUND(AVG(temperature)::numeric, 2) as avg_temp,
-               ROUND(AVG(humidity)::numeric, 2) as avg_humidity,
-               ROUND(AVG(soil_moisture)::numeric, 2) as avg_soil,
-               MIN(timestamp) as first_reading,
-               MAX(timestamp) as last_reading
-        FROM weather_data
-        GROUP BY station_id
-        ORDER BY readings DESC
-    """)
-        or []
-    )
-    return {
-        "stations": [
-            {
-                "station_id": r[0],
-                "readings": r[1],
-                "avg_temperature": float(r[2]) if r[2] else None,
-                "avg_humidity": float(r[3]) if r[3] else None,
-                "avg_soil_moisture": float(r[4]) if r[4] else None,
-                "first_reading": r[5].isoformat()
-                if r[5] and hasattr(r[5], "isoformat")
-                else str(r[5]),
-                "last_reading": r[6].isoformat()
-                if r[6] and hasattr(r[6], "isoformat")
-                else str(r[6]),
+class Batch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    operations: list[Operation] = Field(min_length=1, max_length=100)
+    reason: str = Field(min_length=5, max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def meaningful_reason(cls, value):
+        if len(value.strip()) < 5:
+            raise ValueError("Provide a meaningful reason.")
+        return value.strip()
+
+
+class Commit(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirmation: str
+
+
+def validate_batch(table, batch, actor):
+    if actor["role"] == "viewer" or table.name in READ_ONLY:
+        raise HTTPException(403, "This resource is read-only for your role.")
+    if len(batch.model_dump_json()) > 512_000:
+        raise HTTPException(
+            413, "The batch exceeds 500 KB. Split it into smaller batches."
+        )
+    visible = {c.name for c in table.c} - HIDDEN
+    primary = {c.name for c in table.primary_key}
+    seen = set()
+    if not primary:
+        raise HTTPException(422, "This resource has no stable record key.")
+    for op in batch.operations:
+        if op.action == "delete" and actor["role"] != "owner":
+            raise HTTPException(403, "Only owners can delete records.")
+        if op.action == "create":
+            if op.key or op.version:
+                raise HTTPException(
+                    422, "New records must not have an existing key or version."
+                )
+            # Database-generated identifiers and timestamps cannot be supplied.
+            blocked = IMMUTABLE | {
+                c.name for c in table.primary_key if c.server_default
             }
-            for r in rows
-        ],
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-
-
-@router.get("/analytics/llm")
-def analytics_llm():
-    """LLM load balancer live stats."""
-    return {"llm_pool": pool_status(), "timestamp": datetime.utcnow().isoformat()}
-
-
-@router.get("/analytics/mandi")
-def analytics_mandi(commodity: Optional[str] = None, limit: int = 20):
-    """Mandi price trend for top commodities."""
-    q = (
-        "SELECT commodity, year, ROUND(AVG(modal_price)::numeric,2) as avg_price, "
-        "COUNT(*) as records FROM mandi_rates_history"
-    )
-    params: dict = {"lim": limit}
-    if commodity:
-        q += " WHERE LOWER(commodity) = LOWER(:commodity)"
-        params["commodity"] = commodity
-    q += " GROUP BY commodity, year ORDER BY commodity, year DESC LIMIT :lim"
-    rows = execute_query(q, params) or []
-    return {
-        "trends": [
-            {
-                "commodity": r[0],
-                "year": r[1],
-                "avg_modal_price": float(r[2]) if r[2] else None,
-                "records": r[3],
-            }
-            for r in rows
-        ],
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-
-
-@router.get("/analytics/alerts")
-def analytics_alerts():
-    """Alert severity breakdown."""
-    rows = (
-        execute_query("""
-        SELECT severity, COUNT(*) as count
-        FROM alerts
-        GROUP BY severity
-        ORDER BY count DESC
-    """)
-        or []
-    )
-    total = sum(r[1] for r in rows)
-    return {
-        "breakdown": [{"severity": r[0], "count": r[1]} for r in rows],
-        "total": total,
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-
-
-class AdminLoginReq(BaseModel):
-    username: str
-    password: str
-
-
-class UserCreateReq(BaseModel):
-    phone: str
-    name: Optional[str] = None
-    land_size_acres: Optional[float] = None
-    location: Optional[str] = None
-    crops: Optional[str] = None
-    saved_otp: Optional[str] = None
-
-
-class UserUpdateReq(BaseModel):
-    name: Optional[str] = None
-    land_size_acres: Optional[float] = None
-    location: Optional[str] = None
-    crops: Optional[str] = None
-    saved_otp: Optional[str] = None
-
-
-@router.post("/login")
-def admin_login(req: AdminLoginReq):
-    creds = {
-        "admin@skyview.ai": {
-            "pass": "SkyView#Admin2026!",
-            "name": "Chief Agricultural Administrator",
-            "role": "Super Admin",
-        },
-        "officer@skyview.ai": {
-            "pass": "FieldOfficer#2026",
-            "name": "Regional Krishi Officer",
-            "role": "Field Inspector",
-        },
-    }
-    user = creds.get(req.username.strip().lower())
-    if not user or user["pass"] != req.password:
-        raise HTTPException(401, "Invalid administrator credentials")
-
-    return {
-        "status": "success",
-        "token": f"admin_token_{int(time.time())}",
-        "user": {
-            "email": req.username.strip().lower(),
-            "name": user["name"],
-            "role": user["role"],
-        },
-    }
-
-
-@router.get("/users")
-def list_admin_users():
-    db = get_session()
-    try:
-        rows = db.execute(
-            text("""
-            SELECT phone, name, land_size_acres, location, crops, saved_otp, created_at
-            FROM users
-            ORDER BY created_at DESC NULLS LAST
-        """)
-        ).fetchall()
-
-        users = []
-        for r in rows:
-            users.append(
-                {
-                    "phone": r[0],
-                    "name": r[1] or "Anonymous Farmer",
-                    "land_size_acres": float(r[2]) if r[2] is not None else None,
-                    "location": r[3] or "India",
-                    "crops": r[4] or "Unspecified",
-                    "saved_otp": str(r[5]) if r[5] else None,
-                    "created_at": r[6].isoformat()
-                    if hasattr(r[6], "isoformat")
-                    else str(r[6] or ""),
-                }
+        else:
+            if (
+                set(op.key) != primary
+                or any(v is None for v in op.key.values())
+                or not op.version
+            ):
+                raise HTTPException(
+                    422,
+                    "Supply the complete primary key and the current record version.",
+                )
+            marker = json.dumps(op.key, sort_keys=True, default=str)
+            if marker in seen:
+                raise HTTPException(422, "A record can only appear once in a batch.")
+            seen.add(marker)
+            blocked = IMMUTABLE | primary | OWNERSHIP_FIELDS
+        blocked |= {c.name for c in table.c if c.computed or c.identity}
+        if not set(op.values) <= visible - blocked:
+            raise HTTPException(
+                422, "A field is protected, unknown, or cannot be reassigned."
             )
-        return {"status": "success", "total": len(users), "users": users}
-    finally:
-        db.close()
+        if op.action == "delete" and op.values:
+            raise HTTPException(422, "Delete operations must not contain new values.")
+        if op.action != "delete" and not op.values:
+            raise HTTPException(422, "Supply at least one field.")
+        if table.name == "farmers":
+            if op.action == "create":
+                raise HTTPException(
+                    422,
+                    "Accounts must register through verified sign-in. Administrators can update existing profiles.",
+                )
+            if "status" in op.values and op.values["status"] not in (
+                "active",
+                "onboarding",
+                "suspended",
+            ):
+                raise HTTPException(
+                    422, "Use active, onboarding or suspended account status."
+                )
 
 
-@router.post("/users")
-def create_admin_user(req: UserCreateReq):
-    db = get_session()
-    try:
-        db.execute(
-            text("""
-            INSERT INTO users (phone, name, land_size_acres, location, crops, saved_otp)
-            VALUES (:p, :n, :l, :loc, :c, :otp)
-            ON CONFLICT (phone) DO UPDATE SET
-                name = EXCLUDED.name,
-                land_size_acres = EXCLUDED.land_size_acres,
-                location = EXCLUDED.location,
-                crops = EXCLUDED.crops,
-                saved_otp = COALESCE(EXCLUDED.saved_otp, users.saved_otp)
-        """),
+def refuse_linked_delete(db, table, row):
+    # Do not silently cascade into another resource, even if its FK permits it.
+    inspector = inspect(db)
+    for name in inspector.get_table_names(schema="sv3"):
+        for fk in inspector.get_foreign_keys(name, schema="sv3"):
+            if fk["referred_table"] != table.name or fk.get("referred_schema") not in (
+                None,
+                "sv3",
+            ):
+                continue
+            if fk.get("options", {}).get("ondelete", "").upper() in (
+                "CASCADE",
+                "SET NULL",
+                "SET DEFAULT",
+            ):
+                raise HTTPException(
+                    409,
+                    f"Deletion could affect linked {name} records. Use a status change instead. Cascading deletes are not available in this panel.",
+                )
+            # Restrictive foreign keys are enforced by PostgreSQL at execution.
+
+
+def apply_batch(db, table, batch, actor):
+    validate_batch(table, batch, actor)
+    changes = []
+    for op in batch.operations:
+        before = None
+        if op.action != "create":
+            condition = and_(*(table.c[k] == v for k, v in op.key.items()))
+            before = (
+                db.execute(select(table).where(condition).with_for_update())
+                .mappings()
+                .first()
+            )
+            if before is None or digest(before) != op.version:
+                raise HTTPException(
+                    409,
+                    "A record changed or was removed. Refresh and review a new preview.",
+                )
+        if op.action == "delete":
+            refuse_linked_delete(db, table, before)
+            db.execute(table.delete().where(condition))
+            after = None
+        else:
+            values = dict(op.values)
+            if (
+                table.name == "farmers"
+                and {"contact_phone", "contact_email"} & values.keys()
+            ):
+                values["contact_verified_at"] = None
+            if op.action == "update":
+                if "row_version" in table.c:
+                    values["row_version"] = table.c.row_version + 1
+                if "updated_at" in table.c:
+                    values["updated_at"] = func.now()
+            statement = (
+                table.insert().values(**values)
+                if op.action == "create"
+                else table.update().where(condition).values(**values)
+            )
+            after = db.execute(statement.returning(*table.c)).mappings().one()
+            if table.name == "farmers" and values.get("status") == "suspended":
+                db.execute(
+                    text(
+                        "UPDATE sv3.assistant_sessions SET revoked_at=now(),run_token=NULL,run_expires_at=NULL WHERE farmer_id=:id"
+                    ),
+                    {"id": before["id"]},
+                )
+        changes.append(
             {
-                "p": req.phone,
-                "n": req.name,
-                "l": req.land_size_acres,
-                "loc": req.location,
-                "c": req.crops,
-                "otp": req.saved_otp or "123456",
+                "action": op.action,
+                "key": clean(
+                    {
+                        c.name: (after if after is not None else before)[c.name]
+                        for c in table.primary_key
+                    }
+                ),
+                "before": clean(dict(before)) if before is not None else None,
+                "after": clean(dict(after)) if after is not None else None,
+            }
+        )
+    return changes
+
+
+@router.post("/resources/{name}/preview")
+def preview(name: str, batch: Batch, actor=ADMIN_ACCESS):
+    with connection() as db:
+        table = table_for(db, name)
+        # Execute against real constraints and roll back every proposed write.
+        savepoint = db.begin_nested()
+        try:
+            changes = apply_batch(db, table, batch, actor)
+        finally:
+            savepoint.rollback()
+        pid = str(uuid.uuid4())
+        expires = datetime.now(UTC) + timedelta(minutes=10)
+        db.execute(
+            text(
+                "DELETE FROM sv3.admin_previews WHERE expires_at < now() - interval '1 day'"
+            )
+        )
+        db.execute(
+            text(
+                "INSERT INTO sv3.admin_previews(id,actor,resource,payload,expires_at) VALUES(:id,:actor,:resource,CAST(:payload AS jsonb),:expires)"
+            ),
+            {
+                "id": pid,
+                "actor": actor["subject"],
+                "resource": name,
+                "payload": batch.model_dump_json(),
+                "expires": expires,
             },
         )
-        db.commit()
         return {
-            "status": "success",
-            "message": "User saved successfully",
-            "phone": req.phone,
+            "id": pid,
+            "expires_at": str(expires),
+            "changes": changes,
+            "confirmation": f"APPLY {len(changes)}",
+            "notice": "Nothing has been saved. Generated IDs and timestamps are assigned when applied.",
         }
-    except Exception as exc:
-        db.rollback()
-        raise HTTPException(500, f"Error saving user: {exc}")
-    finally:
-        db.close()
 
 
-@router.put("/users/{phone}")
-def update_admin_user(phone: str, req: UserUpdateReq):
-    p1 = phone.strip()
-    p2 = p1.replace(" ", "+")
-    db = get_session()
-    try:
-        db.execute(
-            text("""
-            UPDATE users SET
-                name = COALESCE(:n, name),
-                land_size_acres = COALESCE(:l, land_size_acres),
-                location = COALESCE(:loc, location),
-                crops = COALESCE(:c, crops),
-                saved_otp = COALESCE(:otp, saved_otp)
-            WHERE phone = :p1 OR phone = :p2
-        """),
+@router.post("/previews/{preview_id}/commit")
+def commit(preview_id: uuid.UUID, body: Commit, actor=ADMIN_ACCESS):
+    with connection() as db:
+        row = (
+            db.execute(
+                text(
+                    "SELECT * FROM sv3.admin_previews WHERE id=:id AND actor=:actor FOR UPDATE"
+                ),
+                {"id": preview_id, "actor": actor["subject"]},
+            )
+            .mappings()
+            .first()
+        )
+        if not row:
+            raise HTTPException(404, "Preview not found for this administrator.")
+        if row["committed_at"]:
+            return {"status": "already_applied", "id": str(preview_id)}
+        if row["expires_at"] < datetime.now(UTC):
+            raise HTTPException(409, "Preview expired. Review the changes again.")
+        batch = Batch.model_validate(row["payload"])
+        if body.confirmation != f"APPLY {len(batch.operations)}":
+            raise HTTPException(
+                422, "Type the exact confirmation shown in the preview."
+            )
+        changes = apply_batch(db, table_for(db, row["resource"]), batch, actor)
+        # Retain keys and hashes, not duplicate private profile data in the audit.
+        summary = [
             {
-                "p1": p1,
-                "p2": p2,
-                "n": req.name,
-                "l": req.land_size_acres,
-                "loc": req.location,
-                "c": req.crops,
-                "otp": req.saved_otp,
+                "action": c["action"],
+                "key": c["key"],
+                "fields": list(op.values),
+                "before_hash": digest(c["before"]) if c["before"] else None,
+                "after_hash": digest(c["after"]) if c["after"] else None,
+            }
+            for c, op in zip(changes, batch.operations)
+        ]
+        db.execute(
+            text(
+                "INSERT INTO sv3.admin_audit(id,actor,role,resource,reason,changes) VALUES(:id,:actor,:role,:resource,:reason,CAST(:changes AS jsonb))"
+            ),
+            {
+                "id": preview_id,
+                "actor": actor["subject"],
+                "role": actor["role"],
+                "resource": row["resource"],
+                "reason": batch.reason,
+                "changes": json.dumps(summary),
             },
         )
-        db.commit()
-        return {
-            "status": "success",
-            "message": "User updated successfully",
-            "phone": phone,
-        }
-    except Exception as exc:
-        db.rollback()
-        logger.error("Error updating admin user %s: %s", phone, exc)
-        raise HTTPException(500, f"Error updating user: {exc}")
-    finally:
-        db.close()
-
-
-@router.delete("/users/{phone}")
-def delete_admin_user(phone: str):
-    p1 = phone.strip()
-    p2 = p1.replace(" ", "+")
-    db = get_session()
-    try:
         db.execute(
-            text("DELETE FROM users WHERE phone = :p1 OR phone = :p2"),
-            {"p1": p1, "p2": p2},
+            text(
+                "UPDATE sv3.admin_previews SET committed_at=now(),payload='{}'::jsonb WHERE id=:id"
+            ),
+            {"id": preview_id},
         )
-        db.commit()
-        return {"status": "success", "message": f"User {phone} deleted successfully"}
-    except Exception as exc:
-        db.rollback()
-        logger.error("Error deleting admin user %s: %s", phone, exc)
-        raise HTTPException(500, f"Error deleting user: {exc}")
-    finally:
-        db.close()
+        return {"status": "applied", "id": str(preview_id), "count": len(changes)}
+
+
+@router.get("/audit")
+def audit(page: int = Query(1, ge=1), actor=ADMIN_ACCESS):
+    with connection() as db:
+        rows = (
+            db.execute(
+                text(
+                    "SELECT * FROM sv3.admin_audit ORDER BY created_at DESC,id DESC LIMIT 25 OFFSET :offset"
+                ),
+                {"offset": (page - 1) * 25},
+            )
+            .mappings()
+            .all()
+        )
+        total = db.execute(text("SELECT count(*) FROM sv3.admin_audit")).scalar_one()
+        return {"records": [clean(dict(r)) for r in rows], "total": total}

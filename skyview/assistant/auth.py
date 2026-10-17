@@ -37,7 +37,7 @@ def _jwks(url):
         return keys
 
 
-def verify_identity(token):
+def verify_identity(token, *, check_revoked=False):
     firebase_project = os.getenv("FIREBASE_PROJECT_ID", "").strip()
     if firebase_project:
         if not token or len(token) > 16000:
@@ -50,7 +50,11 @@ def verify_identity(token):
                 firebase_admin.get_app()
             except ValueError:
                 firebase_admin.initialize_app(options={"projectId": firebase_project})
-            claims = firebase_auth.verify_id_token(token)
+            claims = (
+                firebase_auth.verify_id_token(token, check_revoked=True)
+                if check_revoked
+                else firebase_auth.verify_id_token(token)
+            )
             uid = claims.get("uid")
             provider = (claims.get("firebase") or {}).get("sign_in_provider")
             if not isinstance(uid, str) or not uid or provider != "phone":

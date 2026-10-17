@@ -55,7 +55,7 @@ def create_session_for_farmer(fid):
     with database.connection(str(fid), write=True) as db:
         if not db.execute(
             text(
-                "SELECT id FROM sv3.farmers WHERE id=:id AND (status='active' OR (:demo AND status='demo') OR (:live AND status='onboarding'))"
+                "SELECT id FROM sv3.farmers WHERE id=:id AND (status='active' OR (:demo AND status='demo') OR (:live AND status='onboarding')) FOR SHARE"
             ),
             {
                 "id": fid,

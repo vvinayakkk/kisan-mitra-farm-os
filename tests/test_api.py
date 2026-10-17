@@ -194,12 +194,12 @@ class TestFPGA:
 
 class TestAdmin:
     def test_list_tables(self, client):
-        r = client.get("/admin/tables")
-        assert r.status_code == 200
+        r = client.get("/admin/resources")
+        assert r.status_code == 401
 
     def test_analytics_overview(self, client):
-        r = client.get("/admin/analytics/overview")
-        assert r.status_code == 200
+        r = client.get("/admin/overview")
+        assert r.status_code == 401
 
 
 class TestMarketplace:

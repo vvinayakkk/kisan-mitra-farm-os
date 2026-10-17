@@ -300,7 +300,7 @@ else:
 
     _register("skyview.api.disease_routes")
 
-    _register("skyview.admin.admin_routes")
+_register("skyview.admin.admin_routes")
 
 
 @app.on_event("shutdown")
