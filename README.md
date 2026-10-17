@@ -22,6 +22,22 @@
 
 ---
 
+## 🌾 Four ways to use Kisan Mitra
+
+| **Website · the full farm workspace** | **Flutter app · help in the field** |
+| :--- | :--- |
+| [![Illustration of the Kisan Mitra web workspace and a prepared farm checklist](docs/media/channels/web.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of the Kisan Mitra Flutter app with voice and farm actions](docs/media/channels/app.svg)](mobile/) |
+| Firebase Hosting delivers Farm OS and Classic; Cloud Run connects both to Mitra. | Firebase phone sign-in connects the Flutter companion to the same farmer account and API. |
+
+| **Voice & call · speak naturally** | **WhatsApp · send a question or crop photo** |
+| :--- | :--- |
+| [![Illustration of Kisan Mitra browser live voice and the website call control](docs/media/channels/voice.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of a WhatsApp crop question entering the signed Kisan Mitra webhook](docs/media/channels/whatsapp.svg)](docs/api/websocket-and-webhooks.md) |
+| Browser live voice reaches Mitra on Cloud Run; the separate call control opens the configured support line. | Twilio receives the message; a signed Cloud Run webhook and Cloud Tasks process the inbound request. |
+
+*The four channel cards illustrate product flows; the [Farm OS gallery](#-farm-os-design-system) shows captured website screens.*
+
+---
+
 ## ⚡ Platform at a Glance
 
 | Capability | What is in the repository | Why it matters |
@@ -40,6 +56,7 @@ The counts describe the current code and catalog. They are not latency or produc
 
 ## 🗺️ Table of Contents
 
+- [Four ways to use Kisan Mitra](#-four-ways-to-use-kisan-mitra)
 - [Overview & Vision](#-overview--vision)
 - [System Architecture](#-system-architecture)
 - [UltraCache & Background Data](#-ultracache--background-data)
@@ -66,23 +83,11 @@ A farmer should be able to describe a problem in their own words without first c
 4. **Keep the farmer in control:** Focused questions resolve missing details. Record changes, exchange terms and prepared plans are reviewable before they are saved.
 5. **Meet farmers where they are:** The same product has a web workspace, the original Classic interface, a Flutter companion, linked WhatsApp and a call control.
 
-### Four ways to use Kisan Mitra
+### The channels in practice
 
 ![Four Indian farmers using Kisan Mitra through the web, mobile app, messaging and a phone call](docs/media/four-ways-to-farm.png)
 
 *From a cooperative desk to a crop row, a mandi stall or an orchard: one connected farm companion, reached in the way that fits the moment.*
-
-| **Website · the full farm workspace** | **Flutter app · help in the field** |
-| :--- | :--- |
-| [![Illustration of the Kisan Mitra web workspace and a prepared farm checklist](docs/media/channels/web.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of the Kisan Mitra Flutter app with voice and farm actions](docs/media/channels/app.svg)](mobile/) |
-| Firebase Hosting delivers Farm OS and Classic; Cloud Run connects both to Mitra. | Firebase phone sign-in connects the Flutter companion to the same farmer account and API. |
-
-| **Voice & call · speak naturally** | **WhatsApp · send a question or crop photo** |
-| :--- | :--- |
-| [![Illustration of Kisan Mitra browser live voice and the website call control](docs/media/channels/voice.svg)](https://project-0b9b4009-1644-4477-aec.web.app/workspace) | [![Illustration of a WhatsApp crop question entering the signed Kisan Mitra webhook](docs/media/channels/whatsapp.svg)](docs/api/websocket-and-webhooks.md) |
-| Browser live voice reaches Mitra on Cloud Run; the separate call control opens the configured support line. | Twilio receives the message; a signed Cloud Run webhook and Cloud Tasks process the inbound request. |
-
-*The four channel cards illustrate product flows; the [Farm OS gallery](#-farm-os-design-system) shows captured website screens.*
 
 | Access | Where it fits | Farmer experience |
 | :--- | :--- | :--- |
