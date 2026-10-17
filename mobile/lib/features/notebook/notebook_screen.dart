@@ -20,7 +20,7 @@ const kNotebookTabs = <(String, String, String)>[
   ('today', 'Today', 'today'),
   ('fields', 'My fields', 'fields'),
   ('ledger', 'Money', 'ledger'),
-  ('cases', 'Crop follow-ups', 'followups'),
+  ('cases', 'Follow-ups', 'followups'),
   ('missions', 'Plans', 'missions'),
   ('memory', 'Memory', 'memory'),
   ('files', 'Files', 'records'),
@@ -50,12 +50,10 @@ class _NotebookScreenState extends State<NotebookScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final ink = inkColor(context);
     final helper = kNotebookTabs[_tabs.index].$3;
     return Scaffold(
       appBar: AppBar(
-        title: Text('My farm notebook', style: TextStyle(color: ink)),
-        foregroundColor: ink,
+        title: const Text('Notebook'),
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
@@ -91,7 +89,7 @@ class TodayTab extends ConsumerWidget {
     return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
       const PreparedBySaathi(area: 'records'),
       Loader<Map<String, dynamic>>(
-        loading: 'Gathering your saved farm activity…',
+        loading: 'Loading…',
         load: () async => asMap(await api.get('/api/farm-workspace/today')),
         builder: (context, d) {
           final actions = asMaps(d['actions']);
@@ -99,14 +97,14 @@ class TodayTab extends ConsumerWidget {
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(
-                child: Text('${counts['tasks'] ?? 0} open tasks · ${counts['cases'] ?? 0} crop follow-ups · '
-                    '${counts['missions'] ?? 0} ongoing plans', style: TextStyle(color: mutedColor(context))),
+                child: Text('${counts['tasks'] ?? 0} tasks · ${counts['cases'] ?? 0} follow-ups · '
+                    '${counts['missions'] ?? 0} plans', style: TextStyle(color: mutedColor(context))),
               ),
               ProvenanceBadge.maybe(d['provenance']) ?? const SizedBox.shrink(),
             ]),
             const SizedBox(height: 8),
             if (actions.isEmpty)
-              const EmptyView(title: 'No urgent saved work.', detail: 'Add your field or plan your next farm task with Mitra.')
+              const EmptyView(title: 'Nothing urgent.')
             else
               for (final a in actions)
                 Padding(
@@ -134,23 +132,22 @@ class TodayTab extends ConsumerWidget {
                     ]),
                   ),
                 ),
-            Text('Based on your saved tasks and crop follow-ups.', style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
           ]);
         },
       ),
-      const SectionTitle('Weather to plan around'),
+      const SectionTitle('Weather'),
       Loader<Map<String, dynamic>>(
-        loading: 'Reading the dated forecast…',
+        loading: 'Loading…',
         load: () async => asMap(await api.get('/api/farm-workspace/weather-brief')),
         builder: (context, d) {
           final signals = asMaps(d['signals']).take(6).toList();
           if (d['available'] != true) {
-            return Text(str(d['message'], 'Weather context is unavailable. Link a field to the forecast grid.'),
+            return Text(str(d['message'], 'Weather unavailable.'),
                 style: TextStyle(color: mutedColor(context)));
           }
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (signals.isEmpty)
-              Text('No additional weather flags in this dated forecast. Check its dates before planning field work.',
+              Text('No weather flags.',
                   style: TextStyle(color: mutedColor(context))),
             for (final s in signals)
               ListTile(
@@ -160,18 +157,16 @@ class TodayTab extends ConsumerWidget {
                 subtitle: Text('${displayDate(str(s['date']))} · ${str(s['detail'])}'),
               ),
             const Tag('Forecast', color: AppColors.info),
-            if (str(d['note']).isNotEmpty)
-              Text(str(d['note']), style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
           ]);
         },
       ),
       const SectionTitle('Recent records'),
       Loader<Map<String, dynamic>>(
-        loading: 'Loading dated records…',
+        loading: 'Loading…',
         load: () async => asMap(await api.get('/api/farm-workspace/timeline', query: {'limit': 30})),
         builder: (context, d) {
           final items = asMaps(d['items']);
-          if (items.isEmpty) return const EmptyView(title: 'No dated farm records yet.');
+          if (items.isEmpty) return const EmptyView(title: 'No records yet.');
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             for (final i in items.take(12))
               ListTile(
@@ -182,8 +177,6 @@ class TodayTab extends ConsumerWidget {
                     '${asMap(i['detail'])['status'] != null ? ' · ${asMap(i['detail'])['status']}' : ''}'),
                 trailing: asMap(i['detail'])['origin'] == null ? null : ProvenanceBadge({'origin': asMap(i['detail'])['origin']}),
               ),
-            Text('Calendar dates describe plans; they do not prove work was performed.',
-                style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
           ]);
         },
       ),
@@ -201,19 +194,18 @@ class FilesTab extends ConsumerWidget {
     return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
       const SectionTitle('Saved files'),
       if (artifacts.isEmpty)
-        const EmptyView(title: 'Your notebook has room to grow.', detail: 'Ask Mitra for a report, sheet or slide deck.')
+        const EmptyView(title: 'No saved files.')
       else
         for (final a in artifacts) FileResult(a),
-      const SectionTitle('Latest recorded costs'),
+      const SectionTitle('Recent costs'),
       Loader<Map<String, dynamic>>(
         key: ValueKey(running),
-        loading: 'Loading saved costs…',
+        loading: 'Loading…',
         load: () => ref.read(workspaceToolsProvider).inspect('list_expenses', {}),
         builder: (context, d) {
           final expenses = asMaps(d['expenses']);
           if (expenses.isEmpty) {
-            return const EmptyView(
-                title: 'No saved expenses yet.', detail: 'Ask Mitra to record a cost; you’ll review it before it is saved.');
+            return const EmptyView(title: 'No saved expenses.');
           }
           final total = expenses.fold<num>(0, (s, e) => s + ((e['amount'] as num?) ?? 0));
           return Column(children: [
@@ -225,7 +217,7 @@ class FilesTab extends ConsumerWidget {
                 subtitle: Text(displayDate(str(e['date']))),
                 trailing: Text('₹${e['amount']}'),
               ),
-            Align(alignment: Alignment.centerRight, child: Text('Total recorded ₹${total.toStringAsFixed(2)}')),
+            Align(alignment: Alignment.centerRight, child: Text('Total ₹${total.toStringAsFixed(2)}')),
           ]);
         },
       ),

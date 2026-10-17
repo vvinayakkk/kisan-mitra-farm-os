@@ -1,12 +1,12 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api.dart';
 import '../../ui/kit.dart';
 import '../../utils/constants.dart';
-import '../../voice/live_voice.dart';
 import '../../voice/voice_button.dart';
 import '../assistant_controller.dart';
 import '../models.dart';
@@ -103,14 +103,11 @@ class ComposerState extends ConsumerState<Composer> {
     final state = ref.watch(assistantProvider);
     final locked = !state.ready || state.busy || state.pending != null;
     final dark = context.isDark;
+    // Original input bar: one rounded glass pill floating over the gradient.
     return SafeArea(
       top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-        decoration: BoxDecoration(
-          color: dark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.92),
-          border: Border(top: BorderSide(color: dark ? Colors.white12 : Colors.black12)),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           if (_attached.isNotEmpty || _uploading)
             Padding(
@@ -125,60 +122,69 @@ class ComposerState extends ConsumerState<Composer> {
                 if (_uploading) const Chip(label: Text('Uploading…')),
               ]),
             ),
-          if (state.pending != null && !state.busy)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text('Answer the card above to continue.',
-                  style: TextStyle(fontSize: 12, color: mutedColor(context))),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: dark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: dark ? Colors.white.withValues(alpha: 0.14) : AppColors.primary.withValues(alpha: 0.25),
+              ),
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
             ),
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            IconButton(
-              tooltip: 'Attach a photo or file',
-              onPressed: locked || _uploading ? null : _attach,
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-            Expanded(
-              child: TextField(
-                controller: _text,
-                enabled: !locked,
-                minLines: 1,
-                maxLines: 5,
-                maxLength: 6000,
-                textInputAction: TextInputAction.newline,
-                decoration: const InputDecoration(
-                  hintText: 'Ask in any language…',
-                  counterText: '',
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(children: [
+              IconButton(
+                tooltip: 'Attach a photo or file',
+                onPressed: locked || _uploading ? null : _attach,
+                icon: Icon(Icons.add_rounded, color: mutedColor(context)),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _text,
+                  enabled: !locked,
+                  minLines: 1,
+                  maxLines: 5,
+                  maxLength: 6000,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: state.pending != null && !state.busy ? 'Answer the card above…' : 'Ask in any language…',
+                    counterText: '',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
-            ),
-            VoiceButton(
-              enabled: !locked,
-              onTranscript: (t) => setDraft(_text.text.isEmpty ? t : '${_text.text} $t'),
-            ),
-            if (state.busy)
-              IconButton.filled(
-                tooltip: 'Stop',
-                style: IconButton.styleFrom(backgroundColor: AppColors.error),
-                onPressed: state.running ? ref.read(assistantProvider.notifier).stop : null,
-                icon: const Icon(Icons.stop_rounded),
-              )
-            else
-              ValueListenableBuilder(
-                valueListenable: _text,
-                builder: (_, value, __) => value.text.trim().isEmpty && _attached.isEmpty
+              VoiceButton(
+                enabled: !locked,
+                onTranscript: (t) => setDraft(_text.text.isEmpty ? t : '${_text.text} $t'),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 2),
+                child: state.busy
                     ? IconButton.filled(
-                        tooltip: 'Live voice conversation',
-                        onPressed: locked ? null : () => openLiveVoice(context, runContext: widget.runContext),
-                        icon: const Icon(Icons.graphic_eq),
+                        tooltip: 'Stop',
+                        style: IconButton.styleFrom(backgroundColor: AppColors.error),
+                        onPressed: state.running ? ref.read(assistantProvider.notifier).stop : null,
+                        icon: const Icon(Icons.stop_rounded),
                       )
                     : IconButton.filled(
                         tooltip: 'Send',
-                        onPressed: locked ? null : _send,
+                        style: IconButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                        onPressed: locked
+                            ? null
+                            : () {
+                                HapticFeedback.lightImpact();
+                                _send();
+                              },
                         icon: const Icon(Icons.arrow_upward_rounded),
                       ),
               ),
-          ]),
+            ]),
+          ),
         ]),
       ),
     );

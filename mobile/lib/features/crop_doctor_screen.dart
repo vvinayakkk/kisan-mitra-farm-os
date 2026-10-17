@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -61,7 +60,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'This crop check could not finish.');
+      setState(() => _error = 'Check failed. Try again.');
     } finally {
       if (mounted) setState(() => _phase = 'idle');
     }
@@ -73,14 +72,11 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
     final d = _diagnostic;
     final confidence = (d?['confidence'] as num?)?.toDouble() ?? 0;
     return Scaffold(
-      appBar: AppBar(title: Text('Crop Doctor', style: TextStyle(color: ink)), foregroundColor: ink),
+      appBar: AppBar(title: const Text('Crop Doctor')),
       floatingActionButton: const HelperButton(contextKey: 'crops'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
           const PreparedBySaathi(area: 'crops'),
-          Text('A little closer to a healthier crop.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
-          Text('Start with a clear photo of one leaf in daylight.', style: TextStyle(color: mutedColor(context))),
-          const SizedBox(height: 12),
           FarmCard(
             child: Column(children: [
               if (_image != null)
@@ -89,32 +85,36 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                   child: Image.memory(_image!, height: 220, width: double.infinity, fit: BoxFit.cover, semanticLabel: 'Selected crop photo'),
                 )
               else
-                const EmptyView(icon: Icons.local_florist_outlined, title: 'Let’s start with the leaf.',
-                    detail: 'Your result will explain what is visible, what is uncertain and what to check next.'),
+                const EmptyView(icon: Icons.local_florist_outlined, title: 'Photograph one leaf.'),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
-                OutlinedButton.icon(
+                FilledButton.tonalIcon(
                   onPressed: _phase != 'idle' ? null : () => _pick(ImageSource.camera),
                   icon: const Icon(Icons.photo_camera_outlined),
                   label: const Text('Take photo'),
                 ),
-                OutlinedButton.icon(
+                FilledButton.tonalIcon(
                   onPressed: _phase != 'idle' ? null : () => _pick(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library_outlined),
                   label: const Text('Choose photo'),
                 ),
                 FilledButton.icon(
-                  onPressed: _fileId == null || _phase != 'idle' ? null : _check,
+                  onPressed: _fileId == null || _phase != 'idle'
+                      ? null
+                      : () {
+                          HapticFeedback.selectionClick();
+                          _check();
+                        },
                   icon: const Icon(Icons.health_and_safety_outlined),
-                  label: Text(_phase == 'checking' ? 'Checking…' : _phase == 'uploading' ? 'Uploading…' : 'Check this crop'),
+                  label: Text(_phase == 'checking' ? 'Checking…' : _phase == 'uploading' ? 'Uploading…' : 'Check crop'),
                 ),
               ]),
               if (_phase != 'idle')
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: LoadingView(_phase == 'uploading'
-                      ? 'Getting your photo ready…'
-                      : 'Taking a careful look. This can take up to a minute.'),
+                      ? 'Uploading…'
+                      : 'Checking… up to a minute.'),
                 ),
             ]),
           ),
@@ -123,7 +123,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
             const SizedBox(height: 12),
             FarmCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('PHOTO ASSESSMENT · ${str(d['crop_identified'], 'crop not identified').toUpperCase()}',
+                Text(str(d['crop_identified'], 'crop not identified').toUpperCase(),
                     style: const TextStyle(fontSize: 11, letterSpacing: 1, color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(str(d['disease_name'], 'Unclear from this photo'),
@@ -131,7 +131,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                 const SizedBox(height: 4),
                 Text(str(d['description']), style: TextStyle(color: ink)),
                 const SizedBox(height: 8),
-                Tag('Model confidence ${confidence.round()}% · a photo assessment, not lab confirmation',
+                Tag('${confidence.round()}% confidence · not a lab diagnosis',
                     color: confidence >= 70 ? AppColors.primaryDark : AppColors.warning),
                 if (confidence > 0) ...[
                   if ((d['symptoms'] as List?)?.isNotEmpty == true) ...[
@@ -149,11 +149,9 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                   ],
                 ],
                 const SizedBox(height: 6),
-                Text('Confirm uncertain symptoms with a local agronomist before treatment.',
-                    style: TextStyle(fontSize: 12, color: mutedColor(context))),
-                const SizedBox(height: 6),
-                OutlinedButton.icon(
+                FilledButton.tonalIcon(
                   onPressed: () {
+                    HapticFeedback.selectionClick();
                     ref.read(assistantProvider.notifier).send(
                           'Help me open a crop follow-up from this photo assessment: '
                           '${str(d['disease_name'])} on ${str(d['crop_identified'])}, confidence ${confidence.round()}%. '
@@ -163,7 +161,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                     showHelperSheet(context, 'crops');
                   },
                   icon: const Icon(Icons.playlist_add),
-                  label: const Text('Start a follow-up with Mitra'),
+                  label: const Text('Follow up with Mitra'),
                 ),
               ]),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,10 +10,10 @@ import '../../ui/loader.dart';
 import '../../utils/constants.dart';
 
 const _intents = {
-  'prepare_listing': ('Tell Mitra what you have. Or what you need.', 'I have a sprayer for two days. I need help with my harvest…'),
-  'compare_matches': ('Find the fit, before you connect.', 'Which options fit my resource and exchange wishes?'),
-  'draft_terms': ('Make a fair agreement, together.', 'Help me write terms for quantity, handover and transport…'),
-  'review_exchange': ('A second pair of eyes on this exchange.', 'What is missing before we agree or hand over?'),
+  'prepare_listing': ('What do you have or need?', 'I have a sprayer for two days. I need help with my harvest…'),
+  'compare_matches': ('Find a fit', 'Which options fit my resource and exchange wishes?'),
+  'draft_terms': ('Draft terms', 'Help me write terms for quantity, handover and transport…'),
+  'review_exchange': ('Review this exchange', 'What is missing before we agree or hand over?'),
 };
 
 /// Exchange-specific assistant. It returns reviewable drafts only; nothing is
@@ -50,7 +51,7 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
     final text = _text.text.trim();
     if (text.isEmpty) return;
     final brief = [..._turns, text].join('\nFarmer follow-up: ');
-    if (brief.length > 4000) return setState(() => _error = 'This brief is getting long. Start a new brief or shorten your reply.');
+    if (brief.length > 4000) return setState(() => _error = 'Too long. Shorten or start over.');
     setState(() {
       _busy = true;
       _error = null;
@@ -70,7 +71,7 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
         _text.clear();
       });
     } on ApiException catch (e) {
-      setState(() => _error = '${e.message} Your resource has not been changed.');
+      setState(() => _error = e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -96,18 +97,18 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(border: Border.all(color: AppColors.warning), borderRadius: BorderRadius.circular(12)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Tag('REVIEWABLE DRAFT · NOT SAVED', color: AppColors.warning),
+                  const Tag('Draft · not saved', color: AppColors.warning),
                   const SizedBox(height: 6),
                   Text(draft['kind'] == 'terms'
                       ? str(draft['text'])
                       : asMap(draft['fields']).entries.map((e) => '${e.key.replaceAll('_', ' ')}: ${e.value}').join('\n')),
                   if (widget.onDraft != null)
-                    TextButton(
+                    FilledButton.tonal(
                       onPressed: () {
                         Navigator.pop(context);
                         widget.onDraft!(draft);
                       },
-                      child: const Text('Review this draft'),
+                      child: const Text('Review draft'),
                     ),
                 ]),
               ),
@@ -123,11 +124,17 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
           if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.error)),
           Row(children: [
             if (_turns.isNotEmpty)
-              TextButton(onPressed: () => setState(() { _turns.clear(); _result = null; }), child: const Text('Start a new brief')),
+              TextButton(onPressed: () => setState(() { _turns.clear(); _result = null; }), child: const Text('Start over')),
             const Spacer(),
-            FilledButton(onPressed: _busy ? null : _ask, child: Text(_busy ? 'Reading your exchange context…' : 'Ask Mitra')),
+            FilledButton(onPressed: _busy
+                    ? null
+                    : () {
+                        HapticFeedback.selectionClick();
+                        _ask();
+                      },
+                child: Text(_busy ? 'Thinking…' : 'Ask Mitra')),
           ]),
-          Text('AI suggestions. Nothing is published, sent or agreed without your review.',
+          Text('AI draft; nothing is sent without you.',
               style: TextStyle(fontSize: 11, color: mutedColor(context))),
         ]),
       ),

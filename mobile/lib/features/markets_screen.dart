@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -74,7 +75,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       _prices = results[0] is Map ? results[0] as Map<String, dynamic> : null;
       _trend = results[1] is Map ? results[1] as Map<String, dynamic> : null;
       if (_prices == null) {
-        _error = results[0] is ApiException ? (results[0] as ApiException).message : 'Current prices could not be loaded.';
+        _error = results[0] is ApiException ? (results[0] as ApiException).message : 'Prices could not be loaded.';
       }
     });
   }
@@ -87,7 +88,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
         .toList();
     final markets = asMaps(_catalogue['markets']).take(12).toList();
     return Scaffold(
-      appBar: AppBar(title: Text('Market prices', style: TextStyle(color: ink)), foregroundColor: ink),
+      appBar: AppBar(title: const Text('Market prices')),
       floatingActionButton: const HelperButton(contextKey: 'markets'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
@@ -103,26 +104,30 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                   Expanded(child: InputChip(label: Text(_market!), onDeleted: () => _search())),
                 const Spacer(),
                 FilledButton.icon(
-                  onPressed: _busy ? null : () => _search(market: _market),
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          HapticFeedback.selectionClick();
+                          _search(market: _market);
+                        },
                   icon: const Icon(Icons.search),
-                  label: const Text('Look up prices'),
+                  label: const Text('Look up'),
                 ),
               ]),
             ]),
           ),
-          if (_busy) const LoadingView('Loading dated prices and history…'),
+          if (_busy) const LoadingView('Loading…'),
           if (_error != null) ErrorView(_error!, onRetry: () => _search(market: _market)),
           if (!_busy && _prices != null) ...[
-            SectionTitle('${_crop.text.trim()} around the markets',
+            SectionTitle(_crop.text.trim(),
                 trailing: ProvenanceBadge.maybe(_prices!['provenance'])),
-            Text('${str(_prices!['source'], 'Mandi prices')} · Search date $_today',
+            Text('${str(_prices!['source'], 'Mandi prices')} · dated records, not offers',
                 style: TextStyle(fontSize: 12, color: mutedColor(context))),
             const SizedBox(height: 6),
             if (rows.isEmpty)
               EmptyView(
-                title: 'Reported prices aren’t available for this search yet.',
-                detail: str(_prices!['message'],
-                    'Browse the mandi directory, or try another crop or market. Prices appear here when reported by the source.'),
+                title: 'No reported prices.',
+                detail: str(_prices!['message']).isEmpty ? null : str(_prices!['message']),
               )
             else ...[
               for (final r in rows.take(_shown)) _PriceCard(row: r, onHistory: () => _search(market: str(r['market'])), onCompare: () {
@@ -132,14 +137,14 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                     });
                   }),
               if (rows.length > _shown)
-                TextButton(onPressed: () => setState(() => _shown += 9), child: Text('More mandis · $_shown of ${rows.length} loaded')),
+                TextButton(onPressed: () => setState(() => _shown += 9), child: const Text('More')),
             ],
             if (_compare.isNotEmpty) _TakeHome(rows: _compare, onClear: () => setState(_compare.clear)),
-            const SectionTitle('The longer view', eyebrow: 'One market · one variety'),
+            const SectionTitle('Trend'),
             if (_trend != null && ChartData.tryParse(_trend!['chart']) != null)
               FarmResult(_trend!)
             else
-              Text('There aren’t enough dated observations for a reliable trend in this search.',
+              Text('Not enough data for a trend.',
                   style: TextStyle(color: mutedColor(context))),
             if (markets.isNotEmpty)
               ExpansionTile(
@@ -150,8 +155,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(str(m['name'])),
-                      subtitle: Text('${[m['district'], m['state']].where((e) => e != null).join(', ')} · '
-                          '${m['has_price_series'] == true ? 'Price history available' : 'Reported prices not available yet'}'),
+                      subtitle: Text([m['district'], m['state']].where((e) => e != null).join(', ')),
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                         if (str(m['source_url']).startsWith('https://'))
                           IconButton(
@@ -164,13 +168,10 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                     ),
                 ],
               ),
-            const SizedBox(height: 6),
-            Text('Observed prices are not guaranteed offers. Check the date, variety and unit before you travel.',
-                style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
             TextButton.icon(
               onPressed: () => context.push('/exchange'),
               icon: const Icon(Icons.handshake_outlined),
-              label: const Text('Need transport, equipment or a swap? Farmer exchange'),
+              label: const Text('Farmer exchange'),
             ),
           ],
         ]),
@@ -210,7 +211,7 @@ class _PriceCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: mutedColor(context))),
           Row(children: [
             TextButton(onPressed: onHistory, child: const Text('History')),
-            TextButton(onPressed: onCompare, child: const Text('Compare take-home')),
+            TextButton(onPressed: onCompare, child: const Text('Compare')),
           ]),
         ]),
       ),
@@ -252,7 +253,7 @@ class _TakeHomeState extends State<_TakeHome> {
       child: FarmCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Expanded(child: Text('Estimated take-home', style: TextStyle(fontWeight: FontWeight.w700))),
+            const Expanded(child: Text('Take-home estimate', style: TextStyle(fontWeight: FontWeight.w700))),
             TextButton(onPressed: widget.onClear, child: const Text('Clear')),
           ]),
           TextField(
@@ -291,7 +292,7 @@ class _TakeHomeState extends State<_TakeHome> {
                   style: TextStyle(fontWeight: FontWeight.w700, color: nets[i] == best ? AppColors.primaryDark : null)),
           ],
           const SizedBox(height: 6),
-          Text('Your own estimate from dated prices and the costs you entered. Not a quote or a promised price.',
+          Text('Your own estimate, not a quote.',
               style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
         ]),
       ),

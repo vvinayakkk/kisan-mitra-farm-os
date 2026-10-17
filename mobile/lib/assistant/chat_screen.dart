@@ -8,7 +8,6 @@ import '../ui/kit.dart';
 import '../utils/constants.dart';
 import 'assistant_controller.dart';
 import 'models.dart';
-import 'suggestions.dart';
 import 'widgets/composer.dart';
 import 'widgets/message_view.dart';
 import 'widgets/pending_card.dart';
@@ -16,7 +15,6 @@ import 'widgets/sheets.dart';
 
 /// Feature chips from the original app, now pointing at the Farm OS screens.
 const kFeatureChips = <(String, IconData, Color, String)>[
-  ('Today', Icons.dashboard_outlined, Color(0xFF10B981), '/notebook'),
   ('Calendar', Icons.calendar_month_outlined, Color(0xFF3B82F6), '/calendar'),
   ('Crop Doctor', Icons.healing_rounded, Color(0xFF10B981), '/crops'),
   ('Mandi rates', Icons.storefront_outlined, Color(0xFFF59E0B), '/markets'),
@@ -25,6 +23,7 @@ const kFeatureChips = <(String, IconData, Color, String)>[
   ('Schemes', Icons.account_balance_outlined, Color(0xFF9C27B0), '/schemes'),
   ('Farm notebook', Icons.menu_book_outlined, Color(0xFF795548), '/notebook'),
   ('Farmer exchange', Icons.handshake_outlined, Color(0xFF00BCD4), '/exchange'),
+  ('Saathi', Icons.spa_outlined, Color(0xFF16A34A), '/saathi'),
   ('Profile', Icons.person_outlined, Color(0xFFFF5722), '/profile'),
 ];
 
@@ -42,7 +41,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(assistantProvider);
     final controller = ref.read(assistantProvider.notifier);
-    final ink = inkColor(context);
     final latestAnswer = state.messages.lastWhere((m) => m.role == Role.assistant,
         orElse: () => const ChatMessage(id: '', role: Role.assistant));
     final items = <Widget>[
@@ -62,16 +60,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ];
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kisan Mitra', style: TextStyle(color: ink, fontWeight: FontWeight.w700)),
-        foregroundColor: ink,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+        ),
+        title: Text('chat.title'.tr()),
         actions: [
-          IconButton(
-            tooltip: 'Skills and tools',
-            icon: const Icon(Icons.auto_awesome_outlined),
-            onPressed: () => showCatalogSheet(context, onUseSkill: (skill) {
-              _composer.currentState?.setDraft('Use the ${skill.name} skill: ');
-            }),
-          ),
           IconButton(
             tooltip: 'Conversations',
             icon: const Icon(Icons.history_rounded),
@@ -79,7 +73,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           IconButton(
             tooltip: 'New chat',
-            icon: const Icon(Icons.add_comment_outlined),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: state.busy ? null : controller.newConversation,
           ),
         ],
@@ -97,7 +91,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: !state.ready && state.loading
                 ? const LoadingView('Opening your farm workspace…')
                 : state.messages.isEmpty && state.pending == null
-                    ? _Welcome(onPrompt: (p) => controller.send(p))
+                    ? _Welcome(onSkills: () => showCatalogSheet(context, onUseSkill: (skill) {
+                        _composer.currentState?.setDraft('Use the ${skill.name} skill: ');
+                      }))
                     : RefreshIndicator(
                         onRefresh: controller.refresh,
                         child: ListView.builder(
@@ -115,50 +111,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
-class _Welcome extends ConsumerWidget {
-  const _Welcome({required this.onPrompt});
+/// Empty chat: the heading and one set of chips. Every feature lives in the chips.
+class _Welcome extends StatelessWidget {
+  const _Welcome({required this.onSkills});
 
-  final void Function(String prompt) onPrompt;
+  final VoidCallback onSkills;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ink = inkColor(context);
-    final ready = ref.watch(assistantProvider.select((s) => s.ready && !s.busy));
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      children: [
-        const Text('YOUR FARM COMPANION',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.primaryDark)),
-        const SizedBox(height: 6),
-        Text('Let’s get your farm work done.',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink)),
-        const SizedBox(height: 4),
-        Text('Ask a question in any language. Make a plan. Leave with something useful.',
-            textAlign: TextAlign.center, style: TextStyle(color: mutedColor(context))),
-        const SizedBox(height: 18),
-        Wrap(alignment: WrapAlignment.center, spacing: 8, runSpacing: 8, children: [
-          for (final (label, prompt) in kSuggestions['assistant']!)
-            OutlineChip(label: label, icon: Icons.auto_awesome, onTap: ready ? () => onPrompt(prompt) : null),
-        ]),
-        const SizedBox(height: 22),
-        Text('Open a farm tool', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, color: ink)),
-        const SizedBox(height: 10),
-        Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10, children: [
-          for (final (label, icon, color, route) in kFeatureChips)
-            OutlineChip(label: label, icon: icon, iconColor: color, onTap: () => context.push(route)),
-          Builder(
-            builder: (chipContext) => OutlineChip(
-              label: 'Language',
-              icon: Icons.translate_rounded,
-              iconColor: const Color(0xFF673AB7),
-              onTap: () => showLanguagePicker(chipContext),
-            ),
-          ),
-        ]),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('chat.empty_title'.tr(),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: inkColor(context))),
+            const SizedBox(height: 20),
+            Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10, children: [
+              for (final (label, icon, color, route) in kFeatureChips)
+                OutlineChip(label: label, icon: icon, iconColor: color, onTap: () => context.push(route)),
+              OutlineChip(label: 'Skills', icon: Icons.auto_awesome, iconColor: const Color(0xFF10B981), onTap: onSkills),
+              Builder(
+                builder: (chipContext) => OutlineChip(
+                  label: 'language_select.title'.tr(),
+                  icon: Icons.translate_rounded,
+                  iconColor: const Color(0xFF673AB7),
+                  onTap: () => showLanguagePicker(chipContext),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      );
 }
 
 Future<void> showLanguagePicker(BuildContext context) async {

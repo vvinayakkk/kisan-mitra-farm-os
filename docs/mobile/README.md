@@ -9,11 +9,11 @@ The Flutter project in `mobile/` is the phone version of Farm OS. It talks to th
 | `lib/core/` | `ApiClient` (session headers, typed errors, timeouts, NDJSON streaming), `AuthController` and `SessionVault` (identity lifecycle), bounded `ReadCache`, language preference, idempotency keys |
 | `lib/assistant/` | Typed assistant models, the pure event reducer `run_events.dart`, `AssistantController` (run, stop, retry, approve/decline/answer, history, restart recovery, task edits), chat screen, page helper sheet, widgets for messages, activity, pending cards, results and the composer |
 | `lib/voice/` | Speech capabilities, microphone consent, WAV recording, transcription, synthesis/playback, the dictation button and the turn-based live voice sheet |
-| `lib/features/` | Calendar, Saathi, Station, Weather, Crop doctor, Markets, Schemes, Notebook (Today, Fields, Money, Follow-ups, Plans, Memory, Files, shared work), Exchange, Profile and the home shell |
+| `lib/features/` | Calendar, Saathi, Station, Weather, Crop doctor, Markets, Schemes, Notebook (Today, Fields, Money, Follow-ups, Plans, Memory, Files, shared work), Exchange and Profile |
 | `lib/ui/` | Shared look (gradient background, cards, the original outlined chips), loading/empty/error views, provenance badge, form sheet |
 | `test/` | Contract and failure-path tests: stream ends early, 401, stop, restart replay, stale undo, cache bounds, language/speech, auth lanes |
 
-Navigation: the bottom bar holds Assistant, Calendar, Station and Farm (all other tools). Every tool screen has an "Ask Mitra" helper with page-specific prompts. Chat keeps the original suggestion chips: prompt chips start a real task, and feature chips open the matching screen.
+Navigation keeps the original app: splash → language → sign in → choice screen (voice, text chat, quick services). Chat's suggestion chips open every Farm OS tool (calendar, crop doctor, mandi, weather, station, schemes, notebook, exchange, Saathi, profile, skills, language). Every tool screen has an "Ask Mitra" helper. The theme follows the original design: Poppins, light green gradient, frosted glass cards, filled buttons, centered titles and haptic feedback.
 
 ## Identity and session lifecycle
 

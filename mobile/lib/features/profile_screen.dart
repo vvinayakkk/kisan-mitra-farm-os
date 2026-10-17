@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -53,7 +54,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
       ref.read(workspaceCacheProvider).invalidate();
       if (v['preferred_language'] != null) await ref.read(languageProvider.notifier).choose('${v['preferred_language']}');
-      if (mounted) showNotice(context, 'Your profile has been saved.');
+      if (mounted) showNotice(context, 'Profile saved.');
     } on ApiException catch (e) {
       if (mounted) showNotice(context, e.message);
     }
@@ -65,17 +66,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final ink = inkColor(context);
     final auth = ref.watch(authProvider);
     return Scaffold(
-      appBar: AppBar(title: Text('My farm profile', style: TextStyle(color: ink)), foregroundColor: ink),
+      appBar: AppBar(title: const Text('My profile')),
       body: FarmBackground(
         child: Loader<Map<String, dynamic>>(
           key: _loader,
-          loading: 'Opening your farm profile…',
+          loading: 'Loading…',
           load: () async => asMap(asMap(await ref.read(apiProvider).get('/api/profile'))['profile']),
           builder: (context, p) {
             String list(Object? v, String empty) => v is List && v.isNotEmpty ? v.join(', ') : empty;
             return ListView(padding: const EdgeInsets.all(12), children: [
               if (p.isEmpty)
-                const EmptyView(title: 'No farmer profile is available for this account.', detail: 'Your identity has not been inferred.')
+                const EmptyView(title: 'No profile for this account.')
               else
                 FarmCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -92,8 +93,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     _row(context, 'Crops', list(p['crops'], 'None added')),
                     _row(context, 'Can share', list(p['excess_resources'], 'None added')),
                     _row(context, 'Needs', list(p['required_resources'], 'None added')),
-                    Text('Saved field areas are separate from your reported total.', style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
-                    Align(alignment: Alignment.centerRight, child: FilledButton.tonal(onPressed: () => _edit(p), child: const Text('Edit profile'))),
+                    Align(alignment: Alignment.centerRight, child: FilledButton.tonal(onPressed: () {
+                      HapticFeedback.selectionClick();
+                      _edit(p);
+                    }, child: const Text('Edit'))),
                   ]),
                 ),
               const SizedBox(height: 12),
@@ -130,7 +133,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ListTile(
                     leading: const Icon(Icons.logout),
                     title: const Text('Sign out'),
-                    subtitle: const Text('Ends this device’s session. Your farm records stay on the server.'),
                     onTap: () async {
                       if (await confirmAction(context, title: 'Sign out?', body: 'You will need to sign in again on this phone.', confirm: 'Sign out', cancel: 'Stay')) {
                         await ref.read(authProvider.notifier).signOut();

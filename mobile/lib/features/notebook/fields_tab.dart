@@ -60,7 +60,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
     final farms = {for (final f in d.farms) str(f['id']): str(f['name'])};
     final v = await showFormSheet(context,
         title: p == null ? 'Add a field' : 'Edit field',
-        note: 'Coordinates locate the field centre for the regional forecast grid. Enter them from your phone map.',
+        note: 'Coordinates set the forecast grid location.',
         fields: [
           FieldSpec('farm_id', 'Farm', kind: FieldKind.select, required: true, initial: p?['farm_id'] ?? farms.keys.firstOrNull, options: farms),
           FieldSpec('name', 'Field name', initial: p?['name'], maxLength: 120),
@@ -81,7 +81,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
     final crops = {for (final c in asMaps(d.options['crops'])) str(c['id']): str(c['name'])};
     final v = await showFormSheet(context,
         title: c == null ? 'Add a crop season' : 'Edit crop season',
-        note: 'Harvested seasons need an actual harvest date, which cannot be in the future.',
+        note: 'Harvested needs a past harvest date.',
         fields: [
           FieldSpec('plot_id', 'Field', kind: FieldKind.select, required: true, initial: c?['plot_id'], options: plots),
           FieldSpec('crop_id', 'Crop', kind: FieldKind.select, required: true, initial: c?['crop_id'], options: crops),
@@ -101,7 +101,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
   Future<void> _weather(Map<String, dynamic> farm, List<Map<String, dynamic>> plots, bool linked) async {
     if (linked) {
       await notebookWrite(context, ref, (api) => api.delete('/api/farms/${farm['id']}/weather-link'),
-          done: 'Weather sharing stopped for this farm. Existing dated records remain.', reload: _loader);
+          done: 'Weather sharing stopped.', reload: _loader);
       return;
     }
     final v = await showFormSheet(context, title: 'Get forecasts for ${farm['name']}', fields: [
@@ -110,20 +110,20 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
       const FieldSpec('consent', 'Share this field’s coarse grid location with the weather source', kind: FieldKind.check),
     ]);
     if (v == null || !mounted) return;
-    if (v['consent'] != true) return showNotice(context, 'Forecasts need your consent to share the coarse grid location.');
+    if (v['consent'] != true) return showNotice(context, 'Consent needed for forecasts.');
     await notebookWrite(context, ref,
         (api) => api.post('/api/farms/${farm['id']}/weather-link', body: {'plot_id': v['plot_id'], 'consent_to_share_coarse_grid': true}),
-        done: 'Weather sharing enabled. New forecasts appear when the source worker retrieves them.', reload: _loader);
+        done: 'Weather sharing enabled.', reload: _loader);
   }
 
   @override
   Widget build(BuildContext context) => Loader<_FieldsData>(
         key: _loader,
-        loading: 'Loading your fields…',
+        loading: 'Loading…',
         load: _load,
         builder: (context, d) => ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
-          SectionTitle('Farms', trailing: TextButton.icon(onPressed: () => _farm(d), icon: const Icon(Icons.add), label: const Text('Farm'))),
-          if (d.farms.isEmpty) const EmptyView(title: 'Add your first farm, then its fields.'),
+          SectionTitle('Farms', trailing: FilledButton.tonalIcon(onPressed: () => _farm(d), icon: const Icon(Icons.add), label: const Text('Farm'))),
+          if (d.farms.isEmpty) const EmptyView(title: 'No farms yet.'),
           for (final f in d.farms) ...[
             Card(
               child: ListTile(
@@ -134,7 +134,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
                 trailing: PopupMenuButton<String>(
                   onSelected: (v) => _weather(f, d.plots.where((p) => p['farm_id'] == f['id']).toList(), v == 'unlink'),
                   itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'link', child: Text('Use a field for forecasts')),
+                    PopupMenuItem(value: 'link', child: Text('Use field for forecasts')),
                     PopupMenuItem(value: 'unlink', child: Text('Stop weather sharing')),
                   ],
                 ),
@@ -142,30 +142,27 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
             ),
           ],
           SectionTitle('Fields',
-              trailing: TextButton.icon(onPressed: d.farms.isEmpty ? null : () => _plot(d), icon: const Icon(Icons.add), label: const Text('Field'))),
+              trailing: FilledButton.tonalIcon(onPressed: d.farms.isEmpty ? null : () => _plot(d), icon: const Icon(Icons.add), label: const Text('Field'))),
           for (final p in d.plots)
             Card(
               child: ListTile(
                 title: Text(str(p['name'], 'Field')),
-                subtitle: Text('${p['area_ha']} hectares · ${str(p['soil_texture'], 'Soil texture not recorded')}\n'
-                    '${p['latitude']}, ${p['longitude']}'),
-                isThreeLine: true,
+                subtitle: Text('${p['area_ha']} ha · ${str(p['soil_texture'], 'Soil not recorded')}'),
                 onTap: () => _plot(d, p),
               ),
             ),
           SectionTitle('Crop seasons',
-              trailing: TextButton.icon(onPressed: d.plots.isEmpty ? null : () => _cycle(d), icon: const Icon(Icons.add), label: const Text('Season'))),
-          if (d.cycles.isEmpty) const EmptyView(title: 'No crop seasons saved.', detail: 'Add a field first, then its crop.'),
+              trailing: FilledButton.tonalIcon(onPressed: d.plots.isEmpty ? null : () => _cycle(d), icon: const Icon(Icons.add), label: const Text('Season'))),
+          if (d.cycles.isEmpty) const EmptyView(title: 'No crop seasons.'),
           for (final c in d.cycles)
             Card(
               child: ListTile(
                 title: Text('${str(c['crop_name'], 'Crop')} · ${str(c['season'])}'),
                 subtitle: Text('${_cycleStatus[c['status']] ?? str(c['status'])} · sown ${displayDate(str(c['sowing_date']))}'
-                    '${c['expected_harvest_date'] != null ? ' · harvest estimate ${displayDate(str(c['expected_harvest_date']))}' : ''}'),
+                    '${c['expected_harvest_date'] != null ? ' · harvest (est.) ${displayDate(str(c['expected_harvest_date']))}' : ''}'),
                 onTap: () => _cycle(d, c),
               ),
             ),
-          Text('A future harvest date is your estimate.', style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
         ]),
       );
 }

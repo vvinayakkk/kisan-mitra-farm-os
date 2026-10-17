@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
@@ -15,12 +16,12 @@ import 'exchange_screen.dart';
 const _closed = {'completed', 'cancelled', 'disputed'};
 const _trail = ['open', 'negotiating', 'agreed', 'handover', 'completed'];
 const _actionText = {
-  'propose': 'Share these terms with the other farmer. They can review and agree.',
-  'accept': 'Agree to the proposed terms. This records your agreement; no payment or delivery happens in the app.',
-  'handover': 'Confirm that you handed over or received the resource. Both farmers confirm separately.',
-  'complete': 'Confirm the exchange is complete on your side.',
-  'dispute': 'Record that something went wrong. Describe the problem.',
-  'cancel': 'Close this conversation. Terms not yet agreed are dropped.',
+  'propose': 'Share these terms with the other farmer.',
+  'accept': 'Agree to the terms. No payment happens in the app.',
+  'handover': 'Confirm the handover on your side.',
+  'complete': 'Confirm completion on your side.',
+  'dispute': 'Describe the problem.',
+  'cancel': 'Close this conversation.',
 };
 
 /// One private exchange conversation: messages (polled) and the agreement
@@ -126,7 +127,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => StatefulBuilder(builder: (c, set) => AlertDialog(
-            title: const Text('Review this step'),
+            title: const Text('Confirm step'),
             content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(_actionText[action]!),
               if (action == 'accept' && asMap(t['proposal'])['terms'] != null) ...[
@@ -148,14 +149,14 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                       conversationId: widget.threadId,
                       onDraft: (d) => set(() => terms.text = str(d['text'], terms.text))),
                   icon: const Icon(Icons.auto_awesome, size: 16),
-                  label: const Text('Draft terms with Mitra'),
+                  label: const Text('Draft with Mitra'),
                 ),
             ]),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Go back')),
+              TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Back')),
               FilledButton(
                 onPressed: needsTerms && terms.text.trim().length < 2 ? null : () => Navigator.pop(c, true),
-                child: const Text('Confirm this step'),
+                child: const Text('Confirm'),
               ),
             ],
           )),
@@ -185,8 +186,8 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final t = _thread;
     if (t == null) {
       return Scaffold(
-        appBar: AppBar(foregroundColor: ink),
-        body: FarmBackground(child: _error != null ? ErrorView(_error!, onRetry: _loadAll) : const LoadingView('Opening conversation…')),
+        appBar: AppBar(),
+        body: FarmBackground(child: _error != null ? ErrorView(_error!, onRetry: _loadAll) : const LoadingView('Loading…')),
       );
     }
     final status = str(t['status']);
@@ -198,8 +199,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final step = _trail.indexOf(status);
     return Scaffold(
       appBar: AppBar(
-        title: Text(str(t['listing_title'], 'Exchange'), style: TextStyle(color: ink)),
-        foregroundColor: ink,
+        title: Text(str(t['listing_title'], 'Exchange')),
         actions: [
           IconButton(
             tooltip: 'Review with Mitra',
@@ -234,30 +234,30 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                 if (!closed)
                   Wrap(spacing: 6, runSpacing: 4, children: [
                     if (status == 'open' || status == 'negotiating')
-                      TextButton(onPressed: () => _act('propose'), child: const Text('Propose terms')),
+                      FilledButton.tonal(onPressed: () => _act('propose'), child: const Text('Propose terms')),
                     if (status == 'negotiating')
                       t['can_accept'] == true
-                          ? FilledButton(onPressed: () => _act('accept'), child: const Text('Review & agree'))
-                          : const Text('Waiting for the other farmer to review your terms.'),
+                          ? FilledButton(onPressed: () => _act('accept'), child: const Text('Agree'))
+                          : const Text('Waiting for the other farmer.'),
                     if (status == 'agreed')
                       handed
-                          ? const Text('Your handover confirmed')
-                          : FilledButton(onPressed: () => _act('handover'), child: const Text('Confirm my handover')),
+                          ? const Text('Handover confirmed')
+                          : FilledButton(onPressed: () => _act('handover'), child: const Text('Confirm handover')),
                     if (status == 'handover')
                       completed
                           ? const Text('Waiting for other farmer')
-                          : FilledButton(onPressed: () => _act('complete'), child: const Text('Confirm completion')),
+                          : FilledButton(onPressed: () => _act('complete'), child: const Text('Confirm complete')),
                     if (status == 'agreed' || status == 'handover')
-                      TextButton(onPressed: () => _act('dispute'), child: const Text('Raise a problem')),
+                      TextButton(onPressed: () => _act('dispute'), child: const Text('Problem')),
                     if (status == 'open' || status == 'negotiating')
-                      TextButton(onPressed: () => _act('cancel'), child: const Text('Close conversation')),
+                      TextButton(onPressed: () => _act('cancel'), child: const Text('Close')),
                   ]),
               ]),
             ),
           ),
           Expanded(
             child: messages.isEmpty
-                ? const EmptyView(title: 'Ask about availability, condition and a fair exchange.')
+                ? const EmptyView(title: 'No messages yet.')
                 : ListView.builder(
                     reverse: true,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -298,12 +298,17 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                       maxLength: 4000,
                       minLines: 1,
                       maxLines: 4,
-                      decoration: const InputDecoration(hintText: 'Message (stays in this app)', counterText: ''),
+                      decoration: const InputDecoration(hintText: 'Message', counterText: ''),
                     ),
                   ),
                   IconButton.filled(
                     tooltip: 'Send message',
-                    onPressed: _sending ? null : _send,
+                    onPressed: _sending
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            _send();
+                          },
                     icon: const Icon(Icons.send),
                   ),
                 ]),

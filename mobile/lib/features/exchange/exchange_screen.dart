@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,12 +18,12 @@ import 'exchange_mitra.dart';
 const kExchangeCategories = {'equipment': 'Equipment', 'labour': 'Helping hands', 'transport': 'Transport', 'produce': 'Harvest'};
 const kThreadStatus = {
   'open': 'Connected',
-  'negotiating': 'Discussing terms',
-  'agreed': 'Both agreed',
-  'handover': 'Handover confirmed',
-  'completed': 'Exchange complete',
+  'negotiating': 'Discussing',
+  'agreed': 'Agreed',
+  'handover': 'Handed over',
+  'completed': 'Complete',
   'cancelled': 'Closed',
-  'disputed': 'Needs resolving',
+  'disputed': 'Disputed',
 };
 
 /// Consenting farmers' resource notices, matches and private conversations.
@@ -52,12 +53,12 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
   Future<void> _edit([Map<String, dynamic>? listing, Map<String, Object?>? draft]) async {
     final l = listing ?? draft ?? const {};
     final v = await showFormSheet(context,
-        title: listing == null ? 'Share or request a resource' : 'Edit your notice',
-        submit: 'Save notice',
-        note: 'Published notices are visible to other farmers in this exchange, with your display name and district.',
+        title: listing == null ? 'New notice' : 'Edit notice',
+        submit: 'Save',
+        note: 'Published notices show your name and district.',
         fields: [
           FieldSpec('kind', 'I am', kind: FieldKind.select, required: true, initial: l['kind'] ?? 'offer',
-              options: const {'offer': 'Offering something', 'request': 'Looking for something'}),
+              options: const {'offer': 'Offering', 'request': 'Looking for'}),
           FieldSpec('category', 'Category', kind: FieldKind.select, required: true, initial: l['category'] ?? 'equipment', options: kExchangeCategories),
           FieldSpec('title', 'Title', required: true, initial: l['title'], maxLength: 160),
           FieldSpec('description', 'Description', kind: FieldKind.multiline, required: true, initial: l['description'], maxLength: 2000),
@@ -69,11 +70,11 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
           FieldSpec('exchange_for', 'In exchange for', initial: l['exchange_for'], maxLength: 500),
           FieldSpec('status', 'Visibility', kind: FieldKind.select, required: true, initial: listing?['status'] ?? 'draft',
               options: const {'draft': 'Draft (only you)', 'published': 'Published', 'withdrawn': 'Withdrawn'}),
-          const FieldSpec('consent', 'I consent to publish this notice to other farmers', kind: FieldKind.check),
+          const FieldSpec('consent', 'I consent to publish this', kind: FieldKind.check),
         ]);
     if (v == null || !mounted) return;
     if (v['status'] == 'published' && v['consent'] != true) {
-      return showNotice(context, 'Publishing needs your consent.');
+      return showNotice(context, 'Consent needed to publish.');
     }
     final body = {
       for (final e in v.entries)
@@ -89,7 +90,7 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
         await api.patch('/api/exchange/listings/${listing['id']}', body: {...body, 'row_version': listing['row_version']});
       }
       ref.read(workspaceCacheProvider).invalidate();
-      if (mounted) showNotice(context, v['status'] == 'published' ? 'Notice published.' : 'Notice saved as ${v['status']}.');
+      if (mounted) showNotice(context, v['status'] == 'published' ? 'Published.' : 'Saved.');
     } on ApiException catch (e) {
       if (mounted) showNotice(context, e.message);
     }
@@ -101,7 +102,7 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
     final api = ref.read(apiProvider);
     return Loader<Map<String, dynamic>>(
       key: key,
-      loading: 'Looking for resources…',
+      loading: 'Loading…',
       load: () async => asMap(await api.get('/api/exchange/listings', query: {
         if (mine) 'mine': true,
         if (!mine && _category != null) 'category': _category,
@@ -123,11 +124,13 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
             const SizedBox(height: 8),
             Wrap(spacing: 6, runSpacing: 6, children: [
               OutlineChip(label: 'All', selected: _category == null, onTap: () {
+                HapticFeedback.selectionClick();
                 setState(() => _category = null);
                 _browse.currentState?.reload();
               }),
               for (final e in kExchangeCategories.entries)
                 OutlineChip(label: e.value, selected: _category == e.key, onTap: () {
+                  HapticFeedback.selectionClick();
                   setState(() => _category = e.key);
                   _browse.currentState?.reload();
                 }),
@@ -136,13 +139,10 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
           ],
           if (items.isEmpty)
             EmptyView(
-              title: mine ? 'Your resources belong here.' : 'No resources fit this search yet.',
-              detail: mine ? 'Share equipment, labour, transport or harvest with nearby farmers.' : 'Be the first to share something useful.',
-              action: FilledButton(onPressed: _edit, child: const Text('Create a notice')),
+              title: mine ? 'No notices yet.' : 'Nothing found.',
+              action: FilledButton.tonal(onPressed: _edit, child: const Text('New notice')),
             ),
           for (final l in items) _ListingCard(listing: l, mine: mine, onEdit: () => _edit(l)),
-          Text('Private coordination · no external messages. Distances are not computed; locations are district level.',
-              style: TextStyle(fontSize: 11, color: mutedColor(context))),
         ]);
       },
     );
@@ -150,11 +150,9 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final ink = inkColor(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Farmer exchange', style: TextStyle(color: ink)),
-        foregroundColor: ink,
+        title: const Text('Farmer exchange'),
         actions: [
           IconButton(
             tooltip: 'Ask Mitra to draft',
@@ -168,14 +166,14 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
           controller: _tabs,
           labelColor: AppColors.primaryDark,
           unselectedLabelColor: mutedColor(context),
-          tabs: const [Tab(text: 'Browse'), Tab(text: 'My notices'), Tab(text: 'Conversations')],
+          tabs: const [Tab(text: 'Browse'), Tab(text: 'Mine'), Tab(text: 'Chats')],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'exchange-new',
         onPressed: _edit,
         icon: const Icon(Icons.add),
-        label: const Text('New notice'),
+        label: const Text('New'),
       ),
       body: FarmBackground(
         child: TabBarView(controller: _tabs, children: [
@@ -207,7 +205,7 @@ class _ListingCard extends ConsumerWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text(l['kind'] == 'request' ? 'LOOKING FOR' : 'AVAILABLE TO SHARE',
+              child: Text(l['kind'] == 'request' ? 'LOOKING FOR' : 'AVAILABLE',
                   style: const TextStyle(fontSize: 11, letterSpacing: 1, fontWeight: FontWeight.w700, color: AppColors.primaryDark)),
             ),
             if (sample) const Tag('Sample', color: AppColors.warning) else const Tag('Farmer reported', color: Color(0xFF7C3AED)),
@@ -217,9 +215,9 @@ class _ListingCard extends ConsumerWidget {
           Text('${kExchangeCategories[l['category']] ?? ''} · ${l['quantity']} ${str(l['unit'])} · ${str(l['district'])}, ${str(l['state'])}',
               style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
           if (!mine) Text(str(l['owner_name'], str(l['display_name'], 'Member listing')), style: TextStyle(fontSize: 12, color: mutedColor(context))),
-          if (str(l['exchange_for']).isNotEmpty) Text('In exchange for: ${l['exchange_for']}', style: TextStyle(color: ink)),
+          if (str(l['exchange_for']).isNotEmpty) Text('For: ${l['exchange_for']}', style: TextStyle(color: ink)),
           if (mine && l['status'] == 'published')
-            TextButton(onPressed: () => _showMatches(context, ref, l), child: const Text('See matching notices')),
+            FilledButton.tonal(onPressed: () => _showMatches(context, ref, l), child: const Text('Matches')),
         ]),
       ),
     );
@@ -240,11 +238,11 @@ class _ListingCard extends ConsumerWidget {
           Text('${l['quantity']} ${str(l['unit'])} · ${str(l['district'])}, ${str(l['state'])}'
               '${l['available_on'] != null ? ' · from ${displayDate(str(l['available_on']))}' : ''}'),
           const SizedBox(height: 12),
-          const Text('Starting a conversation shares your display name with this farmer. No message leaves the app.',
-              style: TextStyle(fontSize: 12)),
+          const Text('Starting a chat shares your display name.', style: TextStyle(fontSize: 12)),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: () async {
+              HapticFeedback.selectionClick();
               try {
                 final t = asMap(await ref.read(apiProvider).post('/api/exchange/conversations',
                     body: {'listing_id': l['id'], 'consent_to_share_display_name': true}));
@@ -255,7 +253,7 @@ class _ListingCard extends ConsumerWidget {
               }
             },
             icon: const Icon(Icons.forum_outlined),
-            label: const Text('Discuss exchange'),
+            label: const Text('Discuss'),
           ),
         ]),
       ),
@@ -270,14 +268,13 @@ class _ListingCard extends ConsumerWidget {
       builder: (c) => SizedBox(
         height: MediaQuery.sizeOf(c).height * 0.7,
         child: Loader<Map<String, dynamic>>(
-          loading: 'Comparing resource matches…',
+          loading: 'Loading…',
           load: () async => asMap(await ref.read(apiProvider).get('/api/exchange/matches', query: {'listing_id': l['id']})),
           builder: (c, d) {
             final items = asMaps(d['items']);
             return ListView(padding: const EdgeInsets.all(12), children: [
               Text('Matches for “${l['title']}”', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-              if (str(d['note']).isNotEmpty) Text(str(d['note']), style: const TextStyle(fontSize: 12)),
-              if (items.isEmpty) const EmptyView(title: 'No available match yet.'),
+              if (items.isEmpty) const EmptyView(title: 'No match yet.'),
               for (final m in items)
                 _ListingCard(listing: m, mine: false, onEdit: () {}),
             ]);
@@ -314,12 +311,12 @@ class _InboxState extends ConsumerState<_Inbox> {
   @override
   Widget build(BuildContext context) => Loader<Map<String, dynamic>>(
         key: _loader,
-        loading: 'Loading conversations…',
+        loading: 'Loading…',
         load: () async => asMap(await ref.read(apiProvider).get('/api/exchange/conversations')),
         builder: (context, d) {
           final items = asMaps(d['items']);
           if (items.isEmpty) {
-            return ListView(children: const [EmptyView(title: 'A useful conversation starts with a resource.')]);
+            return ListView(children: const [EmptyView(title: 'No chats yet.')]);
           }
           return ListView(padding: const EdgeInsets.all(12), children: [
             for (final t in items)

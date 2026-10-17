@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../assistant/assistant_controller.dart';
@@ -62,11 +63,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
     final key = isoDate(_selected);
     final today = byDay[key] ?? const [];
-    final open = state.tasks.where((t) => !t.completed).length;
     final ink = inkColor(context);
     final runContext = RunContext(view: 'calendar', selectedDate: key);
     return Scaffold(
-      appBar: AppBar(title: Text('Calendar', style: TextStyle(color: ink)), foregroundColor: ink, actions: [
+      appBar: AppBar(title: const Text('Calendar'), actions: [
         IconButton(
           tooltip: 'Deleted tasks',
           icon: const Icon(Icons.restore_from_trash_outlined),
@@ -78,8 +78,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         child: RefreshIndicator(
           onRefresh: ref.read(assistantProvider.notifier).refresh,
           child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
-            Text('$open open tasks · A little room for what matters', style: TextStyle(color: mutedColor(context))),
-            const SizedBox(height: 8),
             const PreparedBySaathi(area: 'today'),
             _MonthGrid(
               month: _month,
@@ -88,13 +86,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               onMonth: (m) => setState(() => _month = m),
               onSelect: (d) => setState(() => _selected = d),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text('Saved plans appear here. Notifications and hardware actions are not scheduled.',
-                  style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
-            ),
             SectionTitle(displayDate(key),
-                trailing: TextButton.icon(
+                trailing: FilledButton.tonalIcon(
                   onPressed: locked
                       ? null
                       : () => ref.read(assistantProvider.notifier).send(
@@ -103,12 +96,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             if (context.mounted) showHelperSheet(context, 'calendar', runContext: runContext);
                           }),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add with Mitra'),
+                  label: const Text('Add'),
                 )),
             if (!state.ready && state.loading)
-              const LoadingView('Loading your saved tasks…')
+              const LoadingView('Loading…')
             else if (today.isEmpty)
-              const EmptyView(title: 'No tasks planned for this day.', detail: 'Let Mitra help you make a little progress.')
+              const EmptyView(title: 'No tasks this day.')
             else
               for (final t in today)
                 Padding(
@@ -123,17 +116,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 color: ink,
                                 decoration: t.completed ? TextDecoration.lineThrough : null,
                               )),
-                          Text(t.notes.isEmpty ? 'Your saved farm task' : t.notes,
-                              style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
+                          if (t.notes.isNotEmpty)
+                            Text(t.notes, style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
                           const SizedBox(height: 4),
-                          Tag(t.completed ? 'Marked done by you' : 'Saved plan',
+                          Tag(t.completed ? 'Done' : 'Planned',
                               color: t.completed ? AppColors.primaryDark : AppColors.info),
                         ]),
                       ),
                       if (!t.completed)
                         IconButton(
                           tooltip: 'Mark done',
-                          onPressed: locked ? null : () => _change(t.copyWith(completed: true)),
+                          onPressed: locked
+                              ? null
+                              : () {
+                                  HapticFeedback.selectionClick();
+                                  _change(t.copyWith(completed: true));
+                                },
                           icon: const Icon(Icons.check_circle_outline),
                         ),
                       PopupMenuButton<String>(
@@ -239,7 +237,10 @@ class _MonthGrid extends StatelessWidget {
       label: '${displayDate(isoDate(d))}, ${tasks.length} tasks',
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () => onSelect(d),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onSelect(d);
+        },
         child: Container(
           height: 44,
           margin: const EdgeInsets.all(1.5),
@@ -316,7 +317,7 @@ class _TaskEditorState extends State<_TaskEditor> {
               suffixIcon: VoiceButton(onTranscript: (t) => _notes.text = '${_notes.text} $t'.trim()),
             ),
           ),
-          OutlinedButton.icon(
+          FilledButton.tonalIcon(
             icon: const Icon(Icons.event),
             label: Text(displayDate(_date)),
             onPressed: () async {
@@ -340,13 +341,14 @@ class _TaskEditorState extends State<_TaskEditor> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
+                HapticFeedback.selectionClick();
                 if (_title.text.trim().isEmpty) return setState(() => _error = 'Add a task title.');
                 Navigator.pop(
                   context,
                   widget.task.copyWith(title: _title.text.trim(), notes: _notes.text.trim(), dueDate: _date, completed: _done),
                 );
               },
-              child: const Text('Save changes'),
+              child: const Text('Save'),
             ),
           ]),
         ]),

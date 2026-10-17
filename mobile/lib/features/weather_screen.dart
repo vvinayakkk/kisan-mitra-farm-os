@@ -85,11 +85,9 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ink = inkColor(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_city == null ? 'Farm weather' : 'City weather', style: TextStyle(color: ink)),
-        foregroundColor: ink,
+        title: Text(_city == null ? 'Farm weather' : 'City weather'),
         actions: [
           IconButton(tooltip: 'Choose a city', icon: const Icon(Icons.location_city), onPressed: _pickCity),
           if (_city != null)
@@ -112,7 +110,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           onRefresh: () async => _loader.currentState?.reload(),
           child: Loader<Map<String, dynamic>>(
             key: _loader,
-            loading: 'Getting the forecast…',
+            loading: 'Loading…',
             load: _load,
             builder: (context, d) => _WeatherBody(data: d, cityName: _cityName),
           ),
@@ -132,15 +130,15 @@ class _WeatherBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final ink = inkColor(context);
     if (data['requires_farm_selection'] == true) {
-      return ListView(children: const [EmptyView(title: 'Select a farm to see its local outlook.')]);
+      return ListView(children: const [EmptyView(title: 'Select a farm first.')]);
     }
     if (data['available'] != true) {
       return ListView(children: [
         EmptyView(
           icon: Icons.cloud_off_outlined,
-          title: 'Weather is waiting for your farm',
-          detail: str(data['message'], 'Link a plot to your farm’s weather grid to see the forecast.'),
-          action: OutlinedButton(onPressed: () => context.push('/notebook?tab=fields'), child: const Text('Open my fields')),
+          title: 'No weather yet',
+          detail: str(data['message'], 'Link a plot to see the forecast.'),
+          action: FilledButton.tonal(onPressed: () => context.push('/notebook?tab=fields'), child: const Text('Open fields')),
         ),
       ]);
     }
@@ -203,19 +201,13 @@ class _WeatherBody extends StatelessWidget {
             Text('Rain now ${current['precipitation'] ?? '—'} mm', style: TextStyle(color: ink)),
             if (air['us_aqi'] is num) Text('AQI ${v(air['us_aqi'])} · ${aqiBand(air['us_aqi'] as num)}', style: TextStyle(color: ink)),
           ]),
-          const SizedBox(height: 6),
-          Text(
-            '${current.isEmpty ? 'Latest stored regional forecast' : 'Current regional model'}'
-            '${live['captured_at'] != null ? ' · Updated ${displayDate(str(live['captured_at']), withTime: true)}' : ''}',
-            style: TextStyle(fontSize: 11.5, color: mutedColor(context)),
-          ),
         ]),
       ),
       if (str(data['live_error']).isNotEmpty)
         Padding(padding: const EdgeInsets.only(top: 6), child: Text(str(data['live_error']), style: TextStyle(color: mutedColor(context)))),
       const SectionTitle('Next hours'),
       if (hours.isEmpty)
-        Text('Hourly outlook is temporarily unavailable.', style: TextStyle(color: mutedColor(context)))
+        Text('Hourly forecast unavailable.', style: TextStyle(color: mutedColor(context)))
       else
         SizedBox(
           height: 104,
@@ -261,11 +253,7 @@ class _WeatherBody extends StatelessWidget {
           ),
         ),
       const SizedBox(height: 8),
-      Text(
-        'Forecast from $source${live['air_source'] != null ? ' · ${live['air_source']} air quality' : ''}. '
-        'Regional model estimates, not measurements at your field. Check local conditions before changing irrigation or spraying.',
-        style: TextStyle(fontSize: 11.5, color: mutedColor(context)),
-      ),
+      Text('Model forecast, not field measurement.', style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
     ]);
   }
 }
@@ -292,7 +280,7 @@ class _CitySearchState extends ConsumerState<_CitySearch> {
         final data = asMap(await ref.read(apiProvider).get('/api/weather/cities', query: {'q': q.trim()}));
         setState(() {
           _cities = asMaps(data['cities']);
-          _message = _cities.isEmpty ? 'No cities found. Try city and state.' : null;
+          _message = _cities.isEmpty ? 'No cities found.' : null;
         });
       } catch (e) {
         setState(() => _message = '$e');

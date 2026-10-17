@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../utils/constants.dart';
 
@@ -30,6 +33,7 @@ class FarmBackground extends StatelessWidget {
 Color inkColor(BuildContext context) => context.isDark ? Colors.white : AppColors.textDark;
 Color mutedColor(BuildContext context) => context.isDark ? Colors.white70 : AppColors.textMuted;
 
+/// Glass card from the original app: frosted, translucent, soft white rim.
 class FarmCard extends StatelessWidget {
   const FarmCard({super.key, required this.child, this.padding = const EdgeInsets.all(14), this.onTap, this.color});
 
@@ -41,19 +45,31 @@ class FarmCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = context.isDark;
-    return Material(
-      color: color ?? (dark ? AppColors.darkCard : Colors.white.withValues(alpha: 0.86)),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(padding: padding, child: child),
+    final radius = BorderRadius.circular(18);
+    return ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Material(
+          color: color ?? glassFill(dark),
+          shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: glassBorder(dark), width: 1.2)),
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap == null
+                ? null
+                : () {
+                    HapticFeedback.selectionClick();
+                    onTap!();
+                  },
+            child: Padding(padding: padding, child: child),
+          ),
+        ),
       ),
     );
   }
 }
 
-/// The app's original outlined chip with a circled icon.
+/// Pill chip: soft green fill, no outline (the app's chip style).
 class OutlineChip extends StatelessWidget {
   const OutlineChip({
     super.key,
@@ -72,46 +88,46 @@ class OutlineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final border = context.isDark ? Colors.white60 : Colors.black87;
+    final dark = context.isDark;
     final enabled = onTap != null;
+    final fg = dark ? AppColors.primaryLight : AppColors.primaryDark;
     return Semantics(
       button: true,
       selected: selected,
       enabled: enabled,
       child: Opacity(
-        opacity: enabled ? 1 : 0.45,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: selected ? AppColors.primary.withValues(alpha: 0.16) : null,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: selected ? AppColors.primary : border, width: 1.1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: border, width: 1.1),
-                    ),
-                    child: Icon(icon, size: 14, color: iconColor ?? AppColors.primary),
+        opacity: enabled ? 1 : 0.5,
+        child: Material(
+          color: selected
+              ? AppColors.primary
+              : AppColors.primary.withValues(alpha: dark ? 0.18 : 0.12),
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: enabled
+                ? () {
+                    HapticFeedback.selectionClick();
+                    onTap!();
+                  }
+                : null,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 38),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 16, color: selected ? Colors.white : (iconColor ?? AppColors.primary)),
+                    const SizedBox(width: 6),
+                  ],
+                  Flexible(
+                    child: Text(label,
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w500, color: selected ? Colors.white : fg),
+                        overflow: TextOverflow.ellipsis),
                   ),
-                  const SizedBox(width: 7),
                 ],
-                Flexible(
-                  child: Text(label,
-                      style: TextStyle(fontSize: 12.5, color: border),
-                      overflow: TextOverflow.ellipsis),
-                ),
-              ],
+              ),
             ),
           ),
         ),

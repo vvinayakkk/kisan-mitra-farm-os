@@ -69,7 +69,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
 
   String _age(Map<String, dynamic> provenance) {
     final seconds = (provenance['observation_age_seconds'] as num?)?.toInt();
-    if (seconds == null) return 'Reading time not supplied';
+    if (seconds == null) return 'Time unknown';
     if (seconds < 90) return 'Read ${seconds}s ago';
     if (seconds < 5400) return 'Read ${(seconds / 60).round()} min ago';
     return 'Read ${(seconds / 3600).round()} h ago';
@@ -83,19 +83,18 @@ class _StationScreenState extends ConsumerState<StationScreen> {
     final provenance = asMap(s?['provenance']);
     final flags = (data['quality_flags'] as List? ?? const []).map((e) => '$e').toList();
     return Scaffold(
-      appBar: AppBar(title: Text('Farm station', style: TextStyle(color: ink)), foregroundColor: ink),
+      appBar: AppBar(title: const Text('Farm station')),
       floatingActionButton: const HelperButton(contextKey: 'station'),
       body: FarmBackground(
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
             if (_error != null) ErrorView(_error!, onRetry: _load),
-            if (s == null && _error == null) const LoadingView('Preparing your station…'),
+            if (s == null && _error == null) const LoadingView('Loading…'),
             if (s != null && s['available'] != true)
               const EmptyView(
                 icon: Icons.sensors_off_outlined,
                 title: 'No station readings yet',
-                detail: 'Enroll a station and send readings to see them here. Nothing is shown until a reading arrives.',
               ),
             if (s != null && s['available'] == true) ...[
               FarmCard(
@@ -120,7 +119,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
                   if (provenance['origin'] == 'synthetic')
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Text('Simulated readings for the demo farm — not measurements from real hardware.',
+                      child: Text('Simulated demo readings, not real hardware.',
                           style: TextStyle(fontSize: 12, color: mutedColor(context))),
                     ),
                 ]),
@@ -152,12 +151,6 @@ class _StationScreenState extends ConsumerState<StationScreen> {
                   ],
                 );
               }),
-              if (data['soil_moisture_basis'] != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text('Soil moisture is a relative reading unless the sensor is calibrated for your soil.',
-                      style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
-                ),
             ],
           ]),
         ),

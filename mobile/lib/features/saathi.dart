@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -135,65 +136,91 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
     final steps = asMaps(p?['steps']);
     final evidence = asMaps(p?['evidence']);
     final research = asMap(p?['research']);
+    // Nothing prepared: stay out of the way unless it failed.
+    if (p == null && !_working && _error == null && _job?['state'] != 'failed') {
+      return const SizedBox.shrink();
+    }
+    if (p == null && _working) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(children: [
+          const Icon(Icons.spa_outlined, size: 16, color: AppColors.primaryDark),
+          const SizedBox(width: 8),
+          Text('Saathi is preparing…', style: TextStyle(fontSize: 13, color: mutedColor(context))),
+        ]),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: FarmCard(
         color: context.isDark ? AppColors.darkCard : const Color(0xFFF1F8E9),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.spa_outlined, size: 16, color: AppColors.primaryDark),
-            const SizedBox(width: 6),
-            const Expanded(
-              child: Text('PREPARED BY SAATHI',
-                  style: TextStyle(
-                      fontSize: 11, letterSpacing: 1, fontWeight: FontWeight.w700, color: AppColors.primaryDark)),
-            ),
-            if (approved)
-              const Tag('Saved plan')
-            else if (p != null)
-              const Tag('Draft · not saved', color: AppColors.warning),
-          ]),
-          const SizedBox(height: 6),
-          if (_working && p == null)
-            Text('Reviewing your farm… You can keep using this page.', style: TextStyle(color: mutedColor(context)))
-          else if (p == null)
-            Text(
-              _job?['state'] == 'failed'
-                  ? 'Preparation was interrupted. Refresh to try again.'
-                  : 'Prepare a useful next step from your farm records.',
-              style: TextStyle(color: mutedColor(context)),
-            )
+          if (p == null)
+            Row(children: [
+              const Icon(Icons.spa_outlined, size: 16, color: AppColors.primaryDark),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Saathi could not prepare', style: TextStyle(color: mutedColor(context)))),
+              FilledButton.tonal(
+                onPressed: _busy || _working ? null : () => _prepare(),
+                child: const Text('Retry'),
+              ),
+            ])
+          else if (!_open && !_editing)
+            Row(children: [
+              const Icon(Icons.spa_outlined, size: 16, color: AppColors.primaryDark),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(str(p['title'], 'Next step'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+              ),
+              const SizedBox(width: 6),
+              approved ? const Tag('Saved') : const Tag('Draft', color: AppColors.warning),
+              const SizedBox(width: 6),
+              FilledButton.tonal(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _open = true);
+                },
+                child: const Text('Review'),
+              ),
+            ])
           else if (_editing) ...[
-            TextField(controller: _title, maxLength: 160, decoration: const InputDecoration(labelText: 'Plan title')),
+            TextField(controller: _title, maxLength: 160, decoration: const InputDecoration(labelText: 'Title')),
             TextField(
               controller: _steps,
               minLines: 3,
               maxLines: 8,
-              decoration: const InputDecoration(labelText: 'Steps (one per line, up to 12)'),
+              decoration: const InputDecoration(labelText: 'Steps, one per line'),
             ),
           ] else ...[
-            Text(str(p['title'], 'A little help with your next step'),
-                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: ink)),
+            Row(children: [
+              const Icon(Icons.spa_outlined, size: 16, color: AppColors.primaryDark),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(str(p['title'], 'Next step'),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+              ),
+              const SizedBox(width: 6),
+              approved ? const Tag('Saved') : const Tag('Draft', color: AppColors.warning),
+            ]),
             if (str(p['summary']).isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(str(p['summary']),
-                    maxLines: _open ? null : 2,
-                    overflow: _open ? null : TextOverflow.ellipsis,
-                    style: TextStyle(color: ink)),
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(str(p['summary']), style: TextStyle(color: ink)),
               ),
             const SizedBox(height: 6),
-            if (_open)
-              for (final s in steps)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Icon(Icons.radio_button_unchecked, size: 14, color: mutedColor(context)),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(str(s['title']), style: TextStyle(color: ink))),
-                  ]),
-                ),
-            if (_open && evidence.isNotEmpty)
+            for (final s in steps)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.radio_button_unchecked, size: 14, color: mutedColor(context)),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(str(s['title']), style: TextStyle(color: ink))),
+                ]),
+              ),
+            if (evidence.isNotEmpty)
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 shape: const Border(),
@@ -212,67 +239,70 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
                     ),
                 ],
               ),
-            if (_open && research.isNotEmpty && research['status'] != 'not_requested') ResearchSources(research),
+            if (research.isNotEmpty && research['status'] != 'not_requested') ResearchSources(research),
             if (asMap(research['preparation'])['translation_status'] == 'unavailable')
-              Text('Translation is unavailable right now. This draft is in English.',
+              Text('Translation unavailable; shown in English.',
                   style: TextStyle(fontSize: 12, color: mutedColor(context))),
+            Text('Prepared ${displayDate(str(p['created_at'] ?? p['updated_at']))}',
+                style: TextStyle(fontSize: 11, color: mutedColor(context))),
           ],
           if (_error != null) ErrorView(_error!, onRetry: _load),
-          const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 6, children: [
-            // Approval is offered only after the farmer has opened the steps.
-            if (p != null && !_open && !_editing)
-              FilledButton.tonalIcon(
-                onPressed: () => setState(() => _open = true),
-                icon: const Icon(Icons.visibility_outlined, size: 18),
-                label: Text('Review ${steps.length} steps'),
-              ),
-            if (p != null && _open && !approved && !_editing) ...[
-              FilledButton.icon(
-                onPressed: _busy ? null : () => _review('approve'),
-                icon: const Icon(Icons.check, size: 18),
-                label: Text('Approve & save plan · ${steps.length} steps'),
-              ),
-              OutlinedButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(() {
-                          _editing = true;
-                          _title.text = str(p['title']);
-                          _steps.text = steps.map((s) => str(s['title'])).join('\n');
-                        }),
-                child: const Text('Edit'),
-              ),
-              TextButton(onPressed: _busy ? null : () => _review('dismiss'), child: const Text('Dismiss')),
-            ],
-            if (_editing) ...[
-              FilledButton(onPressed: _busy ? null : () => _review('edit'), child: const Text('Save draft changes')),
-              TextButton(onPressed: () => setState(() => _editing = false), child: const Text('Cancel')),
-            ],
-            if (approved)
-              OutlinedButton.icon(
-                onPressed: () => context.push('/notebook?tab=missions'),
-                icon: const Icon(Icons.menu_book_outlined, size: 18),
-                label: const Text('View saved plan'),
-              ),
-            if (!_editing && (_open || p == null))
-              TextButton.icon(
-                onPressed: _busy || _working ? null : () => _prepare(),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(_working ? 'Preparing…' : 'Refresh'),
-              ),
-            if (!_editing && (_open || p == null) && (widget.area == 'markets' || widget.area == 'schemes'))
-              TextButton.icon(
-                onPressed: _busy || _working ? null : () => _prepare(research: true),
-                icon: const Icon(Icons.travel_explore, size: 18),
-                label: const Text('Research the web'),
-              ),
-          ]),
-          if (p != null)
-            Text(
-              'Prepared ${displayDate(str(p['created_at'] ?? p['updated_at']))} · Approval saves a plan in your notebook.',
-              style: TextStyle(fontSize: 11, color: mutedColor(context)),
-            ),
+          if (p != null && (_open || _editing)) ...[
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 6, children: [
+              if (!approved && !_editing) ...[
+                FilledButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          HapticFeedback.selectionClick();
+                          _review('approve');
+                        },
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Approve & save'),
+                ),
+                FilledButton.tonal(
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() {
+                            _editing = true;
+                            _title.text = str(p['title']);
+                            _steps.text = steps.map((s) => str(s['title'])).join('\n');
+                          }),
+                  child: const Text('Edit'),
+                ),
+                TextButton(onPressed: _busy ? null : () => _review('dismiss'), child: const Text('Dismiss')),
+              ],
+              if (_editing) ...[
+                FilledButton(
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            _review('edit');
+                          },
+                    child: const Text('Save changes')),
+                TextButton(onPressed: () => setState(() => _editing = false), child: const Text('Cancel')),
+              ],
+              if (approved)
+                FilledButton.tonal(
+                  onPressed: () => context.push('/notebook?tab=missions'),
+                  child: const Text('View plan'),
+                ),
+              if (!_editing)
+                TextButton.icon(
+                  onPressed: _busy || _working ? null : () => _prepare(),
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: Text(_working ? 'Preparing…' : 'Refresh'),
+                ),
+              if (!_editing && (widget.area == 'markets' || widget.area == 'schemes'))
+                TextButton.icon(
+                  onPressed: _busy || _working ? null : () => _prepare(research: true),
+                  icon: const Icon(Icons.travel_explore, size: 18),
+                  label: const Text('Research'),
+                ),
+            ]),
+          ],
         ]),
       ),
     );
@@ -360,7 +390,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
   Widget build(BuildContext context) {
     final ink = inkColor(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Saathi', style: TextStyle(color: ink)), foregroundColor: ink),
+      appBar: AppBar(title: const Text('Saathi')),
       body: FarmBackground(
         child: Loader<Map<String, dynamic>>(
           key: _loader,
@@ -379,11 +409,6 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                     Text(str(data['name'], 'Saathi'),
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
                     Text(_status[data['status']] ?? 'Connecting…', style: TextStyle(color: mutedColor(context))),
-                    const SizedBox(height: 4),
-                    Text(
-                        'Saathi prepares reviewable suggestions in the background. It does not watch the weather '
-                        'live, send messages or change records without your approval.',
-                        style: TextStyle(fontSize: 12, color: mutedColor(context))),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Background follow-ups'),
@@ -401,8 +426,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                       onChanged: (v) => v == null ? null : _savePrefs(settings, {'frequency_hours': v}),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                        'Quiet hours ${settings['quiet_start']}:00 – ${settings['quiet_end']}:00 (${str(settings['timezone'])})',
+                    Text('Quiet hours ${settings['quiet_start']}:00 – ${settings['quiet_end']}:00',
                         style: TextStyle(fontSize: 12, color: mutedColor(context))),
                   ]),
                 ),
@@ -410,7 +434,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                 const PreparedBySaathi(area: 'today'),
                 const SectionTitle('Recent activity'),
                 if (activity.isEmpty)
-                  const EmptyView(title: 'Your next check-in will appear here.')
+                  const EmptyView(title: 'No activity yet.')
                 else
                   for (final a in activity)
                     Padding(
@@ -432,7 +456,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                 const SectionTitle('WhatsApp'),
                 FarmCard(
                   child: whatsapp['configured'] != true
-                      ? Text('WhatsApp connection is not configured on this server.',
+                      ? Text('WhatsApp not available.',
                           style: TextStyle(color: mutedColor(context)))
                       : Row(children: [
                           Expanded(
@@ -440,7 +464,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                                 whatsapp['connected'] == true ? str(whatsapp['masked_number'], 'Linked') : 'Not linked',
                                 style: TextStyle(color: ink)),
                           ),
-                          OutlinedButton(
+                          FilledButton.tonal(
                             onPressed: () => _whatsapp(whatsapp['connected'] == true),
                             child: Text(whatsapp['connected'] == true ? 'Unlink' : 'Link WhatsApp'),
                           ),

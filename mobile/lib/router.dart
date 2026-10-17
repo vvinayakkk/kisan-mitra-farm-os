@@ -8,7 +8,6 @@ import 'features/calendar_screen.dart';
 import 'features/crop_doctor_screen.dart';
 import 'features/exchange/exchange_screen.dart';
 import 'features/exchange/thread_screen.dart';
-import 'features/home_shell.dart';
 import 'features/markets_screen.dart';
 import 'features/notebook/notebook_screen.dart';
 import 'features/profile_screen.dart';
@@ -16,6 +15,7 @@ import 'features/saathi.dart';
 import 'features/schemes_screen.dart';
 import 'features/station_screen.dart';
 import 'features/weather_screen.dart';
+import 'screens/choice_screen.dart';
 import 'screens/language_select_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
@@ -46,7 +46,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', pageBuilder: (_, s) => _fade(s, const SplashScreen())),
       GoRoute(path: '/language_select', pageBuilder: (_, s) => _fade(s, const LanguageSelectScreen())),
       GoRoute(path: '/login', pageBuilder: (_, s) => _fade(s, const LoginScreen())),
-      GoRoute(path: '/', pageBuilder: (_, s) => _fade(s, const HomeShell())),
+      GoRoute(path: '/', pageBuilder: (_, s) => _fade(s, const ChoiceScreen())),
+      GoRoute(path: '/choice', redirect: (_, __) => '/'),
       GoRoute(path: '/chat', builder: (_, __) => const ChatScreen()),
       GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
       GoRoute(path: '/station', builder: (_, __) => const StationScreen()),

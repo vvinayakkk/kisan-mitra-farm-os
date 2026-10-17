@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -49,7 +50,7 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'The catalog is unavailable.');
+      setState(() => _error = 'Catalog unavailable.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -57,35 +58,34 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ink = inkColor(context);
     final schemes = _schemes;
     return Scaffold(
-      appBar: AppBar(title: Text('Farm support', style: TextStyle(color: ink)), foregroundColor: ink),
+      appBar: AppBar(title: const Text('Farm support')),
       floatingActionButton: const HelperButton(contextKey: 'schemes'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
           const PreparedBySaathi(area: 'schemes'),
           FarmCard(
             child: Column(children: [
-              TextField(controller: _query, decoration: const InputDecoration(labelText: 'What support do you need?', hintText: 'e.g. irrigation, insurance')),
+              TextField(controller: _query, decoration: const InputDecoration(labelText: 'Search support', hintText: 'e.g. irrigation, insurance')),
               const SizedBox(height: 8),
               TextField(controller: _state, decoration: const InputDecoration(labelText: 'State (optional)')),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child: FilledButton.icon(onPressed: _busy ? null : _search, icon: const Icon(Icons.search), label: const Text('Find support')),
+                child: FilledButton.icon(onPressed: _busy ? null : _search, icon: const Icon(Icons.search), label: const Text('Search')),
               ),
             ]),
           ),
-          if (_busy) const LoadingView('Finding relevant support…'),
+          if (_busy) const LoadingView('Loading…'),
           if (_error != null) ErrorView(_error!, onRetry: _search),
           if (!_busy && schemes != null && schemes.isEmpty)
-            const EmptyView(title: 'Let’s try a broader search.', detail: 'No matching catalog entries. Try another keyword or leave the state blank.'),
+            const EmptyView(title: 'No matches. Try another keyword.'),
           if (!_busy && schemes != null && schemes.isNotEmpty) ...[
-            SectionTitle('${schemes.length} relevant references'),
+            SectionTitle('${schemes.length} references'),
             for (final s in schemes.take(_shown)) _SchemeCard(scheme: s),
             if (schemes.length > _shown)
-              TextButton(onPressed: () => setState(() => _shown += 6), child: Text('More support · $_shown of ${schemes.length}')),
+              TextButton(onPressed: () => setState(() => _shown += 6), child: const Text('More')),
           ],
         ]),
       ),
@@ -114,7 +114,7 @@ class _SchemeCard extends ConsumerWidget {
           shape: const Border(),
           title: Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
           subtitle: Text(
-            '${str(scheme['state'], 'National support')} · ${scheme['source'] == 'fallback' ? 'Reference catalog' : 'Programme details'}',
+            str(scheme['state'], 'National'),
             style: TextStyle(fontSize: 12, color: mutedColor(context)),
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -129,13 +129,14 @@ class _SchemeCard extends ConsumerWidget {
             if (_uuid.hasMatch(id)) _SupportChecklist(schemeId: id),
             Wrap(spacing: 8, children: [
               if (url.startsWith('https://') || url.startsWith('http://'))
-                OutlinedButton.icon(
+                FilledButton.tonalIcon(
                   onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
                   icon: const Icon(Icons.open_in_new, size: 16),
                   label: const Text('Official page'),
                 ),
               FilledButton.tonalIcon(
                 onPressed: () {
+                  HapticFeedback.selectionClick();
                   ref.read(assistantProvider.notifier).send(
                         'Help me prepare for the scheme “$title”${str(scheme['state']).isEmpty ? '' : ' in ${scheme['state']}'}'
                         '${url.isEmpty ? '' : ' (official page: $url)'}. Verify the official requirements and ask what you need from me.',
@@ -144,7 +145,7 @@ class _SchemeCard extends ConsumerWidget {
                   showHelperSheet(context, 'schemes');
                 },
                 icon: const Icon(Icons.eco, size: 16),
-                label: const Text('Prepare with Mitra'),
+                label: const Text('Prepare'),
               ),
             ]),
           ],
@@ -169,9 +170,9 @@ class _SupportChecklistState extends ConsumerState<_SupportChecklist> {
   bool _saving = false;
 
   static const _items = {
-    'eligibility_reviewed': 'I have checked who can apply',
-    'documents_reviewed': 'I have checked the documents needed',
-    'application_reviewed': 'I have checked the deadline and application route',
+    'eligibility_reviewed': 'Checked who can apply',
+    'documents_reviewed': 'Checked documents needed',
+    'application_reviewed': 'Checked deadline and route',
   };
 
   @override
@@ -223,21 +224,25 @@ class _SupportChecklistState extends ConsumerState<_SupportChecklist> {
   Widget build(BuildContext context) {
     final f = _folder;
     if (_error != null) return ErrorView(_error!, onRetry: _load);
-    if (f == null) return const LoadingView('Loading your checklist…');
+    if (f == null) return const LoadingView('Loading…');
     final done = _items.keys.where((k) => f[k] == true).length;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Your preparation · ${_saving ? 'Syncing…' : '$done of 3 checked${(f['row_version'] ?? 0) > 0 ? ' · Saved' : ''}'}',
+      Text('Checklist · ${_saving ? 'Saving…' : '$done of 3${(f['row_version'] ?? 0) > 0 ? ' · Saved' : ''}'}',
           style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
       for (final e in _items.entries)
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           dense: true,
           value: f[e.key] == true,
-          onChanged: _saving ? null : (v) => _toggle(e.key, v ?? false),
+          onChanged: _saving
+              ? null
+              : (v) {
+                  HapticFeedback.selectionClick();
+                  _toggle(e.key, v ?? false);
+                },
           title: Text(e.value),
         ),
-      Text('Your own checklist. It does not submit an application or confirm eligibility.',
-          style: TextStyle(fontSize: 11, color: mutedColor(context))),
+      Text('Your checklist; not an application.', style: TextStyle(fontSize: 11, color: mutedColor(context))),
       const SizedBox(height: 6),
     ]);
   }
