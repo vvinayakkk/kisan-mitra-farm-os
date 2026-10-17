@@ -16,7 +16,7 @@
 
 **Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. **Firebase and Google Cloud provide its live web delivery, identity, API runtime, scheduled work and message queue.** Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
 
-**Explore the live deployment:** [Open Farm OS](https://project-0b9b4009-1644-4477-aec.web.app/workspace) · [Open Classic SkyView](https://project-0b9b4009-1644-4477-aec.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/latest)
+**Explore the live deployment:** [Open Farm OS](https://project-0b9b4009-1644-4477-aec.web.app/workspace) · [Open Classic SkyView](https://project-0b9b4009-1644-4477-aec.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/latest) · [Administration](https://project-0b9b4009-1644-4477-aec.web.app/control)
 
 > **A question is the beginning of a workflow, not the end of a chat.** Ask what needs doing; Mitra finds the relevant farm context, shows its work, asks for missing details and returns an answer, chart, file or action ready to approve.
 
@@ -62,6 +62,9 @@ The counts describe the current code and catalog. They are not latency or produc
 - [UltraCache & Background Data](#-ultracache--background-data)
 - [Backend Execution & Data Integrity](#-backend-execution--data-integrity)
 - [Farm OS Design System](#-farm-os-design-system)
+- [Onboarding on app and web](#onboarding-on-app-and-web)
+- [Guided tours on app and web](#guided-tours-on-app-and-web)
+- [Administration workspace](#administration-workspace)
 - [Verification & Quality](#-verification--quality)
 - [Autonomous Agentic Workflows](#-autonomous-agentic-workflows)
 - [Core Functional Engines](#-core-functional-engines)
@@ -205,6 +208,65 @@ The website has **two deliberate experiences**. Classic SkyView keeps dense dash
 | Ask in ordinary language; inspect steps and the resulting work. | Explore the Three.js station without losing the practical readings. |
 
 The visual language uses a warm, light farm palette, clear dark text, restrained borders, compact controls and page-aware help. The station gives equipment feedback on interaction; the notebook takes the form of a page-turning field journal; the exchange shows a resource journey instead of a wall of forms. Controls remain labeled and keyboard reachable, with reduced-motion handling for transitions.
+
+---
+
+## Onboarding on app and web
+
+A little hello, a place, a farm, and a review before saving. Mitra offers spoken guidance and voice input alongside typing, with **Skip for now** when a farmer wants to explore first. Saved profile details belong to the same account across phone and laptop; unfinished setup can be resumed on the device where it was started.
+
+*The galleries below are captures of the implemented web and Flutter interfaces using controlled review data. Names, records and counts are illustrative, not production customer data. Click any screenshot to inspect it at full size.*
+
+### Website · make yourself at home
+
+| **A little hello** | **Review your farm and starter routines** |
+| :--- | :--- |
+| [![Web onboarding with Saathi, name, language and Talk to Mitra](docs/media/product-journey/web-onboarding-welcome.png)](docs/media/product-journey/web-onboarding-welcome.png) | [![Web onboarding review with profile details and optional starter routines](docs/media/product-journey/web-onboarding-review.png)](docs/media/product-journey/web-onboarding-review.png) |
+| Speak or type your details, with a visible four-step journey. | Review the profile and choose editable starter routines before saving. |
+
+### Flutter app · one small step at a time
+
+| **Meet Mitra** | **Introduce your farm** | **A little head start** |
+| :--- | :--- | :--- |
+| [![Flutter onboarding welcome with spoken guidance and name input](docs/media/product-journey/app-onboarding-welcome.png)](docs/media/product-journey/app-onboarding-welcome.png) | [![Flutter onboarding crop, field area and watering inputs](docs/media/product-journey/app-onboarding-farm.png)](docs/media/product-journey/app-onboarding-farm.png) | [![Flutter onboarding profile review and starter routines](docs/media/product-journey/app-onboarding-review.png)](docs/media/product-journey/app-onboarding-review.png) |
+| Listen to the guidance or speak into a field; typing stays available. | Add crops, area and land details at your own pace. | Check the details and starter routines before opening your farm. |
+
+Starter routines are editable suggestions for a morning farm walk, crop observations and a money notebook. They are not automatically scheduled tasks. The farmer reviews them before making them part of their plan.
+
+---
+
+## Guided tours on app and web
+
+**Mitra’s little guide** highlights the control being explained and offers **Next, Back and Skip tour**. Guidance covers onboarding, the assistant and farm tools, including calendar, weather, station, crops, markets, notebook, exchange, schemes, profile and Saathi. Use **Take a tour** on the website or the **compass button** in the app to replay a guide. The tour does not activate the microphone or change farm records.
+
+[![Website guided tour anchored to the Saathi control, with Back, Next and Skip tour](docs/media/product-journey/web-tour-chat.png)](docs/media/product-journey/web-tour-chat.png)
+
+*Website: a spotlight and anchored explanation show exactly where to go next.*
+
+| **App · help during setup** | **App · help inside chat** |
+| :--- | :--- |
+| [![Flutter onboarding tour highlighting Read this to me](docs/media/product-journey/app-tour-onboarding.png)](docs/media/product-journey/app-tour-onboarding.png) | [![Flutter chat tour highlighting the message input](docs/media/product-journey/app-tour-chat.png)](docs/media/product-journey/app-tour-chat.png) |
+| A guide points to spoken guidance without starting recording. | The next action stays highlighted above the native tour controls. |
+
+---
+
+## Administration workspace
+
+[Open Mitra administration](https://project-0b9b4009-1644-4477-aec.web.app/control) · [Capabilities, access and deployment notes](docs/releases/admin-workspace.md)
+
+A web workspace for authorized administrators to look after farmers, farm records, markets, crop guidance, weather and service data. **43 registered resources** include **34 editable resources and 9 read-only views**. Viewer, editor and owner permissions are verified on the server.
+
+| **The community at a glance** | **Review before applying** |
+| :--- | :--- |
+| [![Mitra administration overview with resource groups and illustrative totals](docs/media/product-journey/admin-overview.png)](docs/media/product-journey/admin-overview.png) | [![Administrator change preview comparing before and after values with typed confirmation](docs/media/product-journey/admin-preview.png)](docs/media/product-journey/admin-preview.png) |
+| Navigate people, knowledge, markets, weather, services and activity. | Inspect exact changes and type the confirmation before saving. |
+
+| **Bring data into Mitra** | **Every change, accounted for** |
+| :--- | :--- |
+| [![Admin CSV import with a template, example rows and reason for the change](docs/media/product-journey/admin-import.png)](docs/media/product-journey/admin-import.png) | [![Read-only administrator audit log showing resource, role and reason](docs/media/product-journey/admin-audit.png)](docs/media/product-journey/admin-audit.png) |
+| Import up to 100 CSV rows, validate them and review the batch. | Keep a read-only record of who changed what, when and why. |
+
+Administrators can create and update supported records, edit selected records in bulk, and export the current page. Owners can delete eligible records; linked records remain protected. Changes require a reason, a database-validated preview and confirmation, and each batch is atomic and audited. Accounts with linked history can be suspended. Farmer sign-in alone never grants administrator access.
 
 ---
 
