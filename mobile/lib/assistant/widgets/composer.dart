@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,7 +48,7 @@ class ComposerState extends ConsumerState<Composer> {
     _text.clear();
     setState(_attached.clear);
     await ref.read(assistantProvider.notifier).send(
-          text.isEmpty ? 'Please look at the attached file.' : text,
+          text.isEmpty ? 'fos.assistant.look_at_file'.tr() : text,
           display: names.isEmpty ? null : '${text.isEmpty ? '' : '$text\n'}📎 $names',
           context: widget.runContext,
           attachmentIds: ids,
@@ -59,12 +60,12 @@ class ComposerState extends ConsumerState<Composer> {
       context: context,
       builder: (c) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: const Icon(Icons.photo_camera_outlined), title: const Text('Take a photo'), onTap: () => Navigator.pop(c, 'camera')),
-          ListTile(leading: const Icon(Icons.photo_library_outlined), title: const Text('Choose a photo'), onTap: () => Navigator.pop(c, 'gallery')),
+          ListTile(leading: const Icon(Icons.photo_camera_outlined), title: Text('fos.assistant.take_photo'.tr()), onTap: () => Navigator.pop(c, 'camera')),
+          ListTile(leading: const Icon(Icons.photo_library_outlined), title: Text('fos.assistant.choose_photo'.tr()), onTap: () => Navigator.pop(c, 'gallery')),
           ListTile(
               leading: const Icon(Icons.attach_file),
-              title: const Text('Choose a file'),
-              subtitle: const Text('PDF, Word, Excel, CSV or text · up to 5 MB'),
+              title: Text('fos.assistant.choose_file'.tr()),
+              subtitle: Text('fos.assistant.file_types_hint'.tr()),
               onTap: () => Navigator.pop(c, 'file')),
         ]),
       ),
@@ -119,7 +120,7 @@ class ComposerState extends ConsumerState<Composer> {
                     avatar: Icon(a.isPhoto ? Icons.image_outlined : Icons.description_outlined, size: 16),
                     onDeleted: () => setState(() => _attached.remove(a)),
                   ),
-                if (_uploading) const Chip(label: Text('Uploading…')),
+                if (_uploading) Chip(label: Text('fos.assistant.uploading'.tr())),
               ]),
             ),
           Container(
@@ -134,7 +135,7 @@ class ComposerState extends ConsumerState<Composer> {
             ),
             child: Row(children: [
               IconButton(
-                tooltip: 'Attach a photo or file',
+                tooltip: 'fos.assistant.attach_tooltip'.tr(),
                 onPressed: locked || _uploading ? null : _attach,
                 icon: Icon(Icons.add_rounded, color: mutedColor(context)),
               ),
@@ -147,7 +148,9 @@ class ComposerState extends ConsumerState<Composer> {
                   maxLength: 6000,
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
-                    hintText: state.pending != null && !state.busy ? 'Answer the card above…' : 'Ask in any language…',
+                    hintText: state.pending != null && !state.busy
+                        ? 'fos.assistant.answer_card_hint'.tr()
+                        : 'fos.assistant.ask_any_language'.tr(),
                     counterText: '',
                     filled: false,
                     border: InputBorder.none,
@@ -166,13 +169,13 @@ class ComposerState extends ConsumerState<Composer> {
                 padding: const EdgeInsets.only(right: 2),
                 child: state.busy
                     ? IconButton.filled(
-                        tooltip: 'Stop',
+                        tooltip: 'fos.assistant.stop'.tr(),
                         style: IconButton.styleFrom(backgroundColor: AppColors.error),
                         onPressed: state.running ? ref.read(assistantProvider.notifier).stop : null,
                         icon: const Icon(Icons.stop_rounded),
                       )
                     : IconButton.filled(
-                        tooltip: 'Send',
+                        tooltip: 'fos.assistant.send'.tr(),
                         style: IconButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                         onPressed: locked
                             ? null

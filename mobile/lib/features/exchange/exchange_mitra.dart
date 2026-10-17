@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -10,10 +11,10 @@ import '../../ui/loader.dart';
 import '../../utils/constants.dart';
 
 const _intents = {
-  'prepare_listing': ('What do you have or need?', 'I have a sprayer for two days. I need help with my harvest…'),
-  'compare_matches': ('Find a fit', 'Which options fit my resource and exchange wishes?'),
-  'draft_terms': ('Draft terms', 'Help me write terms for quantity, handover and transport…'),
-  'review_exchange': ('Review this exchange', 'What is missing before we agree or hand over?'),
+  'prepare_listing': ('fos.market.intent_prepare_t', 'fos.market.intent_prepare_h'),
+  'compare_matches': ('fos.market.intent_compare_t', 'fos.market.intent_compare_h'),
+  'draft_terms': ('fos.market.intent_terms_t', 'fos.market.intent_terms_h'),
+  'review_exchange': ('fos.market.intent_review_t', 'fos.market.intent_review_h'),
 };
 
 /// Exchange-specific assistant. It returns reviewable drafts only; nothing is
@@ -51,7 +52,7 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
     final text = _text.text.trim();
     if (text.isEmpty) return;
     final brief = [..._turns, text].join('\nFarmer follow-up: ');
-    if (brief.length > 4000) return setState(() => _error = 'Too long. Shorten or start over.');
+    if (brief.length > 4000) return setState(() => _error = 'fos.market.too_long'.tr().tr());
     setState(() {
       _busy = true;
       _error = null;
@@ -79,36 +80,40 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
 
   @override
   Widget build(BuildContext context) {
-    final (title, hint) = _intents[widget.intent]!;
+    final (titleKey, hintKey) = _intents[widget.intent]!;
+    final title = titleKey.tr();
+    final hint = hintKey.tr();
     final draft = asMap(_result?['draft']);
     final questions = (_result?['questions'] as List? ?? const []).map((e) => '$e').toList();
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: inkColor(context))),
           const SizedBox(height: 8),
           if (_result != null) ...[
             MarkdownBody(data: str(_result!['answer'])),
-            for (final q in questions) Text('• $q'),
+            for (final q in questions) Text('• $q', style: TextStyle(color: inkColor(context))),
             if (draft.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(border: Border.all(color: AppColors.warning), borderRadius: BorderRadius.circular(12)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Tag('Draft · not saved', color: AppColors.warning),
+                  Tag('fos.market.draft_not_saved'.tr(), color: AppColors.warning),
                   const SizedBox(height: 6),
-                  Text(draft['kind'] == 'terms'
-                      ? str(draft['text'])
-                      : asMap(draft['fields']).entries.map((e) => '${e.key.replaceAll('_', ' ')}: ${e.value}').join('\n')),
+                  Text(
+                      draft['kind'] == 'terms'
+                          ? str(draft['text'])
+                          : asMap(draft['fields']).entries.map((e) => '${e.key.replaceAll('_', ' ')}: ${e.value}').join('\n'),
+                      style: TextStyle(color: inkColor(context))),
                   if (widget.onDraft != null)
                     FilledButton.tonal(
                       onPressed: () {
                         Navigator.pop(context);
                         widget.onDraft!(draft);
                       },
-                      child: const Text('Review draft'),
+                      child: Text('fos.market.review_draft'.tr()),
                     ),
                 ]),
               ),
@@ -124,7 +129,7 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
           if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.error)),
           Row(children: [
             if (_turns.isNotEmpty)
-              TextButton(onPressed: () => setState(() { _turns.clear(); _result = null; }), child: const Text('Start over')),
+              TextButton(onPressed: () => setState(() { _turns.clear(); _result = null; }), child: Text('fos.market.start_over'.tr())),
             const Spacer(),
             FilledButton(onPressed: _busy
                     ? null
@@ -132,9 +137,9 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
                         HapticFeedback.selectionClick();
                         _ask();
                       },
-                child: Text(_busy ? 'Thinking…' : 'Ask Mitra')),
+                child: Text(_busy ? 'fos.market.thinking'.tr() : 'fos.market.ask_mitra'.tr())),
           ]),
-          Text('AI draft; nothing is sent without you.',
+          Text('fos.market.ai_draft_note'.tr(),
               style: TextStyle(fontSize: 11, color: mutedColor(context))),
         ]),
       ),

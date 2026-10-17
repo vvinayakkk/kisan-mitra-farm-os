@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,7 @@ class HelperButton extends StatelessWidget {
         foregroundColor: Colors.white,
         onPressed: () => showHelperSheet(context, contextKey, runContext: runContext),
         icon: const Icon(Icons.eco),
-        label: const Text('Ask Mitra'),
+        label: Text('fos.assistant.ask_mitra'.tr()),
       );
 }
 
@@ -58,7 +59,7 @@ void showHelperSheet(BuildContext context, String contextKey, {RunContext? runCo
                   const Icon(Icons.eco, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('A little help from Mitra',
+                    child: Text('fos.assistant.help_title'.tr(),
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: inkColor(context))),
                   ),
                   TextButton(
@@ -66,14 +67,14 @@ void showHelperSheet(BuildContext context, String contextKey, {RunContext? runCo
                       Navigator.pop(sheetContext);
                       context.push('/chat');
                     },
-                    child: const Text('Full chat'),
+                    child: Text('fos.assistant.full_chat'.tr()),
                   ),
                 ]),
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   for (final (label, prompt) in kSuggestions[contextKey] ?? kSuggestions['assistant']!)
                     OutlineChip(
-                      label: label,
+                      label: suggestionLabel(label),
                       icon: Icons.auto_awesome,
                       onTap: idle ? () => controller.send(prompt, context: run) : null,
                     ),

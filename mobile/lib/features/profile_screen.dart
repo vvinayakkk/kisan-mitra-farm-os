@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../assistant/chat_screen.dart';
 import '../core/api.dart';
-import '../core/config.dart';
 import '../core/language.dart';
 import '../core/session.dart';
 import '../core/workspace_cache.dart';
@@ -29,16 +29,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _edit(Map<String, dynamic> p) async {
     String joined(Object? v) => v is List ? v.join(', ') : str(v);
-    final v = await showFormSheet(context, title: 'Edit profile', fields: [
-      FieldSpec('name', 'Name', required: true, initial: p['name'], maxLength: 100),
-      FieldSpec('location', 'Village / location', initial: p['location'], maxLength: 200),
-      FieldSpec('district', 'District', initial: p['district'], maxLength: 100),
-      FieldSpec('preferred_language', 'Preferred language', kind: FieldKind.select,
+    final v = await showFormSheet(context, title: 'fos.market.edit_profile'.tr(), fields: [
+      FieldSpec('name', 'fos.market.name'.tr(), required: true, initial: p['name'], maxLength: 100),
+      FieldSpec('location', 'fos.market.village'.tr(), initial: p['location'], maxLength: 200),
+      FieldSpec('district', 'fos.market.district'.tr(), initial: p['district'], maxLength: 100),
+      FieldSpec('preferred_language', 'fos.market.preferred_language'.tr(), kind: FieldKind.select,
           initial: normalizeLanguage(str(p['preferred_language'])) ?? ref.read(languageProvider).code,
           options: {for (final (code, name) in kAppLanguages) code: name}),
-      FieldSpec('crops', 'Crops (comma separated)', initial: joined(p['crops'])),
-      FieldSpec('excess_resources', 'Resources you can share', initial: joined(p['excess_resources'])),
-      FieldSpec('required_resources', 'Resources you need', initial: joined(p['required_resources'])),
+      FieldSpec('crops', 'fos.market.crops_csv'.tr(), initial: joined(p['crops'])),
+      FieldSpec('excess_resources', 'fos.market.can_share_long'.tr(), initial: joined(p['excess_resources'])),
+      FieldSpec('required_resources', 'fos.market.need_long'.tr(), initial: joined(p['required_resources'])),
     ]);
     if (v == null || !mounted) return;
     List<String> split(Object? s) => '${s ?? ''}'.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -54,7 +54,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
       ref.read(workspaceCacheProvider).invalidate();
       if (v['preferred_language'] != null) await ref.read(languageProvider.notifier).choose('${v['preferred_language']}');
-      if (mounted) showNotice(context, 'Profile saved.');
+      if (mounted) showNotice(context, 'fos.market.profile_saved'.tr());
     } on ApiException catch (e) {
       if (mounted) showNotice(context, e.message);
     }
@@ -64,39 +64,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final ink = inkColor(context);
-    final auth = ref.watch(authProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('My profile')),
+      appBar: AppBar(title: Text('fos.market.my_profile'.tr())),
       body: FarmBackground(
         child: Loader<Map<String, dynamic>>(
           key: _loader,
-          loading: 'Loading…',
+          loading: 'fos.market.loading'.tr(),
           load: () async => asMap(asMap(await ref.read(apiProvider).get('/api/profile'))['profile']),
           builder: (context, p) {
             String list(Object? v, String empty) => v is List && v.isNotEmpty ? v.join(', ') : empty;
             return ListView(padding: const EdgeInsets.all(12), children: [
               if (p.isEmpty)
-                const EmptyView(title: 'No profile for this account.')
+                EmptyView(title: 'fos.market.no_profile'.tr())
               else
                 FarmCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Expanded(child: Text(str(p['name'], 'Not provided'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink))),
+                      Expanded(child: Text(str(p['name'], 'fos.market.not_provided'.tr()), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink))),
                       ProvenanceBadge(asMap(p['provenance']).isEmpty ? {'origin': p['data_origin']} : asMap(p['provenance'])),
                     ]),
-                    Text('${str(p['location'], 'Location not set')} · ${str(p['district'], 'District not set')}',
+                    Text('${str(p['location'], 'fos.market.location_not_set'.tr())} · ${str(p['district'], 'fos.market.district_not_set'.tr())}',
                         style: TextStyle(color: mutedColor(context))),
                     const Divider(),
-                    _row(context, 'Reported land area', p['land_size_acres'] is num ? '${(p['land_size_acres'] as num).toStringAsFixed(2)} acres' : 'Not provided'),
-                    _row(context, 'Area in saved fields',
-                        p['mapped_plot_area_acres'] is num ? '${(p['mapped_plot_area_acres'] as num).toStringAsFixed(2)} acres' : 'No fields saved'),
-                    _row(context, 'Crops', list(p['crops'], 'None added')),
-                    _row(context, 'Can share', list(p['excess_resources'], 'None added')),
-                    _row(context, 'Needs', list(p['required_resources'], 'None added')),
+                    _row(context, 'fos.market.land_area'.tr(), p['land_size_acres'] is num ? 'fos.market.acres'.tr(namedArgs: {'n': (p['land_size_acres'] as num).toStringAsFixed(2)}) : 'fos.market.not_provided'.tr()),
+                    _row(context, 'fos.market.saved_area'.tr(),
+                        p['mapped_plot_area_acres'] is num ? 'fos.market.acres'.tr(namedArgs: {'n': (p['mapped_plot_area_acres'] as num).toStringAsFixed(2)}) : 'fos.market.no_fields'.tr()),
+                    _row(context, 'fos.market.crops'.tr(), list(p['crops'], 'fos.market.none_added'.tr())),
+                    _row(context, 'fos.market.can_share'.tr(), list(p['excess_resources'], 'fos.market.none_added'.tr())),
+                    _row(context, 'fos.market.needs'.tr(), list(p['required_resources'], 'fos.market.none_added'.tr())),
                     Align(alignment: Alignment.centerRight, child: FilledButton.tonal(onPressed: () {
                       HapticFeedback.selectionClick();
                       _edit(p);
-                    }, child: const Text('Edit'))),
+                    }, child: Text('fos.market.edit'.tr()))),
                   ]),
                 ),
               const SizedBox(height: 12),
@@ -105,36 +104,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Column(children: [
                   ListTile(
                     leading: const Icon(Icons.agriculture_outlined),
-                    title: const Text('My fields and crop seasons'),
+                    title: Text('fos.market.my_fields'.tr()),
                     onTap: () => context.push('/notebook?tab=fields'),
                   ),
                   ListTile(
                     leading: const Icon(Icons.spa_outlined),
-                    title: const Text('Saathi follow-ups'),
+                    title: Text('fos.market.saathi_followups'.tr()),
                     onTap: () => context.push('/saathi'),
                   ),
                   ListTile(
                     leading: const Icon(Icons.translate),
-                    title: const Text('Language'),
+                    title: Text('fos.market.language'.tr()),
                     subtitle: Text(kAppLanguages.firstWhere((l) => l.$1 == ref.watch(languageProvider).code).$2),
                     onTap: () => showLanguagePicker(context),
                   ),
                   SwitchListTile(
                     secondary: const Icon(Icons.dark_mode_outlined),
-                    title: const Text('Dark theme'),
+                    title: Text('fos.market.dark_theme'.tr()),
                     value: ref.watch(themeProvider) == ThemeMode.dark,
                     onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.dns_outlined),
-                    title: const Text('Server'),
-                    subtitle: Text('${AppConfig.apiBaseUrl} · ${auth.mode == BackendMode.demo ? 'demo data' : auth.mode == BackendMode.live ? 'live accounts' : 'mode unknown'}'),
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.logout),
-                    title: const Text('Sign out'),
+                    title: Text('fos.market.sign_out'.tr()),
                     onTap: () async {
-                      if (await confirmAction(context, title: 'Sign out?', body: 'You will need to sign in again on this phone.', confirm: 'Sign out', cancel: 'Stay')) {
+                      if (await confirmAction(context, title: 'fos.market.sign_out_q'.tr(), body: 'fos.market.sign_out_body'.tr(), confirm: 'fos.market.sign_out'.tr(), cancel: 'fos.market.stay'.tr())) {
                         await ref.read(authProvider.notifier).signOut();
                       }
                     },

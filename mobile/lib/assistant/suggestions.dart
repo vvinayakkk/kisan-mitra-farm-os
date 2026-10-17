@@ -1,5 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 /// Page-specific prompts, kept identical to `frontend/src/components/assistant/suggestions.ts`
 /// so web and mobile ask the assistant the same way.
+/// Chip label for a suggestion; the prompt itself stays as written (it goes to the assistant).
+String suggestionLabel(String label) =>
+    'fos.assistant.sug_${label.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').replaceAll(RegExp(r'^_+|_+$'), '')}'.tr();
+
 const Map<String, List<(String, String)>> kSuggestions = {
   'assistant': [
     ('Plan my week', 'Help me create a weekly farm work plan. Ask for the details you need.'),

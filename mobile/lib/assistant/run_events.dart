@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -77,9 +78,9 @@ Folded foldEvent(ChatMessage m, Map<String, dynamic> e) {
         artifact: ok ? Artifact.fromJson(result['artifact']) : null,
       );
     case 'question' || 'approval':
-      return Folded(m, pending: Pending.fromJson(e['pending']), status: 'Waiting for you');
+      return Folded(m, pending: Pending.fromJson(e['pending']), status: 'fos.assistant.waiting_for_you'.tr());
     case 'error':
-      return Folded(m.copyWith(status: 'error', error: '${e['message'] ?? 'The request failed.'}'),
+      return Folded(m.copyWith(status: 'error', error: '${e['message'] ?? 'fos.assistant.request_failed'.tr()}'),
           terminal: true);
     case 'cancelled':
       return Folded(m.copyWith(status: 'stopped'), terminal: true);

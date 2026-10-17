@@ -13,7 +13,11 @@ import 'package:skyview_app/core/read_cache.dart';
 import 'package:skyview_app/ui/provenance.dart';
 import 'package:skyview_app/voice/speech.dart';
 
+import 'l10n.dart';
+
 void main() {
+  setUpAll(loadEnglish);
+
   group('session capability', () {
     test('accepts only server-shaped ids', () {
       expect(SessionCapability.tryParse({'id': 'a' * 32, 'token': 't'}), isNotNull);

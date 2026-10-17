@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,17 +28,17 @@ class _StationScreenState extends ConsumerState<StationScreen> {
   Timer? _timer;
 
   static const _readings = <(String, String, String, IconData)>[
-    ('temperature', 'Air temperature', '°C', Icons.thermostat),
-    ('humidity', 'Humidity', '%', Icons.water_drop_outlined),
-    ('soilMoisture', 'Soil moisture', '% relative', Icons.grass),
-    ('soilTemperature', 'Soil temperature', '°C', Icons.landscape_outlined),
-    ('rainfall', 'Rainfall', 'mm', Icons.umbrella_outlined),
-    ('windSpeed', 'Wind speed', 'km/h', Icons.air),
-    ('pressure', 'Pressure', 'hPa', Icons.speed),
-    ('airQualityPM25', 'PM2.5', 'µg/m³', Icons.blur_on),
-    ('uvIndex', 'UV index', '', Icons.wb_sunny_outlined),
-    ('lightIntensity', 'Light', 'lux', Icons.light_mode_outlined),
-    ('batteryVoltage', 'Battery', 'V', Icons.battery_std),
+    ('temperature', 'fos.farm.air_temperature', '°C', Icons.thermostat),
+    ('humidity', 'fos.farm.humidity', '%', Icons.water_drop_outlined),
+    ('soilMoisture', 'fos.farm.soil_moisture', '% relative', Icons.grass),
+    ('soilTemperature', 'fos.farm.soil_temperature', '°C', Icons.landscape_outlined),
+    ('rainfall', 'fos.farm.rainfall', 'mm', Icons.umbrella_outlined),
+    ('windSpeed', 'fos.farm.wind_speed', 'km/h', Icons.air),
+    ('pressure', 'fos.farm.pressure', 'hPa', Icons.speed),
+    ('airQualityPM25', 'fos.farm.pm25', 'µg/m³', Icons.blur_on),
+    ('uvIndex', 'fos.farm.uv_index', '', Icons.wb_sunny_outlined),
+    ('lightIntensity', 'fos.farm.light', 'lux', Icons.light_mode_outlined),
+    ('batteryVoltage', 'fos.farm.battery', 'V', Icons.battery_std),
   ];
 
   @override
@@ -69,10 +70,10 @@ class _StationScreenState extends ConsumerState<StationScreen> {
 
   String _age(Map<String, dynamic> provenance) {
     final seconds = (provenance['observation_age_seconds'] as num?)?.toInt();
-    if (seconds == null) return 'Time unknown';
-    if (seconds < 90) return 'Read ${seconds}s ago';
-    if (seconds < 5400) return 'Read ${(seconds / 60).round()} min ago';
-    return 'Read ${(seconds / 3600).round()} h ago';
+    if (seconds == null) return 'fos.farm.time_unknown'.tr();
+    if (seconds < 90) return 'fos.farm.read_seconds_ago'.tr(namedArgs: {'count': '$seconds'});
+    if (seconds < 5400) return 'fos.farm.read_minutes_ago'.tr(namedArgs: {'count': '${(seconds / 60).round()}'});
+    return 'fos.farm.read_hours_ago'.tr(namedArgs: {'count': '${(seconds / 3600).round()}'});
   }
 
   @override
@@ -83,18 +84,18 @@ class _StationScreenState extends ConsumerState<StationScreen> {
     final provenance = asMap(s?['provenance']);
     final flags = (data['quality_flags'] as List? ?? const []).map((e) => '$e').toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Farm station')),
+      appBar: AppBar(title: Text('fos.farm.farm_station'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'station'),
       body: FarmBackground(
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
             if (_error != null) ErrorView(_error!, onRetry: _load),
-            if (s == null && _error == null) const LoadingView('Loading…'),
+            if (s == null && _error == null) LoadingView('fos.farm.loading'.tr()),
             if (s != null && s['available'] != true)
-              const EmptyView(
+              EmptyView(
                 icon: Icons.sensors_off_outlined,
-                title: 'No station readings yet',
+                title: 'fos.farm.no_station_readings'.tr(),
               ),
             if (s != null && s['available'] == true) ...[
               FarmCard(
@@ -119,7 +120,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
                   if (provenance['origin'] == 'synthetic')
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Text('Simulated demo readings, not real hardware.',
+                      child: Text('fos.farm.simulated_readings'.tr(),
                           style: TextStyle(fontSize: 12, color: mutedColor(context))),
                     ),
                 ]),
@@ -129,7 +130,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
                 final columns = c.maxWidth > 520 ? 3 : 2;
                 final items = [
                   for (final (key, label, unit, icon) in _readings)
-                    if (data[key] is num) (label, '${(data[key] as num).toStringAsFixed(1)} $unit'.trim(), icon),
+                    if (data[key] is num) (label.tr(), '${(data[key] as num).toStringAsFixed(1)} $unit'.trim(), icon),
                 ];
                 return GridView.count(
                   crossAxisCount: columns,
@@ -142,7 +143,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
                     for (final (label, value, icon) in items)
                       FarmCard(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(icon, size: 18, color: AppColors.primaryDark),
+                          Icon(icon, size: 18, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
                           const SizedBox(height: 4),
                           Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
                           Text(label, style: TextStyle(fontSize: 12, color: mutedColor(context))),

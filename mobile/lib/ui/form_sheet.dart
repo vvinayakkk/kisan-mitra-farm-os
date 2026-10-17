@@ -1,6 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../voice/voice_button.dart';
+import '../utils/constants.dart';
 import 'kit.dart';
 
 enum FieldKind { text, multiline, number, date, select, check }
@@ -35,7 +37,7 @@ Future<Map<String, Object?>?> showFormSheet(
   BuildContext context, {
   required String title,
   required List<FieldSpec> fields,
-  String submit = 'Save',
+  String? submit,
   String? note,
 }) =>
     showModalBottomSheet<Map<String, Object?>>(
@@ -50,7 +52,7 @@ class _FormSheet extends StatefulWidget {
 
   final String title;
   final List<FieldSpec> fields;
-  final String submit;
+  final String? submit;
   final String? note;
 
   @override
@@ -85,14 +87,14 @@ class _FormSheetState extends State<_FormSheet> {
         final raw = _text[f.key]!.text.trim();
         if (f.kind == FieldKind.number && raw.isNotEmpty) {
           v = num.tryParse(raw);
-          if (v == null) return setState(() => _error = '${f.label}: enter a number.');
+          if (v == null) return setState(() => _error = 'fos.notebook.field_enter_number'.tr(namedArgs: {'label': f.label}));
         } else {
           v = raw.isEmpty ? null : raw;
         }
       } else {
         v = _values[f.key];
       }
-      if (f.required && (v == null || v == '')) return setState(() => _error = '${f.label} is required.');
+      if (f.required && (v == null || v == '')) return setState(() => _error = 'fos.notebook.field_required'.tr(namedArgs: {'label': f.label}));
       out[f.key] = v;
     }
     Navigator.pop(context, out);
@@ -104,17 +106,17 @@ class _FormSheetState extends State<_FormSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(widget.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(widget.title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: inkColor(context))),
             const SizedBox(height: 8),
             for (final f in widget.fields) Padding(padding: const EdgeInsets.only(bottom: 10), child: _field(f)),
             if (widget.note != null)
               Text(widget.note!, style: TextStyle(fontSize: 12, color: mutedColor(context))),
             if (_error != null)
-              Padding(padding: const EdgeInsets.only(top: 6), child: Text(_error!, style: const TextStyle(color: Colors.red))),
+              Padding(padding: const EdgeInsets.only(top: 6), child: Text(_error!, style: const TextStyle(color: AppColors.error))),
             const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              FilledButton(onPressed: _submit, child: Text(widget.submit)),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text('fos.notebook.cancel'.tr())),
+              FilledButton(onPressed: _submit, child: Text(widget.submit ?? 'fos.notebook.save'.tr())),
             ]),
           ]),
         ),

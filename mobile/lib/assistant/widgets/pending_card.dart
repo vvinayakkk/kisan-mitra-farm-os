@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,30 +24,29 @@ class PendingCard extends ConsumerWidget {
 }
 
 const _approvalPrompts = {
-  'save_task': 'Add this task to your farm plan?',
-  'record_expense': 'Save this expense to your records?',
-  'update_task': 'Save these changes to your task?',
-  'delete_task': 'Remove this task from your plan? It can be restored.',
-  'complete_task': 'Mark this task complete in your plan?',
-  'record_ledger': 'Save this entry to your farm ledger?',
-  'create_crop_case': 'Open this crop follow-up?',
-  'record_crop_note': 'Save this dated crop observation?',
-  'create_mission': 'Save this longer farm plan?',
-  'record_service': 'Save your service arrangement? No booking or payment is made.',
-  'create_farm_group': 'Create this private group checklist? No one is invited yet.',
-  'create_shared_task': 'Save this task for the selected group’s members to see?',
-  'save_soil_report':
-      'Save these report values? Check sample date, depth, units and nutrient basis. This does not verify the laboratory.',
+  'save_task': 'fos.assistant.approval_save_task',
+  'record_expense': 'fos.assistant.approval_record_expense',
+  'update_task': 'fos.assistant.approval_update_task',
+  'delete_task': 'fos.assistant.approval_delete_task',
+  'complete_task': 'fos.assistant.approval_complete_task',
+  'record_ledger': 'fos.assistant.approval_record_ledger',
+  'create_crop_case': 'fos.assistant.approval_create_crop_case',
+  'record_crop_note': 'fos.assistant.approval_record_crop_note',
+  'create_mission': 'fos.assistant.approval_create_mission',
+  'record_service': 'fos.assistant.approval_record_service',
+  'create_farm_group': 'fos.assistant.approval_create_farm_group',
+  'create_shared_task': 'fos.assistant.approval_create_shared_task',
+  'save_soil_report': 'fos.assistant.approval_save_soil_report',
 };
 
 const _fieldLabels = {
-  'task_id': 'Task',
-  'plot_id': 'Field',
-  'group_id': 'Group',
-  'case_id': 'Crop follow-up',
-  'attachment_id': 'Source report',
-  'amount_inr': 'Amount (rupees)',
-  'quote_inr': 'Quoted amount (rupees)',
+  'task_id': 'fos.assistant.field_task_id',
+  'plot_id': 'fos.assistant.field_plot_id',
+  'group_id': 'fos.assistant.field_group_id',
+  'case_id': 'fos.assistant.field_case_id',
+  'attachment_id': 'fos.assistant.field_attachment_id',
+  'amount_inr': 'fos.assistant.field_amount_inr',
+  'quote_inr': 'fos.assistant.field_quote_inr',
 };
 
 const _leading = ['title', 'description', 'amount_inr', 'due_date', 'occurred_on'];
@@ -59,15 +59,15 @@ List<MapEntry<String, dynamic>> orderedArguments(Map<String, dynamic> args) => a
   });
 
 String reviewValue(Object? v) {
-  if (v == null || v == '') return 'Not provided';
+  if (v == null || v == '') return 'fos.assistant.not_provided'.tr();
   if (v is String && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(v)) return displayDate(v);
-  if (v is bool) return v ? 'Yes' : 'No';
+  if (v is bool) return v ? 'fos.assistant.yes'.tr() : 'fos.assistant.no'.tr();
   if (v is List) return v.take(36).map(reviewValue).join('\n');
   if (v is Map) {
-    if (v['title'] != null) return '${v['title']}${v['done'] == true ? ' · completed' : ''}';
+    if (v['title'] != null) return '${v['title']}${v['done'] == true ? ' · ${'fos.assistant.completed'.tr()}' : ''}';
     if (v['property'] != null) {
       return '${'${v['property']}'.replaceAll('_', ' ')} · ${v['value']} ${v['unit_code'] ?? ''} '
-          '(${v['reported_basis'] ?? ''}, depth ${v['depth_top_cm']}–${v['depth_bottom_cm']} cm)';
+          '(${v['reported_basis'] ?? ''}, ${'fos.assistant.depth_cm'.tr(namedArgs: {'top': '${v['depth_top_cm']}', 'bottom': '${v['depth_bottom_cm']}'})})';
     }
     return v.entries.take(20).map((e) => '${'${e.key}'.replaceAll('_', ' ')}: ${reviewValue(e.value)}').join(' · ');
   }
@@ -85,39 +85,39 @@ class ApprovalCard extends ConsumerWidget {
     final controller = ref.read(assistantProvider.notifier);
     final ink = inkColor(context);
     final confirm = switch (pending.tool) {
-      'delete_task' => 'Remove task',
-      'update_task' => 'Save changes',
-      'complete_task' => 'Mark complete',
-      _ => 'Save it',
+      'delete_task' => 'fos.assistant.remove_task'.tr(),
+      'update_task' => 'fos.assistant.save_changes'.tr(),
+      'complete_task' => 'fos.assistant.mark_complete'.tr(),
+      _ => 'fos.assistant.save_it'.tr(),
     };
     return _CardFrame(
       icon: Icons.fact_check_outlined,
-      heading: 'REVIEW BEFORE SAVING',
+      heading: 'fos.assistant.review_before_saving'.tr(),
       children: [
-        Text(_approvalPrompts[pending.tool] ?? 'Save this reviewed change?',
+        Text((_approvalPrompts[pending.tool] ?? 'fos.assistant.approval_default').tr(),
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
         const SizedBox(height: 10),
         for (final e in orderedArguments(pending.arguments))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_fieldLabels[e.key] ?? e.key.replaceAll('_', ' '),
+              Text(_fieldLabels[e.key]?.tr() ?? e.key.replaceAll('_', ' '),
                   style: TextStyle(fontSize: 12, color: mutedColor(context))),
               Text(
                 pending.reviewLabels[e.key] ??
                     (e.key == 'task_id'
-                        ? tasks.where((t) => t.id == e.value).map((t) => t.title).firstOrNull ?? 'Selected farm task'
+                        ? tasks.where((t) => t.id == e.value).map((t) => t.title).firstOrNull ?? 'fos.assistant.selected_task'.tr()
                         : reviewValue(e.value)),
                 style: TextStyle(fontSize: 14.5, color: ink),
               ),
             ]),
           ),
-        Text('Saving changes only your Kisan Mitra records. No message, booking or field work happens.',
+        Text('fos.assistant.saving_note'.tr(),
             style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
         const SizedBox(height: 10),
         Row(children: [
           Expanded(
-            child: OutlinedButton(onPressed: () => controller.decline(pending), child: const Text('Don’t save')),
+            child: OutlinedButton(onPressed: () => controller.decline(pending), child: Text('fos.assistant.dont_save'.tr())),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -172,9 +172,9 @@ class _QuestionFlowState extends ConsumerState<QuestionFlow> {
 
   String? _validate(QuestionField f) {
     final v = _values[f.id]?.trim() ?? '';
-    if (v.isEmpty) return 'Add this detail to continue.';
-    if (f.type == 'number' && num.tryParse(v) == null) return 'Enter a number.';
-    if (f.type == 'date' && DateTime.tryParse(v) == null) return 'Choose a date.';
+    if (v.isEmpty) return 'fos.assistant.add_detail'.tr();
+    if (f.type == 'number' && num.tryParse(v) == null) return 'fos.assistant.enter_number'.tr();
+    if (f.type == 'date' && DateTime.tryParse(v) == null) return 'fos.assistant.choose_date_error'.tr();
     return null;
   }
 
@@ -212,7 +212,7 @@ class _QuestionFlowState extends ConsumerState<QuestionFlow> {
     final photos = ref.watch(assistantProvider.select((s) => s.attachments.where((a) => a.isPhoto).toList()));
     return _CardFrame(
       icon: Icons.auto_awesome,
-      heading: 'MITRA NEEDS A DETAIL',
+      heading: 'fos.assistant.mitra_needs_detail'.tr(),
       trailing: _fields.length > 1 ? Text('${_step + 1} / ${_fields.length}', style: TextStyle(color: mutedColor(context))) : null,
       children: [
         if (_fields.length > 1)
@@ -244,27 +244,27 @@ class _QuestionFlowState extends ConsumerState<QuestionFlow> {
                 OutlinedButton.icon(
                     onPressed: _uploading ? null : () => _photo(ImageSource.camera),
                     icon: const Icon(Icons.photo_camera_outlined),
-                    label: const Text('Take photo')),
+                    label: Text('fos.assistant.take_photo_short'.tr())),
                 OutlinedButton.icon(
                     onPressed: _uploading ? null : () => _photo(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('Choose photo')),
+                    label: Text('fos.assistant.choose_photo_short'.tr())),
               ]),
               if (_uploading) const LinearProgressIndicator(),
               if (photos.isNotEmpty)
                 DropdownButton<String>(
                   isExpanded: true,
-                  hint: const Text('Or use a photo already uploaded'),
+                  hint: Text('fos.assistant.use_uploaded_photo'.tr()),
                   value: photos.any((p) => p.id == _values[field.id]) ? _values[field.id] : null,
                   items: [for (final p in photos) DropdownMenuItem(value: p.id, child: Text(p.name))],
                   onChanged: (v) => setState(() => _values[field.id] = v ?? ''),
                 ),
               if (_values[field.id]?.isNotEmpty == true && !_uploading)
-                const Padding(padding: EdgeInsets.only(top: 6), child: Tag('Photo attached')),
+                Padding(padding: const EdgeInsets.only(top: 6), child: Tag('fos.assistant.photo_attached'.tr())),
             ]),
           'date' => OutlinedButton.icon(
               icon: const Icon(Icons.event),
-              label: Text(_values[field.id]?.isNotEmpty == true ? displayDate(_values[field.id]) : 'Choose date'),
+              label: Text(_values[field.id]?.isNotEmpty == true ? displayDate(_values[field.id]) : 'fos.assistant.choose_date'.tr()),
               onPressed: () async {
                 final now = DateTime.now();
                 final picked = await showDatePicker(
@@ -284,7 +284,7 @@ class _QuestionFlowState extends ConsumerState<QuestionFlow> {
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _next(),
               decoration: InputDecoration(
-                hintText: 'Type or speak your answer',
+                hintText: 'fos.assistant.type_or_speak'.tr(),
                 counterText: '',
                 suffixIcon: VoiceButton(onTranscript: (t) {
                   _text.text = field.type == 'number' ? (RegExp(r'[\d.]+').firstMatch(t)?.group(0) ?? t) : t;
@@ -300,15 +300,15 @@ class _QuestionFlowState extends ConsumerState<QuestionFlow> {
         const SizedBox(height: 12),
         Row(children: [
           if (_step > 0)
-            TextButton(onPressed: () { _syncText(); _goto(_step - 1); }, child: const Text('Back')),
+            TextButton(onPressed: () { _syncText(); _goto(_step - 1); }, child: Text('fos.assistant.back'.tr())),
           TextButton(
             onPressed: () => ref.read(assistantProvider.notifier).decline(widget.pending),
-            child: const Text('Skip for now'),
+            child: Text('fos.assistant.skip_for_now'.tr()),
           ),
           const Spacer(),
           FilledButton(
             onPressed: _uploading ? null : _next,
-            child: Text(_step >= _fields.length - 1 ? 'Send answers' : 'Continue'),
+            child: Text(_step >= _fields.length - 1 ? 'fos.assistant.send_answers'.tr() : 'fos.assistant.continue'.tr()),
           ),
         ]),
       ],
@@ -335,12 +335,12 @@ class _CardFrame extends StatelessWidget {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Icon(icon, size: 16, color: AppColors.primaryDark),
+            Icon(icon, size: 16, color: accentColor(context)),
             const SizedBox(width: 6),
             Expanded(
               child: Text(heading,
-                  style: const TextStyle(
-                      fontSize: 11, letterSpacing: 1, fontWeight: FontWeight.w700, color: AppColors.primaryDark)),
+                  style: TextStyle(
+                      fontSize: 11, letterSpacing: 1, fontWeight: FontWeight.w700, color: accentColor(context))),
             ),
             if (trailing != null) trailing!,
           ]),

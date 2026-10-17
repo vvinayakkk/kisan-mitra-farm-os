@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -46,7 +47,7 @@ class MessageView extends ConsumerWidget {
     if (empty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Text('Stopped before an answer. Nothing was saved by this turn.',
+        child: Text('fos.assistant.stopped_no_answer'.tr(),
             style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
       );
     }
@@ -92,7 +93,7 @@ class MessageView extends ConsumerWidget {
               child: Row(children: [
                 const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
                 const SizedBox(width: 8),
-                Text(liveStatus.isEmpty ? 'Getting started' : liveStatus, style: TextStyle(color: mutedColor(context))),
+                Text(liveStatus.isEmpty ? 'fos.assistant.getting_started'.tr() : liveStatus, style: TextStyle(color: mutedColor(context))),
               ]),
             ),
         ],
@@ -101,8 +102,7 @@ class MessageView extends ConsumerWidget {
   }
 
   void _revise(WidgetRef ref, Artifact a) => ref.read(assistantProvider.notifier).send(
-      'Help me revise the file “${a.title}” (file ID ${a.fileId}). Ask me what I would like to change, '
-      'then create a new version preserving the original.');
+      'fos.assistant.revise_prompt'.tr(namedArgs: {'title': a.title, 'id': a.fileId}));
 }
 
 /// Collapsible list of the run's persisted tool/skill activity. Rows exist
@@ -138,9 +138,14 @@ class _ActivityPanelState extends State<ActivityPanel> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 m.working
                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primaryDark),
+                    : Icon(Icons.check_circle_outline, size: 16, color: accentColor(context)),
                 const SizedBox(width: 6),
-                Text(m.working ? 'Working through your request' : '$n ${n == 1 ? 'step' : 'steps'}',
+                Text(
+                    m.working
+                        ? 'fos.assistant.working_request'.tr()
+                        : n == 1
+                            ? 'fos.assistant.one_step'.tr()
+                            : 'fos.assistant.n_steps'.tr(namedArgs: {'count': '$n'}),
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ink)),
                 Icon(open ? Icons.expand_less : Icons.expand_more, size: 18, color: ink),
               ]),
@@ -160,9 +165,9 @@ class _ActivityPanelState extends State<ActivityPanel> {
       _ when orphaned => const Icon(Icons.remove_circle_outline, size: 16, color: AppColors.textMuted),
       ActivityStatus.running => const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
       ActivityStatus.error => const Icon(Icons.error_outline, size: 16, color: AppColors.error),
-      ActivityStatus.done => const Icon(Icons.check, size: 16, color: AppColors.primaryDark),
+      ActivityStatus.done => Icon(Icons.check, size: 16, color: accentColor(context)),
     };
-    final detail = orphaned ? 'Not finished' : a.outcome;
+    final detail = orphaned ? 'fos.assistant.not_finished'.tr() : a.outcome;
     final time = a.elapsedMs == null ? '' : ' · ${(a.elapsedMs! / 1000).toStringAsFixed(1)}s';
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 6),
@@ -233,22 +238,22 @@ class _AnswerActionsState extends ConsumerState<AnswerActions> {
       children: [
         Row(children: [
           IconButton(
-            tooltip: 'Copy answer',
+            tooltip: 'fos.assistant.copy_answer'.tr(),
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.copy_rounded, size: 18, color: muted),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: widget.message.text));
-              if (context.mounted) showNotice(context, 'Answer copied.');
+              if (context.mounted) showNotice(context, 'fos.assistant.answer_copied'.tr());
             },
           ),
           IconButton(
-            tooltip: 'Share answer',
+            tooltip: 'fos.assistant.share_answer'.tr(),
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.share_outlined, size: 18, color: muted),
-            onPressed: () => SharePlus.instance.share(ShareParams(text: widget.message.text, subject: 'Kisan Mitra answer')),
+            onPressed: () => SharePlus.instance.share(ShareParams(text: widget.message.text, subject: 'fos.assistant.share_subject'.tr())),
           ),
           IconButton(
-            tooltip: _speaking ? 'Stop reading' : 'Read aloud',
+            tooltip: _speaking ? 'fos.assistant.stop_reading'.tr() : 'fos.assistant.read_aloud'.tr(),
             visualDensity: VisualDensity.compact,
             icon: Icon(_speaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined, size: 18, color: muted),
             onPressed: _speak,
@@ -259,14 +264,14 @@ class _AnswerActionsState extends ConsumerState<AnswerActions> {
               icon: _rewriting
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.autorenew, size: 16),
-              label: const Text('Explain differently'),
+              label: Text('fos.assistant.explain_differently'.tr()),
             ),
         ]),
         if (_alternative != null)
           FarmCard(
             color: AppColors.primarySurface.withValues(alpha: context.isDark ? 0.15 : 0.9),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Tag('Alternative explanation · not saved · original above'),
+              Tag('fos.assistant.alt_explanation'.tr()),
               const SizedBox(height: 6),
               MarkdownBody(data: _alternative!, selectable: true),
             ]),

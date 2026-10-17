@@ -3,6 +3,8 @@ library;
 
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
+
 Map<String, dynamic> _map(Object? v) =>
     v is Map ? v.map((k, v) => MapEntry('$k', v)) : <String, dynamic>{};
 List<Map<String, dynamic>> _maps(Object? v) =>
@@ -60,13 +62,13 @@ class Activity {
 
   /// Outcome wording mirrors what the result actually says.
   String get outcome {
-    if (status == ActivityStatus.running) return 'In progress';
-    if (status == ActivityStatus.error) return error ?? 'Failed';
-    if (tool == 'load_skill') return 'Workflow loaded';
-    if (result['artifact'] != null) return 'File created';
-    if (result['available'] == false) return 'Data unavailable — no values assumed';
-    if (result['saved'] == true) return 'Saved to your workspace';
-    return 'Finished';
+    if (status == ActivityStatus.running) return 'fos.assistant.in_progress'.tr();
+    if (status == ActivityStatus.error) return error ?? 'fos.assistant.failed'.tr();
+    if (tool == 'load_skill') return 'fos.assistant.workflow_loaded'.tr();
+    if (result['artifact'] != null) return 'fos.assistant.file_created'.tr();
+    if (result['available'] == false) return 'fos.assistant.data_unavailable'.tr();
+    if (result['saved'] == true) return 'fos.assistant.saved_workspace'.tr();
+    return 'fos.assistant.finished'.tr();
   }
 }
 

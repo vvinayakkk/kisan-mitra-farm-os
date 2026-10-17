@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +51,7 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Catalog unavailable.');
+      setState(() => _error = 'fos.market.catalog_unavailable'.tr().tr());
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -60,32 +61,32 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
   Widget build(BuildContext context) {
     final schemes = _schemes;
     return Scaffold(
-      appBar: AppBar(title: const Text('Farm support')),
+      appBar: AppBar(title: Text('fos.market.support_title'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'schemes'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
           const PreparedBySaathi(area: 'schemes'),
           FarmCard(
             child: Column(children: [
-              TextField(controller: _query, decoration: const InputDecoration(labelText: 'Search support', hintText: 'e.g. irrigation, insurance')),
+              TextField(controller: _query, decoration: InputDecoration(labelText: 'fos.market.search_support'.tr(), hintText: 'fos.market.search_hint'.tr())),
               const SizedBox(height: 8),
-              TextField(controller: _state, decoration: const InputDecoration(labelText: 'State (optional)')),
+              TextField(controller: _state, decoration: InputDecoration(labelText: 'fos.market.state_optional'.tr())),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child: FilledButton.icon(onPressed: _busy ? null : _search, icon: const Icon(Icons.search), label: const Text('Search')),
+                child: FilledButton.icon(onPressed: _busy ? null : _search, icon: const Icon(Icons.search), label: Text('fos.market.search'.tr())),
               ),
             ]),
           ),
-          if (_busy) const LoadingView('Loading…'),
+          if (_busy) LoadingView('fos.market.loading'.tr()),
           if (_error != null) ErrorView(_error!, onRetry: _search),
           if (!_busy && schemes != null && schemes.isEmpty)
-            const EmptyView(title: 'No matches. Try another keyword.'),
+            EmptyView(title: 'fos.market.no_matches'.tr()),
           if (!_busy && schemes != null && schemes.isNotEmpty) ...[
-            SectionTitle('${schemes.length} references'),
+            SectionTitle('fos.market.references'.tr(namedArgs: {'count': '${schemes.length}'})),
             for (final s in schemes.take(_shown)) _SchemeCard(scheme: s),
             if (schemes.length > _shown)
-              TextButton(onPressed: () => setState(() => _shown += 6), child: const Text('More')),
+              TextButton(onPressed: () => setState(() => _shown += 6), child: Text('fos.market.more'.tr())),
           ],
         ]),
       ),
@@ -102,7 +103,7 @@ class _SchemeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ink = inkColor(context);
     final id = str(scheme['scheme_id'], str(scheme['id']));
-    final title = str(scheme['scheme_name'], str(scheme['name'], str(scheme['title'], 'Programme')));
+    final title = str(scheme['scheme_name'], str(scheme['name'], str(scheme['title'], 'fos.market.programme'.tr())));
     final url = str(scheme['official_url'], str(scheme['website']));
     final requirements = asMap(scheme['requirements']);
     final description = str(scheme['benefit_description'], str(scheme['description'], str(requirements['summary'])));
@@ -114,7 +115,7 @@ class _SchemeCard extends ConsumerWidget {
           shape: const Border(),
           title: Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
           subtitle: Text(
-            str(scheme['state'], 'National'),
+            str(scheme['state'], 'fos.market.national'.tr()),
             style: TextStyle(fontSize: 12, color: mutedColor(context)),
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -123,7 +124,7 @@ class _SchemeCard extends ConsumerWidget {
             if (description.isNotEmpty) Text(description, style: TextStyle(color: ink)),
             if (str(scheme['eligibility']).isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text('Who can apply: ${scheme['eligibility']}', style: TextStyle(color: ink)),
+              Text('fos.market.who_can_apply'.tr(namedArgs: {'text': '${scheme['eligibility']}'}), style: TextStyle(color: ink)),
             ],
             const SizedBox(height: 8),
             if (_uuid.hasMatch(id)) _SupportChecklist(schemeId: id),
@@ -132,20 +133,22 @@ class _SchemeCard extends ConsumerWidget {
                 FilledButton.tonalIcon(
                   onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
                   icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('Official page'),
+                  label: Text('fos.market.official_page'.tr()),
                 ),
               FilledButton.tonalIcon(
                 onPressed: () {
                   HapticFeedback.selectionClick();
                   ref.read(assistantProvider.notifier).send(
-                        'Help me prepare for the scheme “$title”${str(scheme['state']).isEmpty ? '' : ' in ${scheme['state']}'}'
-                        '${url.isEmpty ? '' : ' (official page: $url)'}. Verify the official requirements and ask what you need from me.',
+                        'fos.market.prepare_prompt'.tr(namedArgs: {'title': title}) +
+                            (str(scheme['state']).isEmpty ? '' : 'fos.market.prepare_in_state'.tr(namedArgs: {'state': '${scheme['state']}'})) +
+                            (url.isEmpty ? '' : 'fos.market.prepare_official'.tr(namedArgs: {'url': url})) +
+                            'fos.market.prepare_verify'.tr(),
                         context: const RunContext(view: 'schemes'),
                       );
                   showHelperSheet(context, 'schemes');
                 },
                 icon: const Icon(Icons.eco, size: 16),
-                label: const Text('Prepare'),
+                label: Text('fos.market.prepare'.tr()),
               ),
             ]),
           ],
@@ -170,9 +173,9 @@ class _SupportChecklistState extends ConsumerState<_SupportChecklist> {
   bool _saving = false;
 
   static const _items = {
-    'eligibility_reviewed': 'Checked who can apply',
-    'documents_reviewed': 'Checked documents needed',
-    'application_reviewed': 'Checked deadline and route',
+    'eligibility_reviewed': 'fos.market.chk_eligibility',
+    'documents_reviewed': 'fos.market.chk_documents',
+    'application_reviewed': 'fos.market.chk_application',
   };
 
   @override
@@ -224,11 +227,16 @@ class _SupportChecklistState extends ConsumerState<_SupportChecklist> {
   Widget build(BuildContext context) {
     final f = _folder;
     if (_error != null) return ErrorView(_error!, onRetry: _load);
-    if (f == null) return const LoadingView('Loading…');
+    if (f == null) return LoadingView('fos.market.loading'.tr());
     final done = _items.keys.where((k) => f[k] == true).length;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Checklist · ${_saving ? 'Saving…' : '$done of 3${(f['row_version'] ?? 0) > 0 ? ' · Saved' : ''}'}',
-          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+      Text(
+          'fos.market.checklist'.tr(namedArgs: {
+            'status': _saving
+                ? 'fos.market.saving'.tr()
+                : 'fos.market.checklist_done'.tr(namedArgs: {'done': '$done'}) + ((f['row_version'] ?? 0) > 0 ? ' · ${'fos.market.saved'.tr()}' : ''),
+          }),
+          style: TextStyle(fontWeight: FontWeight.w600, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark)),
       for (final e in _items.entries)
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
@@ -240,9 +248,9 @@ class _SupportChecklistState extends ConsumerState<_SupportChecklist> {
                   HapticFeedback.selectionClick();
                   _toggle(e.key, v ?? false);
                 },
-          title: Text(e.value),
+          title: Text(e.value.tr(), style: TextStyle(color: inkColor(context))),
         ),
-      Text('Your checklist; not an application.', style: TextStyle(fontSize: 11, color: mutedColor(context))),
+      Text('fos.market.checklist_note'.tr(), style: TextStyle(fontSize: 11, color: mutedColor(context))),
       const SizedBox(height: 6),
     ]);
   }

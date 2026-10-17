@@ -49,7 +49,7 @@ class LoginScreen extends ConsumerWidget {
                       ),
                     )
                   else
-                    ErrorView(auth.error ?? 'Could not reach the server.', onRetry: controller.refreshMode),
+                    ErrorView(auth.error ?? 'fos.assistant.server_unreachable'.tr(), onRetry: controller.refreshMode),
                   if (auth.error != null && (auth.mode == BackendMode.demo || auth.mode == BackendMode.live))
                     ErrorView(auth.error!),
                 ]),

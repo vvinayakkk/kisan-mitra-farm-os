@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
 
@@ -168,7 +169,7 @@ class AssistantController extends StateNotifier<AssistantState> {
   /// After a restart the server may still be finishing (or have just marked
   /// the run stopped). Replay its persisted events instead of guessing.
   Future<void> _recover(ChatMessage message) async {
-    state = state.copyWith(recovering: true, status: 'Reconnecting to your last request');
+    state = state.copyWith(recovering: true, status: 'fos.assistant.reconnecting'.tr());
     var after = 0;
     var current = message.copyWith(text: '', activities: const []);
     final deadline = DateTime.now().add(const Duration(seconds: 90));
@@ -222,7 +223,7 @@ class AssistantController extends StateNotifier<AssistantState> {
     state = state.copyWith(
       running: true,
       clearError: true,
-      status: 'Connecting',
+      status: 'fos.assistant.connecting'.tr(),
       clearPending: pendingId != null,
       messages: [
         ...state.messages,
@@ -258,7 +259,7 @@ class AssistantController extends StateNotifier<AssistantState> {
         terminal = terminal || folded.terminal;
       }
       if (!terminal) {
-        throw ApiException(0, 'The response stopped before completion. Please retry.');
+        throw ApiException(0, 'fos.assistant.response_stopped'.tr());
       }
       await _sync();
     } catch (e) {
@@ -269,12 +270,12 @@ class AssistantController extends StateNotifier<AssistantState> {
         (m) => m.copyWith(
           status: stopped ? 'stopped' : 'error',
           error: stopped
-              ? 'Stopped. Anything already saved stays in your workspace.'
+              ? 'fos.assistant.stopped_saved'.tr()
               : e is ApiException
                   ? e.message
                   : e is TimeoutException
-                      ? 'The request timed out. Try a smaller task.'
-                      : 'The connection was interrupted. Please retry.',
+                      ? 'fos.assistant.timed_out'.tr()
+                      : 'fos.assistant.connection_interrupted'.tr(),
         ),
       );
       // Pick up whatever the server persisted (pending card, saved records).
@@ -341,7 +342,7 @@ class AssistantController extends StateNotifier<AssistantState> {
 
   Future<Attachment> uploadBytes(String filename, List<int> bytes) async {
     if (bytes.length > 5 * 1024 * 1024) {
-      throw ApiException(413, 'Choose a file smaller than 5 MB.');
+      throw ApiException(413, 'fos.assistant.file_too_big'.tr());
     }
     final data = await _api.post('/api/assistant/sessions/$_sid/attachments-json',
         body: {'filename': filename.length > 120 ? filename.substring(0, 120) : filename, 'content': base64Encode(bytes)},
@@ -356,13 +357,13 @@ class AssistantController extends StateNotifier<AssistantState> {
         '/api/assistant/sessions/$_sid/answers/${Uri.encodeComponent(message.serverId ?? message.id)}/rewrite',
         timeout: const Duration(seconds: 50));
     final text = data is Map ? data['text'] : null;
-    if (text is! String || text.isEmpty) throw ApiException(503, 'No alternative explanation arrived.');
+    if (text is! String || text.isEmpty) throw ApiException(503, 'fos.assistant.no_alternative'.tr());
     return text;
   }
 
   /// Edit / delete / restore a saved task with optimistic-concurrency checks.
   Future<void> changeTask(FarmTask task, {bool delete = false, bool restore = false}) async {
-    if (state.busy) throw ApiException(409, 'Finish the current request first.');
+    if (state.busy) throw ApiException(409, 'fos.assistant.finish_current'.tr());
     // Deleting bumps the row version; restore with the server's latest copy.
     if (restore) task = state.deletedTasks.where((t) => t.id == task.id).firstOrNull ?? task;
     final path = '/api/assistant/sessions/$_sid/tasks/${task.id}';
@@ -378,7 +379,7 @@ class AssistantController extends StateNotifier<AssistantState> {
     } on ApiException catch (e) {
       if (e.conflict) {
         await _sync(replaceMessages: false);
-        throw ApiException(409, 'This task changed elsewhere. Showing the latest version.');
+        throw ApiException(409, 'fos.assistant.task_changed'.tr());
       }
       rethrow;
     } finally {

@@ -6,6 +6,8 @@ import 'package:http/testing.dart';
 import 'package:skyview_app/core/api.dart';
 import 'package:skyview_app/core/session.dart';
 
+import 'l10n.dart';
+
 class MemoryVault extends SessionVault {
   MemoryVault([this.value]);
 
@@ -46,6 +48,8 @@ Future<void> settle(AuthController c) async {
 }
 
 void main() {
+  setUpAll(loadEnglish);
+
   test('demo lane adopts the server-issued session', () async {
     final vault = MemoryVault();
     final c = AuthController(vault, anonymous: server('v3_demo'));

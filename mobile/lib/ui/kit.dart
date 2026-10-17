@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -32,6 +33,9 @@ class FarmBackground extends StatelessWidget {
 
 Color inkColor(BuildContext context) => context.isDark ? Colors.white : AppColors.textDark;
 Color mutedColor(BuildContext context) => context.isDark ? Colors.white70 : AppColors.textMuted;
+
+/// Brand green that stays readable on the current theme.
+Color accentColor(BuildContext context) => context.isDark ? AppColors.primaryLight : AppColors.primaryDark;
 
 /// Glass card from the original app: frosted, translucent, soft white rim.
 class FarmCard extends StatelessWidget {
@@ -69,7 +73,7 @@ class FarmCard extends StatelessWidget {
   }
 }
 
-/// Pill chip: soft green fill, no outline (the app's chip style).
+/// The app's original chip: transparent, thin border, circled icon.
 class OutlineChip extends StatelessWidget {
   const OutlineChip({
     super.key,
@@ -88,46 +92,47 @@ class OutlineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = context.isDark;
+    final border = selected ? AppColors.primary : (context.isDark ? Colors.white60 : Colors.black87);
     final enabled = onTap != null;
-    final fg = dark ? AppColors.primaryLight : AppColors.primaryDark;
     return Semantics(
       button: true,
       selected: selected,
       enabled: enabled,
       child: Opacity(
-        opacity: enabled ? 1 : 0.5,
-        child: Material(
-          color: selected
-              ? AppColors.primary
-              : AppColors.primary.withValues(alpha: dark ? 0.18 : 0.12),
-          borderRadius: BorderRadius.circular(20),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: enabled
-                ? () {
-                    HapticFeedback.selectionClick();
-                    onTap!();
-                  }
-                : null,
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 38),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 16, color: selected ? Colors.white : (iconColor ?? AppColors.primary)),
-                    const SizedBox(width: 6),
-                  ],
-                  Flexible(
-                    child: Text(label,
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w500, color: selected ? Colors.white : fg),
-                        overflow: TextOverflow.ellipsis),
+        opacity: enabled ? 1 : 0.45,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: enabled
+              ? () {
+                  HapticFeedback.selectionClick();
+                  onTap!();
+                }
+              : null,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 38),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: border, width: selected ? 1.6 : 1.1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: border, width: 1.1)),
+                    child: Icon(icon, size: 14, color: iconColor ?? AppColors.primary),
                   ),
+                  const SizedBox(width: 7),
                 ],
-              ),
+                Flexible(
+                  child: Text(label,
+                      style: TextStyle(fontSize: 12, color: border, fontWeight: selected ? FontWeight.w600 : null),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
             ),
           ),
         ),
@@ -154,8 +159,8 @@ class SectionTitle extends StatelessWidget {
                 children: [
                   if (eyebrow != null)
                     Text(eyebrow!.toUpperCase(),
-                        style: const TextStyle(
-                            fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: AppColors.primaryDark)),
+                        style: TextStyle(
+                            fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: accentColor(context))),
                   Text(text,
                       style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: inkColor(context))),
                 ],
@@ -236,7 +241,7 @@ class ErrorView extends StatelessWidget {
               const Icon(Icons.error_outline, color: AppColors.error, size: 20),
               const SizedBox(width: 8),
               Expanded(child: Text(message, style: TextStyle(color: inkColor(context)))),
-              if (onRetry != null) TextButton(onPressed: onRetry, child: const Text('Retry')),
+              if (onRetry != null) TextButton(onPressed: onRetry, child: Text('fos.notebook.retry'.tr())),
             ],
           ),
         ),
@@ -253,6 +258,7 @@ class Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fg = context.isDark ? Color.lerp(color, Colors.white, 0.4)! : color;
     final pill = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -260,7 +266,7 @@ class Tag extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
     );
     return tooltip == null ? pill : Tooltip(message: tooltip!, child: pill);
   }
@@ -273,15 +279,15 @@ void showNotice(BuildContext context, String message) {
 }
 
 Future<bool> confirmAction(BuildContext context,
-    {required String title, required String body, String confirm = 'Confirm', String cancel = 'Keep it'}) async {
+    {required String title, required String body, String? confirm, String? cancel}) async {
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),
       content: Text(body),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancel)),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(confirm)),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancel ?? 'fos.notebook.keep_it'.tr())),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(confirm ?? 'fos.notebook.confirm'.tr())),
       ],
     ),
   );
@@ -294,7 +300,7 @@ String displayDate(String? iso, {bool withTime = false}) {
   final d = DateTime.tryParse(iso);
   if (d == null) return iso;
   final local = d.isUtc ? d.toLocal() : d;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final months = ['fos.notebook.month_1'.tr(), 'fos.notebook.month_2'.tr(), 'fos.notebook.month_3'.tr(), 'fos.notebook.month_4'.tr(), 'fos.notebook.month_5'.tr(), 'fos.notebook.month_6'.tr(), 'fos.notebook.month_7'.tr(), 'fos.notebook.month_8'.tr(), 'fos.notebook.month_9'.tr(), 'fos.notebook.month_10'.tr(), 'fos.notebook.month_11'.tr(), 'fos.notebook.month_12'.tr()];
   final date = '${local.day} ${months[local.month - 1]} ${local.year}';
   if (!withTime) return date;
   return '$date, ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';

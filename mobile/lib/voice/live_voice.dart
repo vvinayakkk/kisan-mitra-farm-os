@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,7 +26,7 @@ Future<void> openLiveVoice(BuildContext context, {RunContext runContext = const 
   if (!context.mounted) return;
   final language = speechLanguage(ref.read(languageProvider).code);
   if (!caps.conversation || !caps.playbackLanguages.contains(language)) {
-    showNotice(context, 'Live voice is unavailable for this language on this server. You can still type or use voice input.');
+    showNotice(context, 'fos.assistant.live_unavailable'.tr());
     return;
   }
   if (!await ref.read(speechProvider).ensureMicrophone(context)) return;
@@ -42,14 +43,14 @@ Future<void> openLiveVoice(BuildContext context, {RunContext runContext = const 
 enum LivePhase { listening, understanding, working, preparing, speaking, review, muted, error }
 
 String livePhaseLabel(LivePhase p) => switch (p) {
-      LivePhase.listening => 'Listening',
-      LivePhase.understanding => 'Understanding',
-      LivePhase.working => 'Mitra is working',
-      LivePhase.preparing => 'Preparing voice reply',
-      LivePhase.speaking => 'Mitra is speaking',
-      LivePhase.review => 'Review the card to continue',
-      LivePhase.muted => 'Microphone off',
-      LivePhase.error => 'Something went wrong',
+      LivePhase.listening => 'fos.assistant.phase_listening'.tr(),
+      LivePhase.understanding => 'fos.assistant.phase_understanding'.tr(),
+      LivePhase.working => 'fos.assistant.phase_working'.tr(),
+      LivePhase.preparing => 'fos.assistant.phase_preparing'.tr(),
+      LivePhase.speaking => 'fos.assistant.phase_speaking'.tr(),
+      LivePhase.review => 'fos.assistant.phase_review'.tr(),
+      LivePhase.muted => 'fos.assistant.phase_muted'.tr(),
+      LivePhase.error => 'fos.assistant.phase_error'.tr(),
     };
 
 class LiveVoiceSheet extends ConsumerStatefulWidget {
@@ -92,7 +93,7 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet> {
     try {
       await _speech.start();
     } catch (_) {
-      return _fail('The microphone could not start.');
+      return _fail('fos.assistant.mic_failed'.tr());
     }
     _limit = Timer(Duration(seconds: widget.maxSeconds), () => _finishTurn(turn));
     _levels = _speech.levels().listen((level) {
@@ -208,7 +209,7 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Live voice', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
+            Text('fos.assistant.live_voice'.tr(), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
             const SizedBox(height: 28),
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
@@ -258,7 +259,7 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet> {
                   FilledButton.icon(
                     onPressed: () => _finishTurn(_generation),
                     icon: const Icon(Icons.stop_rounded),
-                    label: const Text('Done speaking'),
+                    label: Text('fos.assistant.done_speaking'.tr()),
                   ),
                 if (busy)
                   OutlinedButton.icon(
@@ -267,21 +268,21 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet> {
                       await _listen();
                     },
                     icon: const Icon(Icons.pan_tool_alt_outlined),
-                    label: const Text('Interrupt'),
+                    label: Text('fos.assistant.interrupt'.tr()),
                   ),
                 if (_phase == LivePhase.error || _phase == LivePhase.review)
                   OutlinedButton.icon(
                     onPressed: _phase == LivePhase.review ? () => Navigator.pop(context) : _listen,
                     icon: Icon(_phase == LivePhase.review ? Icons.fact_check_outlined : Icons.refresh),
-                    label: Text(_phase == LivePhase.review ? 'Open the card' : 'Resume'),
+                    label: Text(_phase == LivePhase.review ? 'fos.assistant.open_card'.tr() : 'fos.assistant.resume'.tr()),
                   ),
                 IconButton.outlined(
-                  tooltip: _phase == LivePhase.muted ? 'Unmute microphone' : 'Mute microphone',
+                  tooltip: _phase == LivePhase.muted ? 'fos.assistant.unmute'.tr() : 'fos.assistant.mute'.tr(),
                   onPressed: busy ? null : _toggleMute,
                   icon: Icon(_phase == LivePhase.muted ? Icons.mic_off : Icons.mic),
                 ),
                 IconButton.filled(
-                  tooltip: 'End live conversation',
+                  tooltip: 'fos.assistant.end_live'.tr(),
                   style: IconButton.styleFrom(backgroundColor: AppColors.error),
                   onPressed: _end,
                   icon: const Icon(Icons.close),
@@ -289,7 +290,7 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            Text('Audio goes to the configured speech service. Reviews and approvals stay on screen.',
+            Text('fos.assistant.audio_note'.tr(),
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: mutedColor(context))),
           ],
         ),

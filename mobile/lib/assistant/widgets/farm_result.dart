@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../../ui/kit.dart';
 import '../../ui/provenance.dart';
 import '../../utils/constants.dart';
 import '../models.dart';
+import 'theme_helpers.dart';
 
 /// Renders a finished tool result inline: research sources, a generated file,
 /// or a dated chart. Anything else renders nothing (the answer text explains).
@@ -74,7 +76,7 @@ class ChartData {
     final bar = value['type'] == 'bar';
     if (points.length < (bar ? 1 : 2)) return null;
     return ChartData(
-      title: '${value['title'] ?? 'Chart'}',
+      title: '${value['title'] ?? 'fos.assistant.chart'.tr()}',
       unit: '${value['unit'] ?? ''}',
       points: points,
       kind: value['kind'] as String?,
@@ -108,26 +110,31 @@ class _DatedChartState extends State<DatedChart> {
     final caption = c.caption ??
         (weather
             ? c.kind == 'weather_forecast'
-                ? 'Issued weather forecast'
-                : 'Grid weather history / reanalysis'
+                ? 'fos.assistant.cap_forecast'.tr()
+                : 'fos.assistant.cap_history'.tr()
             : c.bar
-                ? 'Calculated from your inputs'
+                ? 'fos.assistant.cap_calculated'.tr()
                 : switch (origin) {
-                    'synthetic' => 'Simulated market history',
-                    'scenario' => 'Planning scenario',
-                    'forecast' => 'Price forecast',
-                    _ => 'Dated market records',
+                    'synthetic' => 'fos.assistant.cap_synthetic'.tr(),
+                    'scenario' => 'fos.assistant.cap_scenario'.tr(),
+                    'forecast' => 'fos.assistant.cap_price_forecast'.tr(),
+                    _ => 'fos.assistant.cap_dated'.tr(),
                   });
     final note = weather
         ? c.kind == 'weather_forecast'
-            ? 'Model forecast, not station readings or guaranteed rainfall.'
-            : 'Grid observations or reanalysis, not farm sensor or soil measurements.'
+            ? 'fos.assistant.note_forecast'.tr()
+            : 'fos.assistant.note_history'.tr()
         : c.bar
-            ? 'Calculated costs'
+            ? 'fos.assistant.note_costs'.tr()
             : origin == 'synthetic' || origin == 'scenario'
-                ? 'Fictional planning data, not actual mandi offers.'
-                : 'Prices are dated records, not guaranteed offers.';
-    final valueName = c.valueName ?? (weather ? 'Rainfall' : c.bar ? 'Cost' : 'Modal price');
+                ? 'fos.assistant.note_fictional'.tr()
+                : 'fos.assistant.note_prices'.tr();
+    final valueName = c.valueName ??
+        (weather
+            ? 'fos.assistant.v_rainfall'.tr()
+            : c.bar
+                ? 'fos.assistant.v_cost'.tr()
+                : 'fos.assistant.v_modal'.tr());
     return (caption, note, valueName);
   }
 
@@ -161,9 +168,13 @@ class _DatedChartState extends State<DatedChart> {
             if (_open) ...[
               const SizedBox(height: 10),
               Semantics(
-                label: '$valueName chart from ${c.points.first.date} to ${c.points.last.date}, '
-                    '${c.points.length} points',
-                child: SizedBox(height: 190, child: c.bar ? _bar() : _line()),
+                label: 'fos.assistant.chart_semantics'.tr(namedArgs: {
+                  'name': valueName,
+                  'from': c.points.first.date,
+                  'to': c.points.last.date,
+                  'count': '${c.points.length}',
+                }),
+                child: SizedBox(height: 190, child: c.bar ? _bar(context) : _line(context)),
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -197,23 +208,33 @@ class _DatedChartState extends State<DatedChart> {
             .toList(),
       );
 
-  Widget _line() {
+  SideTitles _leftTitles(BuildContext context) => SideTitles(
+        showTitles: true,
+        reservedSize: 44,
+        getTitlesWidget: (value, meta) =>
+            SideTitleWidget(meta: meta, child: Text(meta.formattedValue, style: _axis(context))),
+      );
+
+  Widget _line(BuildContext context) {
     final points = widget.chart.points;
     final (_, _, valueName) = _labels();
     return LineChart(LineChartData(
-      gridData: const FlGridData(drawVerticalLine: false),
+      gridData: FlGridData(
+        drawVerticalLine: false,
+        getDrawingHorizontalLine: (_) => FlLine(color: hairlineColor(context), strokeWidth: 1),
+      ),
       borderData: FlBorderData(show: false),
-      titlesData: const FlTitlesData(
-        topTitles: AxisTitles(),
-        rightTitles: AxisTitles(),
-        bottomTitles: AxisTitles(),
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 44)),
+      titlesData: FlTitlesData(
+        topTitles: const AxisTitles(),
+        rightTitles: const AxisTitles(),
+        bottomTitles: const AxisTitles(),
+        leftTitles: AxisTitles(sideTitles: _leftTitles(context)),
       ),
       lineTouchData: LineTouchData(touchTooltipData: _tooltip(valueName)),
       lineBarsData: [
         LineChartBarData(
           spots: [for (var i = 0; i < points.length; i++) FlSpot(i.toDouble(), points[i].value)],
-          color: const Color(0xFF51763A),
+          color: context.isDark ? AppColors.primaryLight : const Color(0xFF51763A),
           barWidth: 2.5,
           dotData: FlDotData(show: points.length <= 30),
         ),
@@ -221,21 +242,24 @@ class _DatedChartState extends State<DatedChart> {
     ));
   }
 
-  Widget _bar() {
+  Widget _bar(BuildContext context) {
     final points = widget.chart.points;
     return BarChart(BarChartData(
-      gridData: const FlGridData(drawVerticalLine: false),
+      gridData: FlGridData(
+        drawVerticalLine: false,
+        getDrawingHorizontalLine: (_) => FlLine(color: hairlineColor(context), strokeWidth: 1),
+      ),
       borderData: FlBorderData(show: false),
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(),
         rightTitles: const AxisTitles(),
-        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 44)),
+        leftTitles: AxisTitles(sideTitles: _leftTitles(context)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: points.length <= 8,
             getTitlesWidget: (v, _) => Text(
               points[v.toInt()].date.length > 8 ? points[v.toInt()].date.substring(0, 8) : points[v.toInt()].date,
-              style: const TextStyle(fontSize: 9),
+              style: TextStyle(fontSize: 9, color: mutedColor(context)),
             ),
           ),
         ),
@@ -243,7 +267,8 @@ class _DatedChartState extends State<DatedChart> {
       barGroups: [
         for (var i = 0; i < points.length; i++)
           BarChartGroupData(x: i, barRods: [
-            BarChartRodData(toY: points[i].value, color: const Color(0xFF6C8E50), width: 14),
+            BarChartRodData(
+                toY: points[i].value, color: context.isDark ? AppColors.primaryLight : const Color(0xFF6C8E50), width: 14),
           ]),
       ],
     ));
@@ -270,7 +295,7 @@ class _FileResultState extends ConsumerState<FileResult> {
   Future<File> _download() async {
     final api = ref.read(apiProvider);
     final session = api.session;
-    if (session == null) throw ApiException(401, 'Sign in to download your files.');
+    if (session == null) throw ApiException(401, 'fos.assistant.sign_in_download'.tr());
     final response = await api.bytes('/api/assistant/sessions/${session.id}/files/${widget.artifact.fileId}');
     final dir = Directory('${(await getApplicationDocumentsDirectory()).path}/files/${session.id}');
     await dir.create(recursive: true);
@@ -290,7 +315,7 @@ class _FileResultState extends ConsumerState<FileResult> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'This download could not finish.');
+      setState(() => _error = 'fos.assistant.download_failed'.tr());
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -309,7 +334,7 @@ class _FileResultState extends ConsumerState<FileResult> {
           children: [
             Row(
               children: [
-                Icon(_icon(a.format), color: AppColors.primaryDark),
+                Icon(_icon(a.format), color: accentColor(context)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -317,8 +342,8 @@ class _FileResultState extends ConsumerState<FileResult> {
                     children: [
                       Text(a.title, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
                       Text(
-                        '${a.format.toUpperCase()} · $kb KB · Saved file'
-                        '${(a.revision ?? 1) > 1 ? ' · version ${a.revision}' : ''}',
+                        '${a.format.toUpperCase()} · $kb KB · ${'fos.assistant.saved_file'.tr()}'
+                        '${(a.revision ?? 1) > 1 ? ' · ${'fos.assistant.version'.tr(namedArgs: {'n': '${a.revision}'})}' : ''}',
                         style: TextStyle(fontSize: 12, color: mutedColor(context)),
                       ),
                     ],
@@ -333,30 +358,29 @@ class _FileResultState extends ConsumerState<FileResult> {
               children: [
                 if (a.preview != null)
                   OutlineChip(
-                    label: _preview ? 'Hide preview' : 'Preview',
+                    label: _preview ? 'fos.assistant.hide_preview'.tr() : 'fos.assistant.preview'.tr(),
                     icon: Icons.visibility_outlined,
                     onTap: () => setState(() => _preview = !_preview),
                   ),
                 OutlineChip(
-                  label: _busy ? 'Downloading…' : 'Open',
+                  label: _busy ? 'fos.assistant.downloading'.tr() : 'fos.assistant.open'.tr(),
                   icon: Icons.open_in_new,
                   onTap: _busy
                       ? null
                       : () => _run((f) async {
                             final result = await OpenFilex.open(f.path);
                             if (result.type != ResultType.done && mounted) {
-                              setState(() => _error =
-                                  'No app on this phone opens ${a.format.toUpperCase()} files. Use Share instead.');
+                              setState(() => _error = 'fos.assistant.no_app_opens'.tr(namedArgs: {'format': a.format.toUpperCase()}));
                             }
                           }),
                 ),
                 OutlineChip(
-                  label: 'Share',
+                  label: 'fos.assistant.share'.tr(),
                   icon: Icons.ios_share,
                   onTap: _busy ? null : () => _run((f) => SharePlus.instance.share(ShareParams(files: [XFile(f.path)], subject: a.title))),
                 ),
                 if (widget.onRevise != null)
-                  OutlineChip(label: 'Revise', icon: Icons.edit_outlined, onTap: () => widget.onRevise!(a)),
+                  OutlineChip(label: 'fos.assistant.revise'.tr(), icon: Icons.edit_outlined, onTap: () => widget.onRevise!(a)),
               ],
             ),
             if (_preview && a.preview != null) _PreviewPaper(a.preview!),
@@ -389,7 +413,7 @@ class _PreviewPaper extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.isDark ? Colors.black26 : const Color(0xFFFAFAF5),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.black12),
+        border: Border.all(color: hairlineColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,11 +442,13 @@ class _PreviewPaper extends StatelessWidget {
               ),
             ),
           if (preview.rowCount > preview.rows.length)
-            Text('Showing ${preview.rows.length} of ${preview.rowCount} rows',
+            Text('fos.assistant.showing_rows'.tr(namedArgs: {'shown': '${preview.rows.length}', 'total': '${preview.rowCount}'}),
                 style: TextStyle(fontSize: 11, color: mutedColor(context))),
           const SizedBox(height: 6),
           Text(
-            '${preview.partial ? 'Excerpt' : 'Content'} preview · Open the file for the full formatted version',
+            (preview.partial
+                    ? 'fos.assistant.excerpt_preview'
+                    : 'fos.assistant.content_preview').tr(),
             style: TextStyle(fontSize: 11, color: mutedColor(context)),
           ),
         ],
@@ -445,7 +471,7 @@ class ResearchSources extends StatelessWidget {
     if (result['available'] != true) {
       return Padding(
         padding: const EdgeInsets.only(top: 8),
-        child: Text('Web research is unavailable right now. Your saved farm records are still available.',
+        child: Text('fos.assistant.research_unavailable'.tr(),
             style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
       );
     }
@@ -464,8 +490,8 @@ class ResearchSources extends StatelessWidget {
         padding: EdgeInsets.zero,
         child: ExpansionTile(
           shape: const Border(),
-          leading: const Icon(Icons.travel_explore, color: AppColors.primaryDark),
-          title: Text('Research & sources · ${sources.length}',
+          leading: Icon(Icons.travel_explore, color: accentColor(context)),
+          title: Text('fos.assistant.research_sources'.tr(namedArgs: {'count': '${sources.length}'}),
               style: TextStyle(fontWeight: FontWeight.w600, color: inkColor(context))),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
@@ -480,11 +506,11 @@ class ResearchSources extends StatelessWidget {
                 onTap: () => launchUrl(Uri.parse('${s['url']}'), mode: LaunchMode.externalApplication),
               ),
             if (result['retrieved_at'] != null)
-              Text('Checked ${displayDate('${result['retrieved_at']}', withTime: true)}',
+              Text('fos.assistant.checked'.tr(namedArgs: {'date': displayDate('${result['retrieved_at']}', withTime: true)}),
                   style: TextStyle(fontSize: 11, color: mutedColor(context))),
             if (suggestions.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Google Search suggestions', style: TextStyle(fontSize: 11, color: mutedColor(context))),
+              Text('fos.assistant.google_suggestions'.tr(), style: TextStyle(fontSize: 11, color: mutedColor(context))),
               const SizedBox(height: 4),
               Wrap(spacing: 6, runSpacing: 6, children: [
                 for (final s in suggestions)

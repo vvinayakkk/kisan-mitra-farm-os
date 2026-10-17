@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,11 +96,11 @@ class SpeechService {
       final open = await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
-          title: const Text('Microphone is off'),
-          content: const Text('Voice input needs microphone access. You can allow it in Settings, or keep typing.'),
+          title: Text('fos.assistant.mic_off_title'.tr()),
+          content: Text('fos.assistant.mic_off_body'.tr()),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Not now')),
-            FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Open Settings')),
+            TextButton(onPressed: () => Navigator.pop(c, false), child: Text('fos.assistant.not_now'.tr())),
+            FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('fos.assistant.open_settings'.tr())),
           ],
         ),
       );
@@ -110,13 +111,11 @@ class SpeechService {
     final proceed = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Use your microphone?'),
-        content: const Text(
-            'Kisan Mitra records only while you speak, sends the recording to the configured speech service to '
-            'turn it into text, and shows the text for you to check. The app does not keep the audio.'),
+        title: Text('fos.assistant.mic_ask_title'.tr()),
+        content: Text('fos.assistant.mic_ask_body'.tr()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Not now')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Allow microphone')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('fos.assistant.not_now'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('fos.assistant.allow_mic'.tr())),
         ],
       ),
     );
@@ -146,10 +145,10 @@ class SpeechService {
   /// Stops recording and returns the transcript for the farmer to review.
   Future<String> stopAndTranscribe(String languageCode) async {
     final path = await _recorder.stop() ?? _path;
-    if (path == null) throw ApiException(400, 'Nothing was recorded. Please try again.');
+    if (path == null) throw ApiException(400, 'fos.assistant.nothing_recorded'.tr());
     try {
       final bytes = await File(path).readAsBytes();
-      if (bytes.length < 2000) throw ApiException(400, 'The recording was too short. Hold and speak again.');
+      if (bytes.length < 2000) throw ApiException(400, 'fos.assistant.recording_short'.tr());
       final data = await _api.multipart(
         '/api/speech/transcribe',
         http.MultipartFile.fromBytes('file', bytes, filename: 'recording.wav', contentType: MediaType('audio', 'wav')),
@@ -157,7 +156,7 @@ class SpeechService {
       );
       final text = data is Map ? data['transcript'] : null;
       if (text is! String || text.trim().isEmpty) {
-        throw ApiException(503, 'No speech was transcribed. Please retry or type.');
+        throw ApiException(503, 'fos.assistant.no_speech'.tr());
       }
       return text.trim();
     } finally {
@@ -182,7 +181,7 @@ class SpeechService {
         timeout: const Duration(seconds: 30));
     final audio = data is Map ? data['audio'] : null;
     if (audio is! String || data['mime_type'] != 'audio/wav') {
-      throw ApiException(503, 'Playback unavailable. Your answer is in the chat.');
+      throw ApiException(503, 'fos.assistant.playback_unavailable'.tr());
     }
     final done = Completer<void>();
     _playing = done;

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -16,12 +17,12 @@ import 'exchange_screen.dart';
 const _closed = {'completed', 'cancelled', 'disputed'};
 const _trail = ['open', 'negotiating', 'agreed', 'handover', 'completed'];
 const _actionText = {
-  'propose': 'Share these terms with the other farmer.',
-  'accept': 'Agree to the terms. No payment happens in the app.',
-  'handover': 'Confirm the handover on your side.',
-  'complete': 'Confirm completion on your side.',
-  'dispute': 'Describe the problem.',
-  'cancel': 'Close this conversation.',
+  'propose': 'fos.market.act_propose',
+  'accept': 'fos.market.act_accept',
+  'handover': 'fos.market.act_handover',
+  'complete': 'fos.market.act_complete',
+  'dispute': 'fos.market.act_dispute',
+  'cancel': 'fos.market.act_cancel',
 };
 
 /// One private exchange conversation: messages (polled) and the agreement
@@ -127,12 +128,12 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => StatefulBuilder(builder: (c, set) => AlertDialog(
-            title: const Text('Confirm step'),
+            title: Text('fos.market.confirm_step'.tr()),
             content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_actionText[action]!),
+              Text(_actionText[action]!.tr()),
               if (action == 'accept' && asMap(t['proposal'])['terms'] != null) ...[
                 const SizedBox(height: 8),
-                Text('Terms: ${asMap(t['proposal'])['terms']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('fos.market.terms_line'.tr(namedArgs: {'text': '${asMap(t['proposal'])['terms']}'}), style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
               if (needsTerms)
                 TextField(
@@ -140,7 +141,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                   maxLines: 4,
                   maxLength: 4000,
                   onChanged: (_) => set(() {}),
-                  decoration: InputDecoration(labelText: action == 'propose' ? 'Terms' : 'What went wrong'),
+                  decoration: InputDecoration(labelText: action == 'propose' ? 'fos.market.terms'.tr() : 'fos.market.what_went_wrong'.tr()),
                 ),
               if (action == 'propose')
                 TextButton.icon(
@@ -149,14 +150,14 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                       conversationId: widget.threadId,
                       onDraft: (d) => set(() => terms.text = str(d['text'], terms.text))),
                   icon: const Icon(Icons.auto_awesome, size: 16),
-                  label: const Text('Draft with Mitra'),
+                  label: Text('fos.market.draft_with_mitra'.tr()),
                 ),
             ]),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Back')),
+              TextButton(onPressed: () => Navigator.pop(c, false), child: Text('fos.market.back'.tr())),
               FilledButton(
                 onPressed: needsTerms && terms.text.trim().length < 2 ? null : () => Navigator.pop(c, true),
-                child: const Text('Confirm'),
+                child: Text('fos.market.confirm'.tr()),
               ),
             ],
           )),
@@ -187,7 +188,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     if (t == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: FarmBackground(child: _error != null ? ErrorView(_error!, onRetry: _loadAll) : const LoadingView('Loading…')),
+        body: FarmBackground(child: _error != null ? ErrorView(_error!, onRetry: _loadAll) : LoadingView('fos.market.loading'.tr())),
       );
     }
     final status = str(t['status']);
@@ -199,10 +200,10 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final step = _trail.indexOf(status);
     return Scaffold(
       appBar: AppBar(
-        title: Text(str(t['listing_title'], 'Exchange')),
+        title: Text(str(t['listing_title'], 'fos.market.exchange'.tr())),
         actions: [
           IconButton(
-            tooltip: 'Review with Mitra',
+            tooltip: 'fos.market.review_with_mitra'.tr(),
             icon: const Icon(Icons.auto_awesome),
             onPressed: () => showExchangeMitra(context, intent: 'review_exchange', conversationId: widget.threadId),
           ),
@@ -214,7 +215,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             padding: const EdgeInsets.all(12),
             child: FarmCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(kThreadStatus[status] ?? status, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                Text(kThreadStatus[status]?.tr() ?? status, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
                 const SizedBox(height: 6),
                 Row(children: [
                   for (var i = 0; i < _trail.length; i++)
@@ -222,42 +223,42 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                       child: Container(
                         height: 4,
                         margin: const EdgeInsets.symmetric(horizontal: 1),
-                        color: i <= step ? AppColors.primary : Colors.black12,
+                        color: i <= step ? AppColors.primary : (context.isDark ? Colors.white24 : Colors.black12),
                       ),
                     ),
                 ]),
                 if (asMap(t['proposal'])['terms'] != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Text('Proposed terms: ${asMap(t['proposal'])['terms']}', style: TextStyle(color: ink)),
+                    child: Text('fos.market.proposed_terms'.tr(namedArgs: {'text': '${asMap(t['proposal'])['terms']}'}), style: TextStyle(color: ink)),
                   ),
                 if (!closed)
                   Wrap(spacing: 6, runSpacing: 4, children: [
                     if (status == 'open' || status == 'negotiating')
-                      FilledButton.tonal(onPressed: () => _act('propose'), child: const Text('Propose terms')),
+                      FilledButton.tonal(onPressed: () => _act('propose'), child: Text('fos.market.propose_terms'.tr())),
                     if (status == 'negotiating')
                       t['can_accept'] == true
-                          ? FilledButton(onPressed: () => _act('accept'), child: const Text('Agree'))
-                          : const Text('Waiting for the other farmer.'),
+                          ? FilledButton(onPressed: () => _act('accept'), child: Text('fos.market.agree'.tr()))
+                          : Text('fos.market.waiting_other_farmer'.tr(), style: TextStyle(color: ink)),
                     if (status == 'agreed')
                       handed
-                          ? const Text('Handover confirmed')
-                          : FilledButton(onPressed: () => _act('handover'), child: const Text('Confirm handover')),
+                          ? Text('fos.market.handover_confirmed'.tr(), style: TextStyle(color: ink))
+                          : FilledButton(onPressed: () => _act('handover'), child: Text('fos.market.confirm_handover'.tr())),
                     if (status == 'handover')
                       completed
-                          ? const Text('Waiting for other farmer')
-                          : FilledButton(onPressed: () => _act('complete'), child: const Text('Confirm complete')),
+                          ? Text('fos.market.waiting_other'.tr(), style: TextStyle(color: ink))
+                          : FilledButton(onPressed: () => _act('complete'), child: Text('fos.market.confirm_complete'.tr())),
                     if (status == 'agreed' || status == 'handover')
-                      TextButton(onPressed: () => _act('dispute'), child: const Text('Problem')),
+                      TextButton(onPressed: () => _act('dispute'), child: Text('fos.market.problem'.tr())),
                     if (status == 'open' || status == 'negotiating')
-                      TextButton(onPressed: () => _act('cancel'), child: const Text('Close')),
+                      TextButton(onPressed: () => _act('cancel'), child: Text('fos.market.close'.tr())),
                   ]),
               ]),
             ),
           ),
           Expanded(
             child: messages.isEmpty
-                ? const EmptyView(title: 'No messages yet.')
+                ? EmptyView(title: 'fos.market.no_messages'.tr())
                 : ListView.builder(
                     reverse: true,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -276,7 +277,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            if (!mine) Text(str(m['display_name'], 'Farmer'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            if (!mine) Text(str(m['display_name'], 'fos.market.farmer'.tr()), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ink)),
                             Text(str(m['text']), style: TextStyle(color: mine ? Colors.white : ink)),
                             Text(displayDate(str(m['created_at']), withTime: true),
                                 style: TextStyle(fontSize: 10, color: mine ? Colors.white70 : mutedColor(context))),
@@ -298,11 +299,11 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                       maxLength: 4000,
                       minLines: 1,
                       maxLines: 4,
-                      decoration: const InputDecoration(hintText: 'Message', counterText: ''),
+                      decoration: InputDecoration(hintText: 'fos.market.message'.tr(), counterText: ''),
                     ),
                   ),
                   IconButton.filled(
-                    tooltip: 'Send message',
+                    tooltip: 'fos.market.send_message'.tr(),
                     onPressed: _sending
                         ? null
                         : () {

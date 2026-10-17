@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
@@ -6,11 +7,11 @@ import 'kit.dart';
 /// Loads once, shows loading / error-with-retry / data. Call [LoaderState.reload]
 /// (via a GlobalKey) after a write.
 class Loader<T> extends StatefulWidget {
-  const Loader({super.key, required this.load, required this.builder, this.loading = 'Loading…'});
+  const Loader({super.key, required this.load, required this.builder, this.loading});
 
   final Future<T> Function() load;
   final Widget Function(BuildContext context, T data) builder;
-  final String loading;
+  final String? loading;
 
   @override
   State<Loader<T>> createState() => LoaderState<T>();
@@ -44,7 +45,7 @@ class LoaderState<T> extends State<Loader<T>> {
     } catch (e) {
       if (!mounted || generation != _generation) return;
       setState(() {
-        _error = e is ApiException ? e.message : 'This could not be loaded. Please retry.';
+        _error = e is ApiException ? e.message : 'fos.notebook.load_failed'.tr();
         _busy = false;
       });
     }
@@ -54,7 +55,7 @@ class LoaderState<T> extends State<Loader<T>> {
   Widget build(BuildContext context) {
     if (_error != null) return ErrorView(_error!, onRetry: reload);
     final data = _data;
-    if (data == null) return LoadingView(widget.loading);
+    if (data == null) return LoadingView(widget.loading ?? 'fos.notebook.loading'.tr());
     return Stack(children: [
       widget.builder(context, data),
       if (_busy) const Positioned(top: 0, left: 0, right: 0, child: LinearProgressIndicator(minHeight: 2)),

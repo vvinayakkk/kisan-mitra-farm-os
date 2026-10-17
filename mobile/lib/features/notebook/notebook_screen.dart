@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,14 +17,14 @@ import 'fields_tab.dart';
 import 'records_tabs.dart';
 
 const kNotebookTabs = <(String, String, String)>[
-  // (tab id, label, helper context)
-  ('today', 'Today', 'today'),
-  ('fields', 'My fields', 'fields'),
-  ('ledger', 'Money', 'ledger'),
-  ('cases', 'Follow-ups', 'followups'),
-  ('missions', 'Plans', 'missions'),
-  ('memory', 'Memory', 'memory'),
-  ('files', 'Files', 'records'),
+  // (tab id, label translation key, helper context)
+  ('today', 'fos.notebook.tab_today', 'today'),
+  ('fields', 'fos.notebook.tab_fields', 'fields'),
+  ('ledger', 'fos.notebook.tab_money', 'ledger'),
+  ('cases', 'fos.notebook.tab_followups', 'followups'),
+  ('missions', 'fos.notebook.tab_plans', 'missions'),
+  ('memory', 'fos.notebook.tab_memory', 'memory'),
+  ('files', 'fos.notebook.tab_files', 'records'),
 ];
 
 class NotebookScreen extends StatefulWidget {
@@ -53,14 +54,14 @@ class _NotebookScreenState extends State<NotebookScreen> with SingleTickerProvid
     final helper = kNotebookTabs[_tabs.index].$3;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notebook'),
+        title: Text('fos.notebook.notebook'.tr()),
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          labelColor: AppColors.primaryDark,
+          labelColor: accentColor(context),
           unselectedLabelColor: mutedColor(context),
-          tabs: [for (final t in kNotebookTabs) Tab(text: t.$2)],
+          tabs: [for (final t in kNotebookTabs) Tab(text: t.$2.tr())],
         ),
       ),
       floatingActionButton: HelperButton(key: ValueKey(helper), contextKey: helper),
@@ -89,7 +90,7 @@ class TodayTab extends ConsumerWidget {
     return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
       const PreparedBySaathi(area: 'records'),
       Loader<Map<String, dynamic>>(
-        loading: 'Loading…',
+        loading: 'fos.notebook.loading'.tr(),
         load: () async => asMap(await api.get('/api/farm-workspace/today')),
         builder: (context, d) {
           final actions = asMaps(d['actions']);
@@ -97,14 +98,13 @@ class TodayTab extends ConsumerWidget {
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(
-                child: Text('${counts['tasks'] ?? 0} tasks · ${counts['cases'] ?? 0} follow-ups · '
-                    '${counts['missions'] ?? 0} plans', style: TextStyle(color: mutedColor(context))),
+                child: Text('fos.notebook.counts_summary'.tr(namedArgs: {'tasks': '${counts['tasks'] ?? 0}', 'cases': '${counts['cases'] ?? 0}', 'plans': '${counts['missions'] ?? 0}'}), style: TextStyle(color: mutedColor(context))),
               ),
               ProvenanceBadge.maybe(d['provenance']) ?? const SizedBox.shrink(),
             ]),
             const SizedBox(height: 8),
             if (actions.isEmpty)
-              const EmptyView(title: 'Nothing urgent.')
+              EmptyView(title: 'fos.notebook.nothing_urgent'.tr())
             else
               for (final a in actions)
                 Padding(
@@ -116,7 +116,7 @@ class TodayTab extends ConsumerWidget {
                       _ => '/chat',
                     }),
                     child: Row(children: [
-                      Icon(a['kind'] == 'task' ? Icons.event_note : Icons.local_florist_outlined, color: AppColors.primaryDark),
+                      Icon(a['kind'] == 'task' ? Icons.event_note : Icons.local_florist_outlined, color: accentColor(context)),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -135,19 +135,19 @@ class TodayTab extends ConsumerWidget {
           ]);
         },
       ),
-      const SectionTitle('Weather'),
+      SectionTitle('fos.notebook.weather'.tr()),
       Loader<Map<String, dynamic>>(
-        loading: 'Loading…',
+        loading: 'fos.notebook.loading'.tr(),
         load: () async => asMap(await api.get('/api/farm-workspace/weather-brief')),
         builder: (context, d) {
           final signals = asMaps(d['signals']).take(6).toList();
           if (d['available'] != true) {
-            return Text(str(d['message'], 'Weather unavailable.'),
+            return Text(str(d['message'], 'fos.notebook.weather_unavailable'.tr()),
                 style: TextStyle(color: mutedColor(context)));
           }
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (signals.isEmpty)
-              Text('No weather flags.',
+              Text('fos.notebook.no_weather_flags'.tr(),
                   style: TextStyle(color: mutedColor(context))),
             for (final s in signals)
               ListTile(
@@ -156,17 +156,17 @@ class TodayTab extends ConsumerWidget {
                 title: Text(str(s['title'])),
                 subtitle: Text('${displayDate(str(s['date']))} · ${str(s['detail'])}'),
               ),
-            const Tag('Forecast', color: AppColors.info),
+            Tag('fos.notebook.forecast'.tr(), color: AppColors.info),
           ]);
         },
       ),
-      const SectionTitle('Recent records'),
+      SectionTitle('fos.notebook.recent_records'.tr()),
       Loader<Map<String, dynamic>>(
-        loading: 'Loading…',
+        loading: 'fos.notebook.loading'.tr(),
         load: () async => asMap(await api.get('/api/farm-workspace/timeline', query: {'limit': 30})),
         builder: (context, d) {
           final items = asMaps(d['items']);
-          if (items.isEmpty) return const EmptyView(title: 'No records yet.');
+          if (items.isEmpty) return EmptyView(title: 'fos.notebook.no_records'.tr());
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             for (final i in items.take(12))
               ListTile(
@@ -192,20 +192,20 @@ class FilesTab extends ConsumerWidget {
     final artifacts = ref.watch(assistantProvider.select((s) => s.artifacts));
     final running = ref.watch(assistantProvider.select((s) => s.running));
     return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
-      const SectionTitle('Saved files'),
+      SectionTitle('fos.notebook.saved_files'.tr()),
       if (artifacts.isEmpty)
-        const EmptyView(title: 'No saved files.')
+        EmptyView(title: 'fos.notebook.no_saved_files'.tr())
       else
         for (final a in artifacts) FileResult(a),
-      const SectionTitle('Recent costs'),
+      SectionTitle('fos.notebook.recent_costs'.tr()),
       Loader<Map<String, dynamic>>(
         key: ValueKey(running),
-        loading: 'Loading…',
+        loading: 'fos.notebook.loading'.tr(),
         load: () => ref.read(workspaceToolsProvider).inspect('list_expenses', {}),
         builder: (context, d) {
           final expenses = asMaps(d['expenses']);
           if (expenses.isEmpty) {
-            return const EmptyView(title: 'No saved expenses.');
+            return EmptyView(title: 'fos.notebook.no_expenses'.tr());
           }
           final total = expenses.fold<num>(0, (s, e) => s + ((e['amount'] as num?) ?? 0));
           return Column(children: [
@@ -217,7 +217,7 @@ class FilesTab extends ConsumerWidget {
                 subtitle: Text(displayDate(str(e['date']))),
                 trailing: Text('₹${e['amount']}'),
               ),
-            Align(alignment: Alignment.centerRight, child: Text('Total ₹${total.toStringAsFixed(2)}')),
+            Align(alignment: Alignment.centerRight, child: Text('fos.notebook.total'.tr(namedArgs: {'amount': total.toStringAsFixed(2)}))),
           ]);
         },
       ),

@@ -8,6 +8,8 @@ import 'package:skyview_app/assistant/assistant_controller.dart';
 import 'package:skyview_app/assistant/models.dart';
 import 'package:skyview_app/core/api.dart';
 
+import 'l10n.dart';
+
 const sid = '0123456789abcdef0123456789abcdef';
 const session = SessionCapability(id: sid, token: 'secret');
 
@@ -64,6 +66,8 @@ Future<void> settle(AssistantController c) async {
 }
 
 void main() {
+  setUpAll(loadEnglish);
+
   test('streams real tool activity, then shows the pending approval card', () async {
     final server = FakeServer();
     final c = controller(server, stream: () => FakeServer.stream((r) {

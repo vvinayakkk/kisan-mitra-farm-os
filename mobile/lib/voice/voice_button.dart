@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,7 +38,7 @@ class _VoiceButtonState extends ConsumerState<VoiceButton> {
     final caps = await ref.read(speechCapabilitiesProvider.future).catchError((_) => const SpeechCapabilities());
     if (!mounted) return;
     if (!caps.transcription) {
-      showNotice(context, 'Voice input is not configured on this server. Please type instead.');
+      showNotice(context, 'fos.assistant.voice_not_configured'.tr());
       return;
     }
     if (!await speech.ensureMicrophone(context)) return;
@@ -47,7 +48,7 @@ class _VoiceButtonState extends ConsumerState<VoiceButton> {
       _limit = Timer(Duration(seconds: caps.maxSeconds), _finish);
       setState(() => _phase = _Phase.recording);
     } catch (_) {
-      if (mounted) showNotice(context, 'The microphone could not start.');
+      if (mounted) showNotice(context, 'fos.assistant.mic_failed'.tr());
     }
   }
 
@@ -80,9 +81,9 @@ class _VoiceButtonState extends ConsumerState<VoiceButton> {
   Widget build(BuildContext context) {
     final recording = _phase == _Phase.recording;
     final label = switch (_phase) {
-      _Phase.idle => 'Speak instead of typing',
-      _Phase.recording => 'Done speaking',
-      _Phase.transcribing => 'Understanding your words',
+      _Phase.idle => 'fos.assistant.speak_instead'.tr(),
+      _Phase.recording => 'fos.assistant.done_speaking'.tr(),
+      _Phase.transcribing => 'fos.assistant.understanding_words'.tr(),
     };
     return Semantics(
       button: true,
@@ -103,7 +104,7 @@ class _VoiceButtonState extends ConsumerState<VoiceButton> {
                   child: IconButton(
                     onPressed: widget.enabled || recording ? _toggle : null,
                     icon: Icon(recording ? Icons.stop_rounded : Icons.mic_none_rounded,
-                        color: recording ? AppColors.error : AppColors.primaryDark),
+                        color: recording ? AppColors.error : (context.isDark ? AppColors.primaryLight : AppColors.primaryDark)),
                   ),
                 ),
         ),

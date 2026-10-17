@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,7 +61,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Check failed. Try again.');
+      setState(() => _error = 'fos.farm.check_failed'.tr());
     } finally {
       if (mounted) setState(() => _phase = 'idle');
     }
@@ -72,7 +73,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
     final d = _diagnostic;
     final confidence = (d?['confidence'] as num?)?.toDouble() ?? 0;
     return Scaffold(
-      appBar: AppBar(title: const Text('Crop Doctor')),
+      appBar: AppBar(title: Text('fos.farm.crop_doctor'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'crops'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
@@ -82,21 +83,21 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
               if (_image != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(_image!, height: 220, width: double.infinity, fit: BoxFit.cover, semanticLabel: 'Selected crop photo'),
+                  child: Image.memory(_image!, height: 220, width: double.infinity, fit: BoxFit.cover, semanticLabel: 'fos.farm.selected_crop_photo'.tr()),
                 )
               else
-                const EmptyView(icon: Icons.local_florist_outlined, title: 'Photograph one leaf.'),
+                EmptyView(icon: Icons.local_florist_outlined, title: 'fos.farm.photograph_leaf'.tr()),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
                 FilledButton.tonalIcon(
                   onPressed: _phase != 'idle' ? null : () => _pick(ImageSource.camera),
                   icon: const Icon(Icons.photo_camera_outlined),
-                  label: const Text('Take photo'),
+                  label: Text('fos.farm.take_photo'.tr()),
                 ),
                 FilledButton.tonalIcon(
                   onPressed: _phase != 'idle' ? null : () => _pick(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library_outlined),
-                  label: const Text('Choose photo'),
+                  label: Text('fos.farm.choose_photo'.tr()),
                 ),
                 FilledButton.icon(
                   onPressed: _fileId == null || _phase != 'idle'
@@ -106,15 +107,15 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                           _check();
                         },
                   icon: const Icon(Icons.health_and_safety_outlined),
-                  label: Text(_phase == 'checking' ? 'Checking…' : _phase == 'uploading' ? 'Uploading…' : 'Check crop'),
+                  label: Text(_phase == 'checking' ? 'fos.farm.checking'.tr() : _phase == 'uploading' ? 'fos.farm.uploading'.tr() : 'fos.farm.check_crop'.tr()),
                 ),
               ]),
               if (_phase != 'idle')
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: LoadingView(_phase == 'uploading'
-                      ? 'Uploading…'
-                      : 'Checking… up to a minute.'),
+                      ? 'fos.farm.uploading'.tr()
+                      : 'fos.farm.checking_minute'.tr()),
                 ),
             ]),
           ),
@@ -123,28 +124,28 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
             const SizedBox(height: 12),
             FarmCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(str(d['crop_identified'], 'crop not identified').toUpperCase(),
-                    style: const TextStyle(fontSize: 11, letterSpacing: 1, color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
+                Text(str(d['crop_identified'], 'fos.farm.crop_not_identified'.tr()).toUpperCase(),
+                    style: TextStyle(fontSize: 11, letterSpacing: 1, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(str(d['disease_name'], 'Unclear from this photo'),
+                Text(str(d['disease_name'], 'fos.farm.unclear_photo'.tr()),
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
                 const SizedBox(height: 4),
                 Text(str(d['description']), style: TextStyle(color: ink)),
                 const SizedBox(height: 8),
-                Tag('${confidence.round()}% confidence · not a lab diagnosis',
+                Tag('fos.farm.confidence_note'.tr(namedArgs: {'value': '${confidence.round()}'}),
                     color: confidence >= 70 ? AppColors.primaryDark : AppColors.warning),
                 if (confidence > 0) ...[
                   if ((d['symptoms'] as List?)?.isNotEmpty == true) ...[
-                    const SectionTitle('What is visible'),
+                    SectionTitle('fos.farm.what_visible'.tr()),
                     for (final s in d['symptoms'] as List) Text('• $s', style: TextStyle(color: ink)),
                   ],
                   if ((d['solutions'] as List?)?.isNotEmpty == true) ...[
-                    const SectionTitle('What you could do'),
+                    SectionTitle('fos.farm.what_could_do'.tr()),
                     for (final s in asMaps(d['solutions']))
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(str(s['title'])),
-                        subtitle: Text([str(s['details']), if (str(s['stage']).isNotEmpty) 'Stage: ${s['stage']}'].join('\n')),
+                        title: Text(str(s['title']), style: TextStyle(color: ink)),
+                        subtitle: Text([str(s['details']), if (str(s['stage']).isNotEmpty) 'fos.farm.stage'.tr(namedArgs: {'value': '${s['stage']}'})].join('\n'), style: TextStyle(color: mutedColor(context))),
                       ),
                   ],
                 ],
@@ -161,7 +162,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                     showHelperSheet(context, 'crops');
                   },
                   icon: const Icon(Icons.playlist_add),
-                  label: const Text('Follow up with Mitra'),
+                  label: Text('fos.farm.follow_up_mitra'.tr()),
                 ),
               ]),
             ),

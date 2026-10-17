@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,11 +20,11 @@ class FieldsTab extends ConsumerStatefulWidget {
 class _FieldsTabState extends ConsumerState<FieldsTab> {
   final _loader = GlobalKey<LoaderState<_FieldsData>>();
 
-  static const _ownership = {'owned': 'Owned', 'leased': 'Leased', 'shared': 'Shared'};
-  static const _irrigation = {
-    'rainfed': 'Rainfed', 'drip': 'Drip', 'sprinkler': 'Sprinkler', 'flood': 'Flood', 'manual': 'Manual', 'other': 'Other',
-  };
-  static const _cycleStatus = {'planned': 'Planned', 'growing': 'Growing', 'harvested': 'Harvested', 'failed': 'Failed'};
+  Map<String, String> get _ownership => {'owned': 'fos.notebook.owned'.tr(), 'leased': 'fos.notebook.leased'.tr(), 'shared': 'fos.notebook.shared'.tr()};
+  Map<String, String> get _irrigation => {
+        'rainfed': 'fos.notebook.rainfed'.tr(), 'drip': 'fos.notebook.drip'.tr(), 'sprinkler': 'fos.notebook.sprinkler'.tr(), 'flood': 'fos.notebook.flood'.tr(), 'manual': 'fos.notebook.manual'.tr(), 'other': 'fos.notebook.other'.tr(),
+      };
+  Map<String, String> get _cycleStatus => {'planned': 'fos.notebook.planned'.tr(), 'growing': 'fos.notebook.growing'.tr(), 'harvested': 'fos.notebook.harvested'.tr(), 'failed': 'fos.notebook.failed'.tr()};
 
   Future<_FieldsData> _load() async {
     final api = ref.read(apiProvider);
@@ -43,87 +44,87 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
 
   Future<void> _farm(_FieldsData d, [Map<String, dynamic>? f]) async {
     final regions = {for (final r in asMaps(d.options['regions'])) str(r['id']): str(r['name'])};
-    final v = await showFormSheet(context, title: f == null ? 'Add a farm' : 'Edit farm', fields: [
-      FieldSpec('name', 'Farm name', required: true, initial: f?['name'], maxLength: 120),
-      FieldSpec('region_id', 'State / region', kind: FieldKind.select, required: true, initial: f?['region_id'], options: regions),
-      FieldSpec('ownership_type', 'Ownership', kind: FieldKind.select, required: true, initial: f?['ownership_type'] ?? 'owned', options: _ownership),
-      FieldSpec('irrigation_method', 'Irrigation', kind: FieldKind.select, required: true, initial: f?['irrigation_method'] ?? 'rainfed', options: _irrigation),
-      FieldSpec('water_source', 'Water source', initial: f?['water_source'], maxLength: 160),
+    final v = await showFormSheet(context, title: f == null ? 'fos.notebook.add_farm'.tr() : 'fos.notebook.edit_farm'.tr(), fields: [
+      FieldSpec('name', 'fos.notebook.farm_name'.tr(), required: true, initial: f?['name'], maxLength: 120),
+      FieldSpec('region_id', 'fos.notebook.state_region'.tr(), kind: FieldKind.select, required: true, initial: f?['region_id'], options: regions),
+      FieldSpec('ownership_type', 'fos.notebook.ownership'.tr(), kind: FieldKind.select, required: true, initial: f?['ownership_type'] ?? 'owned', options: _ownership),
+      FieldSpec('irrigation_method', 'fos.notebook.irrigation'.tr(), kind: FieldKind.select, required: true, initial: f?['irrigation_method'] ?? 'rainfed', options: _irrigation),
+      FieldSpec('water_source', 'fos.notebook.water_source'.tr(), initial: f?['water_source'], maxLength: 160),
     ]);
     if (v == null || !mounted) return;
     await notebookWrite(context, ref, (api) async {
       f == null ? await api.post('/api/farms', body: v) : await api.put('/api/farms/${f['id']}', body: v);
-    }, done: 'Farm saved.', reload: _loader);
+    }, done: 'fos.notebook.farm_saved'.tr(), reload: _loader);
   }
 
   Future<void> _plot(_FieldsData d, [Map<String, dynamic>? p]) async {
     final farms = {for (final f in d.farms) str(f['id']): str(f['name'])};
     final v = await showFormSheet(context,
-        title: p == null ? 'Add a field' : 'Edit field',
-        note: 'Coordinates set the forecast grid location.',
+        title: p == null ? 'fos.notebook.add_field'.tr() : 'fos.notebook.edit_field'.tr(),
+        note: 'fos.notebook.coords_note'.tr(),
         fields: [
-          FieldSpec('farm_id', 'Farm', kind: FieldKind.select, required: true, initial: p?['farm_id'] ?? farms.keys.firstOrNull, options: farms),
-          FieldSpec('name', 'Field name', initial: p?['name'], maxLength: 120),
-          FieldSpec('area_ha', 'Area (hectares)', kind: FieldKind.number, required: true, initial: p?['area_ha']),
-          FieldSpec('latitude', 'Latitude', kind: FieldKind.number, required: true, initial: p?['latitude']),
-          FieldSpec('longitude', 'Longitude', kind: FieldKind.number, required: true, initial: p?['longitude']),
-          FieldSpec('soil_texture', 'Soil texture', initial: p?['soil_texture'], maxLength: 60),
+          FieldSpec('farm_id', 'fos.notebook.farm'.tr(), kind: FieldKind.select, required: true, initial: p?['farm_id'] ?? farms.keys.firstOrNull, options: farms),
+          FieldSpec('name', 'fos.notebook.field_name'.tr(), initial: p?['name'], maxLength: 120),
+          FieldSpec('area_ha', 'fos.notebook.area_ha_label'.tr(), kind: FieldKind.number, required: true, initial: p?['area_ha']),
+          FieldSpec('latitude', 'fos.notebook.latitude'.tr(), kind: FieldKind.number, required: true, initial: p?['latitude']),
+          FieldSpec('longitude', 'fos.notebook.longitude'.tr(), kind: FieldKind.number, required: true, initial: p?['longitude']),
+          FieldSpec('soil_texture', 'fos.notebook.soil_texture'.tr(), initial: p?['soil_texture'], maxLength: 60),
         ]);
     if (v == null || !mounted) return;
     final body = {...v, 'name': v['name'] ?? '', 'boundary_geojson': p?['boundary_geojson']};
     await notebookWrite(context, ref, (api) async {
       p == null ? await api.post('/api/plots', body: body) : await api.put('/api/plots/${p['id']}', body: body);
-    }, done: 'Field saved.', reload: _loader);
+    }, done: 'fos.notebook.field_saved'.tr(), reload: _loader);
   }
 
   Future<void> _cycle(_FieldsData d, [Map<String, dynamic>? c]) async {
-    final plots = {for (final p in d.plots) str(p['id']): str(p['name'], 'Field')};
+    final plots = {for (final p in d.plots) str(p['id']): str(p['name'], 'fos.notebook.field'.tr())};
     final crops = {for (final c in asMaps(d.options['crops'])) str(c['id']): str(c['name'])};
     final v = await showFormSheet(context,
-        title: c == null ? 'Add a crop season' : 'Edit crop season',
-        note: 'Harvested needs a past harvest date.',
+        title: c == null ? 'fos.notebook.add_season'.tr() : 'fos.notebook.edit_season'.tr(),
+        note: 'fos.notebook.harvested_note'.tr(),
         fields: [
-          FieldSpec('plot_id', 'Field', kind: FieldKind.select, required: true, initial: c?['plot_id'], options: plots),
-          FieldSpec('crop_id', 'Crop', kind: FieldKind.select, required: true, initial: c?['crop_id'], options: crops),
-          FieldSpec('season', 'Season', required: true, initial: c?['season'], maxLength: 40, help: 'e.g. Kharif 2026'),
-          FieldSpec('sowing_date', 'Sowing date', kind: FieldKind.date, required: true, initial: c?['sowing_date']),
-          FieldSpec('expected_harvest_date', 'Expected harvest (your estimate)', kind: FieldKind.date, initial: c?['expected_harvest_date']),
-          FieldSpec('actual_harvest_date', 'Actual harvest', kind: FieldKind.date, initial: c?['actual_harvest_date']),
-          FieldSpec('status', 'Status', kind: FieldKind.select, required: true, initial: c?['status'] ?? 'planned', options: _cycleStatus),
+          FieldSpec('plot_id', 'fos.notebook.field'.tr(), kind: FieldKind.select, required: true, initial: c?['plot_id'], options: plots),
+          FieldSpec('crop_id', 'fos.notebook.crop'.tr(), kind: FieldKind.select, required: true, initial: c?['crop_id'], options: crops),
+          FieldSpec('season', 'fos.notebook.season'.tr(), required: true, initial: c?['season'], maxLength: 40, help: 'fos.notebook.season_hint'.tr()),
+          FieldSpec('sowing_date', 'fos.notebook.sowing_date'.tr(), kind: FieldKind.date, required: true, initial: c?['sowing_date']),
+          FieldSpec('expected_harvest_date', 'fos.notebook.expected_harvest'.tr(), kind: FieldKind.date, initial: c?['expected_harvest_date']),
+          FieldSpec('actual_harvest_date', 'fos.notebook.actual_harvest'.tr(), kind: FieldKind.date, initial: c?['actual_harvest_date']),
+          FieldSpec('status', 'fos.notebook.status'.tr(), kind: FieldKind.select, required: true, initial: c?['status'] ?? 'planned', options: _cycleStatus),
         ]);
     if (v == null || !mounted) return;
     final body = {...v, 'variety_id': c?['variety_id']};
     await notebookWrite(context, ref, (api) async {
       c == null ? await api.post('/api/crop-cycles', body: body) : await api.put('/api/crop-cycles/${c['id']}', body: body);
-    }, done: 'Crop season saved.', reload: _loader);
+    }, done: 'fos.notebook.season_saved'.tr(), reload: _loader);
   }
 
   Future<void> _weather(Map<String, dynamic> farm, List<Map<String, dynamic>> plots, bool linked) async {
     if (linked) {
       await notebookWrite(context, ref, (api) => api.delete('/api/farms/${farm['id']}/weather-link'),
-          done: 'Weather sharing stopped.', reload: _loader);
+          done: 'fos.notebook.weather_stopped'.tr(), reload: _loader);
       return;
     }
-    final v = await showFormSheet(context, title: 'Get forecasts for ${farm['name']}', fields: [
-      FieldSpec('plot_id', 'Field to locate the forecast', kind: FieldKind.select, required: true,
-          options: {for (final p in plots) str(p['id']): str(p['name'], 'Field')}),
-      const FieldSpec('consent', 'Share this field’s coarse grid location with the weather source', kind: FieldKind.check),
+    final v = await showFormSheet(context, title: 'fos.notebook.get_forecasts_for'.tr(namedArgs: {'farm': '${farm['name']}'}), fields: [
+      FieldSpec('plot_id', 'fos.notebook.field_for_forecast'.tr(), kind: FieldKind.select, required: true,
+          options: {for (final p in plots) str(p['id']): str(p['name'], 'fos.notebook.field'.tr())}),
+      FieldSpec('consent', 'fos.notebook.share_grid_consent'.tr(), kind: FieldKind.check),
     ]);
     if (v == null || !mounted) return;
-    if (v['consent'] != true) return showNotice(context, 'Consent needed for forecasts.');
+    if (v['consent'] != true) return showNotice(context, 'fos.notebook.consent_forecasts'.tr());
     await notebookWrite(context, ref,
         (api) => api.post('/api/farms/${farm['id']}/weather-link', body: {'plot_id': v['plot_id'], 'consent_to_share_coarse_grid': true}),
-        done: 'Weather sharing enabled.', reload: _loader);
+        done: 'fos.notebook.weather_enabled'.tr(), reload: _loader);
   }
 
   @override
   Widget build(BuildContext context) => Loader<_FieldsData>(
         key: _loader,
-        loading: 'Loading…',
+        loading: 'fos.notebook.loading'.tr(),
         load: _load,
         builder: (context, d) => ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
-          SectionTitle('Farms', trailing: FilledButton.tonalIcon(onPressed: () => _farm(d), icon: const Icon(Icons.add), label: const Text('Farm'))),
-          if (d.farms.isEmpty) const EmptyView(title: 'No farms yet.'),
+          SectionTitle('fos.notebook.farms'.tr(), trailing: FilledButton.tonalIcon(onPressed: () => _farm(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_farm'.tr()))),
+          if (d.farms.isEmpty) EmptyView(title: 'fos.notebook.no_farms'.tr()),
           for (final f in d.farms) ...[
             Card(
               child: ListTile(
@@ -133,33 +134,33 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
                 onTap: () => _farm(d, f),
                 trailing: PopupMenuButton<String>(
                   onSelected: (v) => _weather(f, d.plots.where((p) => p['farm_id'] == f['id']).toList(), v == 'unlink'),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'link', child: Text('Use field for forecasts')),
-                    PopupMenuItem(value: 'unlink', child: Text('Stop weather sharing')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'link', child: Text('fos.notebook.use_for_forecasts'.tr())),
+                    PopupMenuItem(value: 'unlink', child: Text('fos.notebook.stop_weather'.tr())),
                   ],
                 ),
               ),
             ),
           ],
-          SectionTitle('Fields',
-              trailing: FilledButton.tonalIcon(onPressed: d.farms.isEmpty ? null : () => _plot(d), icon: const Icon(Icons.add), label: const Text('Field'))),
+          SectionTitle('fos.notebook.fields'.tr(),
+              trailing: FilledButton.tonalIcon(onPressed: d.farms.isEmpty ? null : () => _plot(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_field'.tr()))),
           for (final p in d.plots)
             Card(
               child: ListTile(
-                title: Text(str(p['name'], 'Field')),
-                subtitle: Text('${p['area_ha']} ha · ${str(p['soil_texture'], 'Soil not recorded')}'),
+                title: Text(str(p['name'], 'fos.notebook.field'.tr())),
+                subtitle: Text('fos.notebook.area_ha_value'.tr(namedArgs: {'area': '${p['area_ha']}', 'soil': str(p['soil_texture'], 'fos.notebook.soil_not_recorded'.tr())})),
                 onTap: () => _plot(d, p),
               ),
             ),
-          SectionTitle('Crop seasons',
-              trailing: FilledButton.tonalIcon(onPressed: d.plots.isEmpty ? null : () => _cycle(d), icon: const Icon(Icons.add), label: const Text('Season'))),
-          if (d.cycles.isEmpty) const EmptyView(title: 'No crop seasons.'),
+          SectionTitle('fos.notebook.crop_seasons'.tr(),
+              trailing: FilledButton.tonalIcon(onPressed: d.plots.isEmpty ? null : () => _cycle(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_season'.tr()))),
+          if (d.cycles.isEmpty) EmptyView(title: 'fos.notebook.no_seasons'.tr()),
           for (final c in d.cycles)
             Card(
               child: ListTile(
-                title: Text('${str(c['crop_name'], 'Crop')} · ${str(c['season'])}'),
-                subtitle: Text('${_cycleStatus[c['status']] ?? str(c['status'])} · sown ${displayDate(str(c['sowing_date']))}'
-                    '${c['expected_harvest_date'] != null ? ' · harvest (est.) ${displayDate(str(c['expected_harvest_date']))}' : ''}'),
+                title: Text('${str(c['crop_name'], 'fos.notebook.crop'.tr())} · ${str(c['season'])}'),
+                subtitle: Text('${_cycleStatus[c['status']] ?? str(c['status'])} · ${'fos.notebook.sown'.tr(namedArgs: {'date': displayDate(str(c['sowing_date']))})}'
+                    '${c['expected_harvest_date'] != null ? ' · ${'fos.notebook.harvest_est'.tr(namedArgs: {'date': displayDate(str(c['expected_harvest_date']))})}' : ''}'),
                 onTap: () => _cycle(d, c),
               ),
             ),

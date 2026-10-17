@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,16 +15,16 @@ import 'widgets/sheets.dart';
 
 /// Feature chips from the original app, now pointing at the Farm OS screens.
 const kFeatureChips = <(String, IconData, Color, String)>[
-  ('Calendar', Icons.calendar_month_outlined, Color(0xFF3B82F6), '/calendar'),
-  ('Crop Doctor', Icons.healing_rounded, Color(0xFF10B981), '/crops'),
-  ('Mandi rates', Icons.storefront_outlined, Color(0xFFF59E0B), '/markets'),
-  ('Weather', Icons.cloud_outlined, Color(0xFF0EA5E9), '/weather'),
-  ('Farm station', Icons.sensors_outlined, Color(0xFFE91E63), '/station'),
-  ('Schemes', Icons.account_balance_outlined, Color(0xFF9C27B0), '/schemes'),
-  ('Farm notebook', Icons.menu_book_outlined, Color(0xFF795548), '/notebook'),
-  ('Farmer exchange', Icons.handshake_outlined, Color(0xFF00BCD4), '/exchange'),
-  ('Saathi', Icons.spa_outlined, Color(0xFF16A34A), '/saathi'),
-  ('Profile', Icons.person_outlined, Color(0xFFFF5722), '/profile'),
+  ('fos.assistant.chip_calendar', Icons.calendar_month_outlined, Color(0xFF3B82F6), '/calendar'),
+  ('fos.assistant.chip_crop_doctor', Icons.healing_rounded, Color(0xFF10B981), '/crops'),
+  ('fos.assistant.chip_mandi_rates', Icons.storefront_outlined, Color(0xFFF59E0B), '/markets'),
+  ('fos.assistant.chip_weather', Icons.cloud_outlined, Color(0xFF0EA5E9), '/weather'),
+  ('fos.assistant.chip_farm_station', Icons.sensors_outlined, Color(0xFFE91E63), '/station'),
+  ('fos.assistant.chip_schemes', Icons.account_balance_outlined, Color(0xFF9C27B0), '/schemes'),
+  ('fos.assistant.chip_farm_notebook', Icons.menu_book_outlined, Color(0xFF795548), '/notebook'),
+  ('fos.assistant.chip_farmer_exchange', Icons.handshake_outlined, Color(0xFF00BCD4), '/exchange'),
+  ('fos.assistant.chip_saathi', Icons.spa_outlined, Color(0xFF16A34A), '/saathi'),
+  ('fos.assistant.chip_profile', Icons.person_outlined, Color(0xFFFF5722), '/profile'),
 ];
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -68,12 +67,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: Text('chat.title'.tr()),
         actions: [
           IconButton(
-            tooltip: 'Conversations',
+            tooltip: 'fos.assistant.conversations'.tr(),
             icon: const Icon(Icons.history_rounded),
             onPressed: () => showHistorySheet(context),
           ),
           IconButton(
-            tooltip: 'New chat',
+            tooltip: 'fos.assistant.new_chat'.tr(),
             icon: const Icon(Icons.refresh_rounded),
             onPressed: state.busy ? null : controller.newConversation,
           ),
@@ -90,10 +89,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const LinearProgressIndicator(minHeight: 2),
           Expanded(
             child: !state.ready && state.loading
-                ? const LoadingView('Opening your farm workspace…')
+                ? LoadingView('fos.assistant.opening_workspace'.tr())
                 : state.messages.isEmpty && state.pending == null
                     ? _Welcome(onSkills: () => showCatalogSheet(context, onUseSkill: (skill) {
-                        _composer.currentState?.setDraft('Use the ${skill.name} skill: ');
+                        _composer.currentState?.setDraft('fos.assistant.use_skill_draft'.tr(namedArgs: {'name': skill.name}));
                       }))
                     : RefreshIndicator(
                         onRefresh: controller.refresh,
@@ -129,10 +128,10 @@ class _Welcome extends StatelessWidget {
             const SizedBox(height: 20),
             Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10, children: [
               for (final (label, icon, color, route) in kFeatureChips)
-                _BorderChip(label: label, icon: icon, iconColor: color, onTap: () => context.push(route)),
-              _BorderChip(label: 'Skills', icon: Icons.auto_awesome, iconColor: const Color(0xFF10B981), onTap: onSkills),
+                OutlineChip(label: label.tr(), icon: icon, iconColor: color, onTap: () => context.push(route)),
+              OutlineChip(label: 'fos.assistant.chip_skills'.tr(), icon: Icons.auto_awesome, iconColor: const Color(0xFF10B981), onTap: onSkills),
               Builder(
-                builder: (chipContext) => _BorderChip(
+                builder: (chipContext) => OutlineChip(
                   label: 'language_select.title'.tr(),
                   icon: Icons.translate_rounded,
                   iconColor: const Color(0xFF673AB7),
@@ -145,45 +144,6 @@ class _Welcome extends StatelessWidget {
       );
 }
 
-/// The original chat chip: transparent, thin border, circled icon.
-class _BorderChip extends StatelessWidget {
-  const _BorderChip({required this.label, required this.icon, required this.iconColor, required this.onTap});
-
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final border = context.isDark ? Colors.white60 : Colors.black87;
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: border, width: 1.1),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: border, width: 1.1)),
-            child: Icon(icon, size: 14, color: iconColor),
-          ),
-          const SizedBox(width: 7),
-          Text(label, style: TextStyle(fontSize: 12, color: border)),
-        ]),
-      ),
-    );
-  }
-}
-
 Future<void> showLanguagePicker(BuildContext context) async {
   final container = ProviderScope.containerOf(context);
   final current = container.read(languageProvider).code;
@@ -191,9 +151,9 @@ Future<void> showLanguagePicker(BuildContext context) async {
     context: context,
     useSafeArea: true,
     builder: (c) => ListView(shrinkWrap: true, children: [
-      const ListTile(
-        title: Text('Preferred language', style: TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text('Mitra answers in the language you write or speak. This is the fallback and voice language.'),
+      ListTile(
+        title: Text('fos.assistant.preferred_language'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text('fos.assistant.preferred_language_hint'.tr()),
       ),
       for (final (code, name) in kAppLanguages)
         ListTile(

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,8 +23,8 @@ void showCatalogSheet(BuildContext context, {void Function(CatalogEntry skill)? 
           return Column(children: [
             const SizedBox(height: 8),
             TabBar(tabs: [
-              Tab(text: 'Skills · ${catalog.skills.length}'),
-              Tab(text: 'Tools · ${catalog.tools.length}'),
+              Tab(text: 'fos.assistant.skills_tab'.tr(namedArgs: {'count': '${catalog.skills.length}'})),
+              Tab(text: 'fos.assistant.tools_tab'.tr(namedArgs: {'count': '${catalog.tools.length}'})),
             ]),
             Expanded(
               child: TabBarView(children: [
@@ -48,7 +49,7 @@ class _CatalogList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (entries.isEmpty) return const EmptyView(title: 'The catalog is still loading.');
+    if (entries.isEmpty) return EmptyView(title: 'fos.assistant.catalog_loading'.tr());
     return ListView.separated(
       controller: scroll,
       padding: const EdgeInsets.all(12),
@@ -60,11 +61,11 @@ class _CatalogList extends StatelessWidget {
           shape: const Border(),
           title: Text(e.name, style: const TextStyle(fontWeight: FontWeight.w600)),
           subtitle: Text(
-            skills ? e.description : (e.approval ? 'You review before anything is saved' : 'Reads or prepares only'),
+            skills ? e.description : (e.approval ? 'fos.assistant.tool_review_short'.tr() : 'fos.assistant.tool_reads_only'.tr()),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: e.approval ? const Tag('Review', color: AppColors.warning) : null,
+          trailing: e.approval ? Tag('fos.assistant.review_tag'.tr(), color: AppColors.warning) : null,
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           children: [
@@ -74,8 +75,8 @@ class _CatalogList extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   e.approval
-                      ? 'This tool pauses with a review card. Nothing changes until you approve it.'
-                      : 'This tool runs when needed and reports its actual result in the conversation.',
+                      ? 'fos.assistant.tool_review_long'.tr()
+                      : 'fos.assistant.tool_runs_long'.tr(),
                   style: TextStyle(fontSize: 12, color: mutedColor(context)),
                 ),
               ),
@@ -87,7 +88,7 @@ class _CatalogList extends StatelessWidget {
                     Navigator.pop(context);
                     onUse!(e);
                   },
-                  child: const Text('Use this skill'),
+                  child: Text('fos.assistant.use_skill'.tr()),
                 ),
               ),
           ],
@@ -110,7 +111,7 @@ void showHistorySheet(BuildContext context) {
         constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
-            title: const Text('Conversations', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: Text('fos.assistant.conversations'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
             trailing: FilledButton.icon(
               onPressed: state.busy
                   ? null
@@ -119,11 +120,13 @@ void showHistorySheet(BuildContext context) {
                       await controller.newConversation();
                     },
               icon: const Icon(Icons.add),
-              label: const Text('New chat'),
+              label: Text('fos.assistant.new_chat'.tr()),
             ),
           ),
           if (state.conversations.isEmpty)
-            const EmptyView(title: 'No earlier conversations yet.', detail: 'Starting a new chat keeps this one here.')
+            EmptyView(
+                title: 'fos.assistant.no_conversations'.tr(),
+                detail: 'fos.assistant.no_conversations_hint'.tr())
           else
             Flexible(
               child: ListView(shrinkWrap: true, children: [

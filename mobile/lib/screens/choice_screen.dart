@@ -41,7 +41,7 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
   Widget build(BuildContext context) {
     final dark = context.isDark;
     final ink = inkColor(context);
-    const iconColor = Color(0xFF2E7D32);
+    final iconColor = _iconGreen(context);
     return Scaffold(
       body: FarmBackground(
         child: SafeArea(
@@ -134,12 +134,13 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(
-                  child: _QuickCard(Icons.health_and_safety_outlined, 'Crop Doctor / फसल निदान',
-                      'Photo check for your crop', () => context.push('/crops')),
+                  child: _QuickCard(Icons.health_and_safety_outlined, 'fos.assistant.quick_crop_doctor'.tr(),
+                      'fos.assistant.quick_crop_doctor_sub'.tr(), () => context.push('/crops')),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _QuickCard(Icons.sensors_rounded, 'Farm Station', 'Live field readings', () => context.push('/station')),
+                  child: _QuickCard(Icons.sensors_rounded, 'fos.assistant.quick_station'.tr(),
+                      'fos.assistant.quick_station_sub'.tr(), () => context.push('/station')),
                 ),
               ]),
               const SizedBox(height: 32),
@@ -150,6 +151,11 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
     );
   }
 }
+
+Color _tint(BuildContext context) =>
+    context.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06);
+
+Color _iconGreen(BuildContext context) => context.isDark ? AppColors.primaryLight : const Color(0xFF2E7D32);
 
 class _TopIcon extends StatelessWidget {
   const _TopIcon(this.icon, this.color, this.onTap);
@@ -200,7 +206,7 @@ class _ModeCard extends StatelessWidget {
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: _tint(context), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: iconColor, size: 28),
           ),
           const SizedBox(width: 16),
@@ -233,8 +239,8 @@ class _QuickCard extends StatelessWidget {
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: const Color(0xFF2E7D32), size: 20),
+              decoration: BoxDecoration(color: _tint(context), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: _iconGreen(context), size: 20),
             ),
             const SizedBox(height: 8),
             Text(title,
