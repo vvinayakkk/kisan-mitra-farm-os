@@ -1,3 +1,4 @@
+import { WorkspaceEntry } from "@/components/WorkspaceEntry";
 import { invalidateWorkspaceCaches } from "@/lib/workspaceCacheLifecycle";
 import { apiFetch } from "@/lib/apiClient";
 import { lazy, Suspense, useEffect } from "react";
@@ -17,6 +18,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { VoiceAssistantButton } from "@/components/VoiceAssistantButton";
 import { ClassicWorkspaceSwitch } from "@/components/assistant/ClassicWorkspaceSwitch";
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Landing = lazy(() => import("./pages/Landing"));
@@ -199,6 +201,7 @@ import { warmWorkspaceReads } from "@/lib/assistantClient";
 function GlobalAssistanceButtons() {
   const { pathname } = useLocation();
   if (
+    pathname === "/onboarding" ||
     pathname === "/advisor" ||
     pathname === "/overview" ||
     pathname === "/station" ||
@@ -307,6 +310,7 @@ const AppContent = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
           {                                                         }
           <Route
@@ -400,7 +404,7 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <Suspense fallback={<div>Opening workspace…</div>}>
-                  <Advisor />
+                  <WorkspaceEntry><Advisor /></WorkspaceEntry>
                 </Suspense>
               </ProtectedRoute>
             }

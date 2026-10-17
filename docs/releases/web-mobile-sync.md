@@ -20,3 +20,14 @@ Unfinished web edits are scoped to the local session/browser and resume after re
 The existing v1.1.0 APK is compatible with these additive APIs; this web update does not require replacing it. Publishing source does not deploy either hosted service.
 
 Validation: 228 frontend tests, TypeScript checking, production web build, and 460 backend tests passed. Browser checks with controlled API responses verified workspace login routing, Classic round-trip, prefilled setup, local draft resumption and desktop/390px layouts. They are not a production Firebase SMS test.
+
+
+## Guided web onboarding
+
+The post-login workspace now checks the saved profile before mounting chat. New or incomplete accounts enter `/onboarding`: hello/language, region, crops/area and final review. Completed profiles from Android go directly to the workspace. Explicit skip is scoped to the current browser session capability; unfinished drafts resume at their current step and are not claimed to sync to another device.
+
+The dedicated page follows the staged layout of [Onboarding for DOMO by Adrian Kuleszo / DesignMe](https://dribbble.com/shots/27295174-Onboarding-for-DOMO), adapted with original farm illustrations, Saathi, cream/olive colors and reduced-motion behavior. The old setup form modal is replaced by this page.
+
+Voice is an inline primary action with optional typing. Recording uses the existing speech hook, transcript review precedes field extraction, and final confirmation precedes database writes. Read-aloud reads generic guidance only, not saved personal profile details. Browser voice availability and live provider audio require real-device acceptance; screenshots and tests do not prove microphone accuracy or audible TTS.
+
+Validation for this follow-up: 236 web tests, TypeScript checking, production build, and controlled browser walkthrough of login to onboarding (no mounted chat), reload/resume, review/save to workspace, plus desktop and 390px layouts. No additional backend schema/API change or APK rebuild is needed for this web UI; deploy with the previously prepared backend rollout.
