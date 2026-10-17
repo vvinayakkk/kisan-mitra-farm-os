@@ -9,6 +9,7 @@ import '../../core/api.dart';
 import '../../core/ids.dart';
 import '../../core/session.dart';
 import '../../ui/kit.dart';
+import '../../ui/labels.dart';
 import '../../ui/loader.dart';
 import '../../utils/constants.dart';
 import 'exchange_mitra.dart';
@@ -215,7 +216,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             padding: const EdgeInsets.all(12),
             child: FarmCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(kThreadStatus[status]?.tr() ?? status, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                Text(kThreadStatus[status]?.tr() ?? statusLabel(status), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ink)),
                 const SizedBox(height: 6),
                 Row(children: [
                   for (var i = 0; i < _trail.length; i++)
@@ -277,10 +278,10 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            if (!mine) Text(str(m['display_name'], 'fos.market.farmer'.tr()), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ink)),
+                            if (!mine) Text(str(m['display_name'], 'fos.market.farmer'.tr()), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ink)),
                             Text(str(m['text']), style: TextStyle(color: mine ? Colors.white : ink)),
                             Text(displayDate(str(m['created_at']), withTime: true),
-                                style: TextStyle(fontSize: 10, color: mine ? Colors.white70 : mutedColor(context))),
+                                style: TextStyle(fontSize: 12, color: mine ? Colors.white70 : mutedColor(context))),
                           ]),
                         ),
                       );

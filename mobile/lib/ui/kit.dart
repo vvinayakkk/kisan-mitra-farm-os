@@ -109,8 +109,8 @@ class OutlineChip extends StatelessWidget {
                 }
               : null,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 38),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: border, width: selected ? 1.6 : 1.1),
@@ -129,7 +129,7 @@ class OutlineChip extends StatelessWidget {
                 ],
                 Flexible(
                   child: Text(label,
-                      style: TextStyle(fontSize: 12, color: border, fontWeight: selected ? FontWeight.w600 : null),
+                      style: TextStyle(fontSize: 13.5, color: border, fontWeight: selected ? FontWeight.w600 : FontWeight.w500),
                       overflow: TextOverflow.ellipsis),
                 ),
               ],

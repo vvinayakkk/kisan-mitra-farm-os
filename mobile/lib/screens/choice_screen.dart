@@ -93,13 +93,7 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
               Text('choice.title'.tr(),
                   textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: ink)),
               const SizedBox(height: 24),
-              _ModeCard(
-                icon: Icons.mic_rounded,
-                iconColor: iconColor,
-                title: 'choice.voice_title'.tr(),
-                subtitle: 'choice.voice_subtitle'.tr(),
-                onTap: () => openLiveVoice(context),
-              ),
+              const _VoiceHero(),
               const SizedBox(height: 20),
               Row(children: [
                 const Expanded(child: Divider()),
@@ -177,6 +171,45 @@ class _TopIcon extends StatelessWidget {
             HapticFeedback.selectionClick();
             onTap();
           },
+        ),
+      );
+}
+
+/// Voice is the main way in: one big, filled, easy target.
+class _VoiceHero extends StatelessWidget {
+  const _VoiceHero();
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(22),
+        elevation: 0,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            openLiveVoice(context);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+            child: Row(children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), shape: BoxShape.circle),
+                child: const Icon(Icons.mic_rounded, color: Colors.white, size: 36),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('choice.voice_title'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 19, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text('fos.label.voice_hint'.tr(), style: const TextStyle(fontSize: 14, color: Colors.white)),
+                ]),
+              ),
+            ]),
+          ),
         ),
       );
 }

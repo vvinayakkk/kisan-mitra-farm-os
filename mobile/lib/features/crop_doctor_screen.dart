@@ -8,6 +8,7 @@ import '../assistant/assistant_controller.dart';
 import '../assistant/helper_sheet.dart';
 import '../core/api.dart';
 import '../ui/kit.dart';
+import '../ui/labels.dart';
 import '../ui/loader.dart';
 import '../utils/constants.dart';
 import 'saathi.dart';
@@ -124,15 +125,19 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
             const SizedBox(height: 12),
             FarmCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(str(d['crop_identified'], 'fos.farm.crop_not_identified'.tr()).toUpperCase(),
-                    style: TextStyle(fontSize: 11, letterSpacing: 1, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark, fontWeight: FontWeight.w700)),
+                Text(str(d['crop_identified']).isEmpty ? 'fos.farm.crop_not_identified'.tr() : cropName(d['crop_identified']),
+                    style: TextStyle(fontSize: 13, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(str(d['disease_name'], 'fos.farm.unclear_photo'.tr()),
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
                 const SizedBox(height: 4),
                 Text(str(d['description']), style: TextStyle(color: ink)),
                 const SizedBox(height: 8),
-                Tag('fos.farm.confidence_note'.tr(namedArgs: {'value': '${confidence.round()}'}),
+                Tag(
+                    'fos.farm2.conf_line'.tr(namedArgs: {
+                      'word': (confidence >= 70 ? 'fos.farm2.conf_high' : confidence >= 40 ? 'fos.farm2.conf_mid' : 'fos.farm2.conf_low').tr(),
+                      'value': '${confidence.round()}',
+                    }),
                     color: confidence >= 70 ? AppColors.primaryDark : AppColors.warning),
                 if (confidence > 0) ...[
                   if ((d['symptoms'] as List?)?.isNotEmpty == true) ...[
@@ -155,7 +160,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                     HapticFeedback.selectionClick();
                     ref.read(assistantProvider.notifier).send(
                           'Help me open a crop follow-up from this photo assessment: '
-                          '${str(d['disease_name'])} on ${str(d['crop_identified'])}, confidence ${confidence.round()}%. '
+                          '${str(d['disease_name'])} on ${cropName(d['crop_identified'])}, confidence ${confidence.round()}%. '
                           'Ask what I observed and when, and show it for review before saving.',
                           context: const RunContext(view: 'crops'),
                         );

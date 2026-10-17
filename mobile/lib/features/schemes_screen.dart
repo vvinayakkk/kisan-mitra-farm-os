@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import '../assistant/helper_sheet.dart';
 import '../core/api.dart';
 import '../core/session.dart';
 import '../ui/kit.dart';
+import '../ui/labels.dart';
 import '../ui/loader.dart';
 import '../utils/constants.dart';
 import 'saathi.dart';
@@ -115,16 +118,16 @@ class _SchemeCard extends ConsumerWidget {
           shape: const Border(),
           title: Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
           subtitle: Text(
-            str(scheme['state'], 'fos.market.national'.tr()),
-            style: TextStyle(fontSize: 12, color: mutedColor(context)),
+            phrase(str(scheme['state'], 'fos.market.national'.tr())),
+            style: TextStyle(fontSize: 13, color: mutedColor(context)),
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (description.isNotEmpty) Text(description, style: TextStyle(color: ink)),
+            if (description.isNotEmpty) Text(description, maxLines: 4, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: ink)),
             if (str(scheme['eligibility']).isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text('fos.market.who_can_apply'.tr(namedArgs: {'text': '${scheme['eligibility']}'}), style: TextStyle(color: ink)),
+              _Clamped('fos.market.who_can_apply'.tr(namedArgs: {'text': phrase(scheme['eligibility'])}), style: TextStyle(fontSize: 14, color: ink)),
             ],
             const SizedBox(height: 8),
             if (_uuid.hasMatch(id)) _SupportChecklist(schemeId: id),
@@ -156,6 +159,41 @@ class _SchemeCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Text capped at three lines with a Read more toggle.
+class _Clamped extends StatefulWidget {
+  const _Clamped(this.text, {required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  State<_Clamped> createState() => _ClampedState();
+}
+
+class _ClampedState extends State<_Clamped> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) {
+        final tp = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: 3,
+          textDirection: ui.TextDirection.ltr,
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: box.maxWidth);
+        final long = tp.didExceedMaxLines;
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(widget.text, style: widget.style, maxLines: _open ? null : 3, overflow: _open ? null : TextOverflow.ellipsis),
+          if (long)
+            TextButton(
+              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(48, 36), alignment: Alignment.centerLeft),
+              onPressed: () => setState(() => _open = !_open),
+              child: Text((_open ? 'fos.market2.read_less' : 'fos.market2.read_more').tr()),
+            ),
+        ]);
+      });
 }
 
 class _SupportChecklist extends ConsumerStatefulWidget {
@@ -250,7 +288,7 @@ class _SupportChecklistState extends ConsumerState<_SupportChecklist> {
                 },
           title: Text(e.value.tr(), style: TextStyle(color: inkColor(context))),
         ),
-      Text('fos.market.checklist_note'.tr(), style: TextStyle(fontSize: 11, color: mutedColor(context))),
+      Text('fos.market.checklist_note'.tr(), style: TextStyle(fontSize: 12, color: mutedColor(context))),
       const SizedBox(height: 6),
     ]);
   }

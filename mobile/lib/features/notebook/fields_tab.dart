@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/session.dart';
 import '../../ui/form_sheet.dart';
 import '../../ui/kit.dart';
+import '../../ui/labels.dart';
 import '../../ui/loader.dart';
 import 'records_tabs.dart';
 
@@ -24,7 +25,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
   Map<String, String> get _irrigation => {
         'rainfed': 'fos.notebook.rainfed'.tr(), 'drip': 'fos.notebook.drip'.tr(), 'sprinkler': 'fos.notebook.sprinkler'.tr(), 'flood': 'fos.notebook.flood'.tr(), 'manual': 'fos.notebook.manual'.tr(), 'other': 'fos.notebook.other'.tr(),
       };
-  Map<String, String> get _cycleStatus => {'planned': 'fos.notebook.planned'.tr(), 'growing': 'fos.notebook.growing'.tr(), 'harvested': 'fos.notebook.harvested'.tr(), 'failed': 'fos.notebook.failed'.tr()};
+  Map<String, String> get _cycleStatus => {for (final k in const ['planned', 'growing', 'harvested', 'failed']) k: statusLabel(k)};
 
   Future<_FieldsData> _load() async {
     final api = ref.read(apiProvider);
@@ -79,7 +80,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
 
   Future<void> _cycle(_FieldsData d, [Map<String, dynamic>? c]) async {
     final plots = {for (final p in d.plots) str(p['id']): str(p['name'], 'fos.notebook.field'.tr())};
-    final crops = {for (final c in asMaps(d.options['crops'])) str(c['id']): str(c['name'])};
+    final crops = {for (final c in asMaps(d.options['crops'])) str(c['id']): cropName(c['name'])};
     final v = await showFormSheet(context,
         title: c == null ? 'fos.notebook.add_season'.tr() : 'fos.notebook.edit_season'.tr(),
         note: 'fos.notebook.harvested_note'.tr(),
@@ -129,8 +130,8 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
             Card(
               child: ListTile(
                 title: Text(str(f['name'])),
-                subtitle: Text('${_ownership[f['ownership_type']] ?? ''} · ${_irrigation[f['irrigation_method']] ?? ''}'
-                    '${str(f['water_source']).isEmpty ? '' : ' · ${f['water_source']}'}'),
+                subtitle: Text('${[_ownership[f['ownership_type']], _irrigation[f['irrigation_method']]].whereType<String>().join(' · ')}'
+                    '${str(f['water_source']).isEmpty ? '' : ' · ${phrase(f['water_source'])}'}'),
                 onTap: () => _farm(d, f),
                 trailing: PopupMenuButton<String>(
                   onSelected: (v) => _weather(f, d.plots.where((p) => p['farm_id'] == f['id']).toList(), v == 'unlink'),
@@ -148,7 +149,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
             Card(
               child: ListTile(
                 title: Text(str(p['name'], 'fos.notebook.field'.tr())),
-                subtitle: Text('fos.notebook.area_ha_value'.tr(namedArgs: {'area': '${p['area_ha']}', 'soil': str(p['soil_texture'], 'fos.notebook.soil_not_recorded'.tr())})),
+                subtitle: Text('fos.notebook.area_ha_value'.tr(namedArgs: {'area': qty(p['area_ha']), 'soil': str(p['soil_texture'], 'fos.notebook.soil_not_recorded'.tr())})),
                 onTap: () => _plot(d, p),
               ),
             ),
@@ -158,8 +159,8 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
           for (final c in d.cycles)
             Card(
               child: ListTile(
-                title: Text('${str(c['crop_name'], 'fos.notebook.crop'.tr())} · ${str(c['season'])}'),
-                subtitle: Text('${_cycleStatus[c['status']] ?? str(c['status'])} · ${'fos.notebook.sown'.tr(namedArgs: {'date': displayDate(str(c['sowing_date']))})}'
+                title: Text('${cropName(str(c['crop_name'], 'fos.notebook.crop'.tr()))} · ${str(c['season'])}'),
+                subtitle: Text('${statusLabel(c['status'])} · ${'fos.notebook.sown'.tr(namedArgs: {'date': displayDate(str(c['sowing_date']))})}'
                     '${c['expected_harvest_date'] != null ? ' · ${'fos.notebook.harvest_est'.tr(namedArgs: {'date': displayDate(str(c['expected_harvest_date']))})}' : ''}'),
                 onTap: () => _cycle(d, c),
               ),

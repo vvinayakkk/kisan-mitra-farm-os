@@ -11,7 +11,9 @@ import '../../core/session.dart';
 import '../../core/workspace_cache.dart';
 import '../../ui/form_sheet.dart';
 import '../../ui/kit.dart';
+import '../../ui/labels.dart';
 import '../../ui/loader.dart';
+import '../../ui/provenance.dart';
 import '../../utils/constants.dart';
 import '../saathi.dart';
 import 'exchange_mitra.dart';
@@ -118,6 +120,7 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> with SingleTick
         final items = asMaps(d['items']);
         return ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
           if (!mine) ...[
+            const DemoBanner(),
             const PreparedBySaathi(area: 'exchange'),
             TextField(
               controller: _query,
@@ -211,17 +214,24 @@ class _ListingCard extends ConsumerWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text((l['kind'] == 'request' ? 'fos.market.kind_request' : 'fos.market.kind_offer').tr(),
-                  style: TextStyle(fontSize: 11, letterSpacing: 1, fontWeight: FontWeight.w700, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark)),
+              child: Text((l['kind'] == 'request' ? 'fos.market2.needed' : 'fos.market2.available_offer').tr(),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark)),
             ),
             if (sample) Tag('fos.market.sample'.tr(), color: AppColors.warning) else Tag('fos.market.farmer_reported'.tr(), color: context.isDark ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED)),
-            if (mine) ...[const SizedBox(width: 6), Tag(const {'draft': 'fos.market.vis_draft', 'published': 'fos.market.vis_published', 'withdrawn': 'fos.market.vis_withdrawn'}[l['status']]?.tr() ?? str(l['status']))],
+            if (mine) ...[const SizedBox(width: 6), Tag(const {'draft': 'fos.market.vis_draft', 'published': 'fos.market.vis_published', 'withdrawn': 'fos.market.vis_withdrawn'}[l['status']]?.tr() ?? statusLabel(l['status']))],
           ]),
+          const SizedBox(height: 2),
           Text(str(l['title']), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ink)),
-          Text('${kExchangeCategories[l['category']]?.tr() ?? ''} · ${l['quantity']} ${str(l['unit'])} · ${str(l['district'])}, ${str(l['state'])}',
-              style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
-          if (!mine) Text(str(l['owner_name'], str(l['display_name'], 'fos.market.member_listing'.tr())), style: TextStyle(fontSize: 12, color: mutedColor(context))),
-          if (str(l['exchange_for']).isNotEmpty) Text('fos.market.for_line'.tr(namedArgs: {'text': '${l['exchange_for']}'}), style: TextStyle(color: ink)),
+          const SizedBox(height: 4),
+          Text(
+              str(l['exchange_for']).isNotEmpty
+                  ? 'fos.market2.in_exchange_for'.tr(namedArgs: {'text': str(l['exchange_for'])})
+                  : 'fos.market2.terms_talk'.tr(),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
+          const SizedBox(height: 4),
+          Text('${_category(l['category'])} · ${qty(l['quantity'])} ${str(l['unit'])}'.trim(), style: TextStyle(fontSize: 13, color: mutedColor(context))),
+          Text(_place(l), style: TextStyle(fontSize: 13, color: mutedColor(context))),
+          if (!mine) Text(str(l['owner_name'], str(l['display_name'], 'fos.market.member_listing'.tr())), style: TextStyle(fontSize: 13, color: mutedColor(context))),
           if (mine && l['status'] == 'published')
             FilledButton.tonal(onPressed: () => _showMatches(context, ref, l), child: Text('fos.market.matches'.tr())),
         ]),
@@ -230,6 +240,7 @@ class _ListingCard extends ConsumerWidget {
   }
 
   void _showListing(BuildContext context, WidgetRef ref, Map<String, dynamic> l) {
+    final swap = str(l['exchange_for']).isNotEmpty ? 'fos.market2.in_exchange_for'.tr(namedArgs: {'text': str(l['exchange_for'])}) : 'fos.market2.terms_talk'.tr();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -241,12 +252,14 @@ class _ListingCard extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(str(l['description']), style: TextStyle(color: inkColor(c))),
           const SizedBox(height: 6),
+          Text(swap, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: inkColor(c))),
+          const SizedBox(height: 6),
           Text(
-              '${l['quantity']} ${str(l['unit'])} · ${str(l['district'])}, ${str(l['state'])}'
+              '${qty(l['quantity'])} ${str(l['unit'])} · ${_place(l)}'
               '${l['available_on'] != null ? ' · ${'fos.market.from_date'.tr(namedArgs: {'date': displayDate(str(l['available_on']))})}' : ''}',
               style: TextStyle(color: inkColor(c))),
           const SizedBox(height: 12),
-          Text('fos.market.chat_shares_name'.tr(), style: TextStyle(fontSize: 12, color: mutedColor(c))),
+          Text('fos.market.chat_shares_name'.tr(), style: TextStyle(fontSize: 13, color: mutedColor(c))),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: () async {
@@ -267,6 +280,10 @@ class _ListingCard extends ConsumerWidget {
       ),
     );
   }
+
+  String _category(Object? c) => kExchangeCategories[c]?.tr() ?? humanize('${c ?? ''}');
+
+  String _place(Map<String, dynamic> l) => [l['district'], l['state']].where((e) => str(e).isNotEmpty).map(phrase).join(', ');
 
   void _showMatches(BuildContext context, WidgetRef ref, Map<String, dynamic> l) {
     showModalBottomSheet<void>(
@@ -331,7 +348,7 @@ class _InboxState extends ConsumerState<_Inbox> {
               Card(
                 child: ListTile(
                   title: Text(str(t['listing_title'], 'fos.market.exchange'.tr())),
-                  subtitle: Text('${kThreadStatus[t['status']]?.tr() ?? str(t['status'])} · '
+                  subtitle: Text('${kThreadStatus[t['status']]?.tr() ?? statusLabel(t['status'])} · '
                       '${asMaps(t['participants']).map((p) => str(p['display_name'])).join(' & ')}'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/exchange/thread/${t['id']}'),

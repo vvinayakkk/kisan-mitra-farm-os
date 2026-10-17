@@ -8,8 +8,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../assistant/helper_sheet.dart';
 import '../assistant/widgets/farm_result.dart';
 import '../core/api.dart';
+import '../core/session.dart';
 import '../core/workspace_cache.dart';
 import '../ui/kit.dart';
+import '../ui/labels.dart';
 import '../ui/loader.dart';
 import '../ui/provenance.dart';
 import '../utils/constants.dart';
@@ -29,19 +31,37 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
   final _crop = TextEditingController(text: 'Wheat');
   final _state = TextEditingController();
   String? _market;
+  bool _showSearch = false;
   Map<String, dynamic>? _prices;
   Map<String, dynamic>? _trend;
   Map<String, dynamic> _catalogue = const {};
   String? _error;
   bool _busy = false;
   int _shown = 9;
+  List<String> _myCrops = const [];
   final _compare = <Map<String, dynamic>>[];
 
   @override
   void initState() {
     super.initState();
     _loadCatalogue();
-    _search();
+    _init();
+  }
+
+  Future<void> _init() async {
+    // Start from the farmer's own first crop and state.
+    try {
+      final p = asMap(asMap(await ref.read(apiProvider).get('/api/profile'))['profile']);
+      _myCrops = (p['crops'] as List? ?? const []).map((e) => '$e'.trim()).where((e) => e.isNotEmpty).toList();
+      if (_myCrops.isNotEmpty) _crop.text = _myCrops.first;
+      if (str(p['state']).isNotEmpty) _state.text = str(p['state']);
+    } catch (_) {
+      // Profile is optional; defaults stay.
+    }
+    if (mounted) {
+      setState(() {});
+      _search();
+    }
   }
 
   Future<void> _loadCatalogue() async {
@@ -76,9 +96,24 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       _prices = results[0] is Map ? results[0] as Map<String, dynamic> : null;
       _trend = results[1] is Map ? results[1] as Map<String, dynamic> : null;
       if (_prices == null) {
-        _error = results[0] is ApiException ? (results[0] as ApiException).message : 'fos.market.prices_load_failed'.tr();
+        _error =
+            results[0] is ApiException ? (results[0] as ApiException).message : 'fos.market.prices_load_failed'.tr();
       }
     });
+  }
+
+  void _calculate(List<Map<String, dynamic>> rows) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (c) => _TakeHome(
+          rows: rows,
+          onClear: () {
+            setState(_compare.clear);
+            Navigator.pop(c);
+          }),
+    );
   }
 
   @override
@@ -93,37 +128,73 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       floatingActionButton: const HelperButton(contextKey: 'markets'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
+          const DemoBanner(),
           const PreparedBySaathi(area: 'markets'),
-          FarmCard(
-            child: Column(children: [
-              _Suggest(controller: _crop, label: 'fos.market.crop'.tr(), options: (_catalogue['commodities'] as List? ?? const []).map((e) => '$e').toList()),
-              const SizedBox(height: 8),
-              _Suggest(controller: _state, label: 'fos.market.state_optional'.tr(), options: (_catalogue['states'] as List? ?? const []).map((e) => '$e').toList()),
-              const SizedBox(height: 8),
-              Row(children: [
-                if (_market != null)
-                  Expanded(child: InputChip(label: Text(_market!), onDeleted: () => _search())),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () {
-                          HapticFeedback.selectionClick();
-                          _search(market: _market);
-                        },
-                  icon: const Icon(Icons.search),
-                  label: Text('fos.market.look_up'.tr()),
+          if (_myCrops.isNotEmpty) ...[
+            Text('fos.market2.your_crops'.tr(),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ink)),
+            const SizedBox(height: 6),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              for (final c in _myCrops)
+                OutlineChip(
+                  label: cropName(c),
+                  selected: _crop.text.trim().toLowerCase() == c.toLowerCase(),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    _crop.text = c;
+                    _search();
+                  },
                 ),
-              ]),
             ]),
+            const SizedBox(height: 8),
+          ],
+          // Farmer's own crop and state are searched automatically; manual
+          // search stays one tap away.
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _showSearch = !_showSearch),
+              icon: Icon(_showSearch ? Icons.expand_less : Icons.search, size: 18),
+              label: Text((_showSearch ? 'fos.label.hide_search' : 'fos.label.other_crop').tr()),
+            ),
           ),
+          if (_showSearch)
+            FarmCard(
+              child: Column(children: [
+                _Suggest(
+                    controller: _crop,
+                    label: 'fos.market.crop'.tr(),
+                    options: (_catalogue['commodities'] as List? ?? const []).map((e) => '$e').toList()),
+                const SizedBox(height: 8),
+                _Suggest(
+                    controller: _state,
+                    label: 'fos.market.state_optional'.tr(),
+                    options: (_catalogue['states'] as List? ?? const []).map((e) => '$e').toList()),
+                const SizedBox(height: 8),
+                Row(children: [
+                  if (_market != null) Expanded(child: InputChip(label: Text(_market!), onDeleted: () => _search())),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            _search(market: _market);
+                          },
+                    icon: const Icon(Icons.search),
+                    label: Text('fos.market.look_up'.tr()),
+                  ),
+                ]),
+              ]),
+            ),
           if (_busy) LoadingView('fos.market.loading'.tr()),
           if (_error != null) ErrorView(_error!, onRetry: () => _search(market: _market)),
           if (!_busy && _prices != null) ...[
-            SectionTitle(_crop.text.trim(),
-                trailing: ProvenanceBadge.maybe(_prices!['provenance'])),
-            Text('fos.market.source_line'.tr(namedArgs: {'source': str(_prices!['source'], 'fos.market.mandi_prices'.tr())}),
-                style: TextStyle(fontSize: 12, color: mutedColor(context))),
+            SectionTitle(cropName(_crop.text.trim()), trailing: ProvenanceBadge.maybe(_prices!['provenance'])),
+            Text(
+                'fos.market.source_line'
+                    .tr(namedArgs: {'source': phrase(str(_prices!['source'], 'fos.market.mandi_prices'.tr()))}),
+                style: TextStyle(fontSize: 13, color: mutedColor(context))),
             const SizedBox(height: 6),
             if (rows.isEmpty)
               EmptyView(
@@ -131,40 +202,54 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                 detail: str(_prices!['message']).isEmpty ? null : str(_prices!['message']),
               )
             else ...[
-              for (final r in rows.take(_shown)) _PriceCard(row: r, onHistory: () => _search(market: str(r['market'])), onCompare: () {
-                    setState(() {
-                      if (_compare.length >= 3) _compare.removeAt(0);
-                      _compare.add(r);
-                    });
-                  }),
+              for (final r in rows.take(_shown))
+                _PriceCard(
+                    row: r,
+                    onHistory: () => _search(market: str(r['market'])),
+                    onCompare: () {
+                      setState(() {
+                        if (_compare.length >= 3) _compare.removeAt(0);
+                        _compare.add(r);
+                      });
+                    }),
               if (rows.length > _shown)
                 TextButton(onPressed: () => setState(() => _shown += 9), child: Text('fos.market.more'.tr())),
             ],
-            if (_compare.isNotEmpty) _TakeHome(rows: _compare, onClear: () => setState(_compare.clear)),
+            if (rows.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: FilledButton.icon(
+                  onPressed: () => _calculate(_compare.isNotEmpty ? List.of(_compare) : rows.take(3).toList()),
+                  icon: const Icon(Icons.calculate_outlined),
+                  label: Text('fos.market2.calc_button'.tr()),
+                ),
+              ),
             SectionTitle('fos.market.trend'.tr()),
             if (_trend != null && ChartData.tryParse(_trend!['chart']) != null)
               FarmResult(_trend!)
             else
-              Text('fos.market.no_trend'.tr(),
-                  style: TextStyle(color: mutedColor(context))),
+              Text('fos.market.no_trend'.tr(), style: TextStyle(color: mutedColor(context))),
             if (markets.isNotEmpty)
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
-                title: Text('fos.market.directory'.tr(namedArgs: {'count': '${markets.length}'}), style: TextStyle(color: ink)),
+                title: Text('fos.market.directory'.tr(namedArgs: {'count': '${markets.length}'}),
+                    style: TextStyle(color: ink)),
                 children: [
                   for (final m in markets)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(str(m['name'])),
-                      subtitle: Text([m['district'], m['state']].where((e) => e != null).join(', ')),
+                      subtitle: Text([m['district'], m['state']].where((e) => e != null).map(phrase).join(', ')),
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                         if (str(m['source_url']).startsWith('https://'))
                           IconButton(
                             tooltip: 'fos.market.source'.tr(),
                             icon: const Icon(Icons.open_in_new, size: 18),
-                            onPressed: () => launchUrl(Uri.parse(str(m['source_url'])), mode: LaunchMode.externalApplication),
+                            onPressed: () =>
+                                launchUrl(Uri.parse(str(m['source_url'])), mode: LaunchMode.externalApplication),
                           ),
-                        TextButton(onPressed: () => _search(market: str(m['name'])), child: Text('fos.market.select'.tr())),
+                        TextButton(
+                            onPressed: () => _search(market: str(m['name'])), child: Text('fos.market.select'.tr())),
                       ]),
                     ),
                 ],
@@ -191,7 +276,8 @@ class _PriceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ink = inkColor(context);
-    final unit = str(row['unit']).replaceFirst('INR/', '');
+    final unit = str(row['unit']);
+    final perQuintal = unit.isEmpty || RegExp(r'quintal|qtl|100 ?kg', caseSensitive: false).hasMatch(unit);
     String rupees(Object? v) => v is num ? '₹${v.round()}' : '—';
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -199,17 +285,30 @@ class _PriceCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text(str(row['market'], 'fos.market.market'.tr()), style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+              child: Text(str(row['market'], 'fos.market.market'.tr()),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: ink)),
             ),
             ProvenanceBadge.maybe(row['provenance']) ?? const SizedBox.shrink(),
           ]),
-          Text('${[row['district'], row['state']].where((e) => e != null).join(', ')} · ${str(row['variety'], 'fos.market.variety_not_stated'.tr())}',
-              style: TextStyle(fontSize: 12, color: mutedColor(context))),
+          Text(
+              '${[
+                row['district'],
+                row['state']
+              ].where((e) => e != null).map(phrase).join(', ')} · ${phrase(str(row['variety'], 'fos.market.variety_not_stated'.tr()))}',
+              style: TextStyle(fontSize: 13, color: mutedColor(context))),
           const SizedBox(height: 6),
-          Text('${rupees(row['modal_price'])} / ${unit.isEmpty ? 'fos.market.quintal'.tr() : unit}',
+          Text(
+              '${rupees(row['modal_price'])} ${perQuintal ? 'fos.market2.per_quintal'.tr() : phrase(unit.replaceFirst('INR/', ''))}',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink)),
-          Text('fos.market.low_high'.tr(namedArgs: {'low': rupees(row['min_price']), 'high': rupees(row['max_price']), 'date': str(row['arrival_date'], 'fos.market.date_not_supplied'.tr())}),
-              style: TextStyle(fontSize: 12, color: mutedColor(context))),
+          Text(
+              'fos.market.low_high'.tr(namedArgs: {
+                'low': rupees(row['min_price']),
+                'high': rupees(row['max_price']),
+                'date': row['arrival_date'] == null
+                    ? 'fos.market.date_not_supplied'.tr()
+                    : displayDate(str(row['arrival_date']))
+              }),
+              style: TextStyle(fontSize: 13, color: mutedColor(context))),
           Row(children: [
             TextButton(onPressed: onHistory, child: Text('fos.market.history'.tr())),
             TextButton(onPressed: onCompare, child: Text('fos.market.compare'.tr())),
@@ -243,18 +342,21 @@ class _TakeHomeState extends State<_TakeHome> {
     final qty = double.tryParse(_qty.text);
     final nets = <double?>[];
     for (final r in widget.rows) {
-      final c = _costs.putIfAbsent(str(r['series_id'], str(r['market'])), () => (TextEditingController(), TextEditingController()));
+      final c = _costs.putIfAbsent(
+          str(r['series_id'], str(r['market'])), () => (TextEditingController(), TextEditingController()));
       nets.add(qty == null || !_qualifies(r)
           ? null
           : qty * (r['modal_price'] as num) - (double.tryParse(c.$1.text) ?? 0) - (double.tryParse(c.$2.text) ?? 0));
     }
     final best = nets.whereType<double>().fold<double?>(null, (a, b) => a == null || b > a ? b : a);
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: FarmCard(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text('fos.market.take_home'.tr(), style: TextStyle(fontWeight: FontWeight.w700, color: inkColor(context)))),
+            Expanded(
+                child: Text('fos.market2.calc_title'.tr(),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: inkColor(context)))),
             TextButton(onPressed: widget.onClear, child: Text('fos.market.clear'.tr())),
           ]),
           TextField(
@@ -265,7 +367,8 @@ class _TakeHomeState extends State<_TakeHome> {
           ),
           for (var i = 0; i < widget.rows.length; i++) ...[
             const SizedBox(height: 8),
-            Text(str(widget.rows[i]['market']), style: TextStyle(fontWeight: FontWeight.w600, color: inkColor(context))),
+            Text(str(widget.rows[i]['market']),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: inkColor(context))),
             if (!_qualifies(widget.rows[i]))
               Text('fos.market.not_per_quintal'.tr(), style: TextStyle(color: mutedColor(context)))
             else
@@ -289,12 +392,19 @@ class _TakeHomeState extends State<_TakeHome> {
                 ),
               ]),
             if (nets[i] != null)
-              Text('fos.market.net_line'.tr(namedArgs: {'label': (nets[i] == best ? 'fos.market.highest_return' : 'fos.market.estimated_take_home').tr(), 'amount': '₹${nets[i]!.round()}'}),
-                  style: TextStyle(fontWeight: FontWeight.w700, color: nets[i] == best ? (context.isDark ? AppColors.primaryLight : AppColors.primaryDark) : inkColor(context))),
+              Text(
+                  'fos.market.net_line'.tr(namedArgs: {
+                    'label': (nets[i] == best ? 'fos.market.highest_return' : 'fos.market.estimated_take_home').tr(),
+                    'amount': '₹${nets[i]!.round()}'
+                  }),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: nets[i] == best
+                          ? (context.isDark ? AppColors.primaryLight : AppColors.primaryDark)
+                          : inkColor(context))),
           ],
           const SizedBox(height: 6),
-          Text('fos.market.own_estimate'.tr(),
-              style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
+          Text('fos.market.own_estimate'.tr(), style: TextStyle(fontSize: 12, color: mutedColor(context))),
         ]),
       ),
     );

@@ -54,6 +54,66 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (updated != null) await _change(updated);
   }
 
+  bool _monthView = false;
+
+  Widget _taskCard(FarmTask t, bool locked, {bool overdue = false}) {
+    final ink = inkColor(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: FarmCard(
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(t.title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: ink,
+                    decoration: t.completed ? TextDecoration.lineThrough : null,
+                  )),
+              if (t.notes.isNotEmpty) Text(t.notes, style: TextStyle(fontSize: 13, color: mutedColor(context))),
+              const SizedBox(height: 4),
+              if (overdue)
+                Tag('fos.farm2.cal_due_on'.tr(namedArgs: {'date': displayDate(t.dueDate)}), color: AppColors.warning)
+              else
+                Tag(t.completed ? 'fos.farm.done'.tr() : 'fos.farm.planned'.tr(),
+                    color: t.completed ? AppColors.primaryDark : AppColors.info),
+            ]),
+          ),
+          if (!t.completed)
+            IconButton(
+              tooltip: 'fos.farm.mark_done'.tr(),
+              onPressed: locked
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      _change(t.copyWith(completed: true));
+                    },
+              icon: const Icon(Icons.check_circle_outline),
+            ),
+          PopupMenuButton<String>(
+            enabled: !locked,
+            tooltip: 'fos.farm.task_options'.tr(),
+            onSelected: (v) => v == 'edit' ? _edit(t) : _change(t, delete: true),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'edit', child: Text('fos.farm.edit'.tr())),
+              PopupMenuItem(value: 'delete', child: Text('fos.farm.remove'.tr())),
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+
+  String _dayName(DateTime d, DateTime today) {
+    final lang = context.locale.languageCode;
+    final full = DateFormat.MMMEd(lang).format(d);
+    final diff = DateUtils.dateOnly(d).difference(today).inDays;
+    if (diff == 0) return '${'fos.farm2.cal_today'.tr()} · $full';
+    if (diff == 1) return '${'fos.farm2.cal_tomorrow'.tr()} · $full';
+    return full;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assistantProvider);
@@ -63,9 +123,85 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       byDay.putIfAbsent(t.dueDate, () => []).add(t);
     }
     final key = isoDate(_selected);
-    final today = byDay[key] ?? const [];
-    final ink = inkColor(context);
+    final today = DateUtils.dateOnly(DateTime.now());
+    final todayKey = isoDate(today);
+    final selectedTasks = byDay[key] ?? const [];
     final runContext = RunContext(view: 'calendar', selectedDate: key);
+    final loading = !state.ready && state.loading;
+
+    Widget addButton(String forKey) => FilledButton.tonalIcon(
+          onPressed: locked
+              ? null
+              : () => ref.read(assistantProvider.notifier).send(
+                  'Help me add a farm task for $forKey. Ask what I need to do.',
+                  context: runContext).then((_) {
+                    if (context.mounted) showHelperSheet(context, 'calendar', runContext: runContext);
+                  }),
+          icon: const Icon(Icons.add),
+          label: Text('fos.farm.add'.tr()),
+        );
+
+    final toggle = FilledButton.tonalIcon(
+      onPressed: () => setState(() => _monthView = !_monthView),
+      icon: Icon(_monthView ? Icons.view_agenda_outlined : Icons.calendar_month_outlined),
+      label: Text(_monthView ? 'fos.farm2.cal_week_view'.tr() : 'fos.farm2.cal_month_view'.tr()),
+    );
+
+    final children = <Widget>[const PreparedBySaathi(area: 'today')];
+    if (_monthView) {
+      children.addAll([
+        _MonthGrid(
+          month: _month,
+          selected: _selected,
+          byDay: byDay,
+          onMonth: (m) => setState(() => _month = m),
+          onSelect: (d) => setState(() => _selected = d),
+        ),
+        SectionTitle(displayDate(key)),
+        Wrap(spacing: 8, runSpacing: 8, children: [toggle, addButton(key)]),
+        const SizedBox(height: 8),
+        if (loading)
+          LoadingView('fos.farm.loading'.tr())
+        else if (selectedTasks.isEmpty)
+          EmptyView(title: 'fos.farm.no_tasks_day'.tr())
+        else
+          for (final t in selectedTasks) _taskCard(t, locked),
+      ]);
+    } else {
+      final overdue = state.tasks.where((t) => !t.completed && t.dueDate.compareTo(todayKey) < 0).toList()
+        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+      final emptyDays = <String>[];
+      final lang = context.locale.languageCode;
+      final dayWidgets = <Widget>[];
+      for (var i = 0; i < 7; i++) {
+        final d = DateTime(today.year, today.month, today.day + i);
+        final tasks = byDay[isoDate(d)] ?? const [];
+        if (tasks.isEmpty) {
+          emptyDays.add(i == 0 ? 'fos.farm2.cal_today'.tr() : DateFormat.MMMEd(lang).format(d));
+          continue;
+        }
+        dayWidgets.add(SectionTitle(_dayName(d, today)));
+        dayWidgets.addAll([for (final t in tasks) _taskCard(t, locked)]);
+      }
+      children.addAll([
+        SectionTitle('fos.farm2.cal_this_week'.tr()),
+        Wrap(spacing: 8, runSpacing: 8, children: [toggle, addButton(todayKey)]),
+        if (loading) LoadingView('fos.farm.loading'.tr()),
+        if (!loading && overdue.isNotEmpty) ...[
+          SectionTitle('fos.farm2.cal_overdue'.tr()),
+          for (final t in overdue) _taskCard(t, locked, overdue: true),
+        ],
+        if (!loading) ...dayWidgets,
+        if (!loading && emptyDays.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: FarmCard(
+              child: Text('${'fos.farm2.cal_no_work'.tr()}: ${emptyDays.join(', ')}',
+                  style: TextStyle(fontSize: 14, color: mutedColor(context))),
+            ),
+          ),
+      ]);
+    }
     return Scaffold(
       appBar: AppBar(title: Text('fos.farm.calendar'.tr()), actions: [
         IconButton(
@@ -78,76 +214,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       body: FarmBackground(
         child: RefreshIndicator(
           onRefresh: ref.read(assistantProvider.notifier).refresh,
-          child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
-            const PreparedBySaathi(area: 'today'),
-            _MonthGrid(
-              month: _month,
-              selected: _selected,
-              byDay: byDay,
-              onMonth: (m) => setState(() => _month = m),
-              onSelect: (d) => setState(() => _selected = d),
-            ),
-            SectionTitle(displayDate(key),
-                trailing: FilledButton.tonalIcon(
-                  onPressed: locked
-                      ? null
-                      : () => ref.read(assistantProvider.notifier).send(
-                          'Help me add a farm task for $key. Ask what I need to do.',
-                          context: runContext).then((_) {
-                            if (context.mounted) showHelperSheet(context, 'calendar', runContext: runContext);
-                          }),
-                  icon: const Icon(Icons.add),
-                  label: Text('fos.farm.add'.tr()),
-                )),
-            if (!state.ready && state.loading)
-              LoadingView('fos.farm.loading'.tr())
-            else if (today.isEmpty)
-              EmptyView(title: 'fos.farm.no_tasks_day'.tr())
-            else
-              for (final t in today)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: FarmCard(
-                    child: Row(children: [
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(t.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: ink,
-                                decoration: t.completed ? TextDecoration.lineThrough : null,
-                              )),
-                          if (t.notes.isNotEmpty)
-                            Text(t.notes, style: TextStyle(fontSize: 12.5, color: mutedColor(context))),
-                          const SizedBox(height: 4),
-                          Tag(t.completed ? 'fos.farm.done'.tr() : 'fos.farm.planned'.tr(),
-                              color: t.completed ? AppColors.primaryDark : AppColors.info),
-                        ]),
-                      ),
-                      if (!t.completed)
-                        IconButton(
-                          tooltip: 'fos.farm.mark_done'.tr(),
-                          onPressed: locked
-                              ? null
-                              : () {
-                                  HapticFeedback.selectionClick();
-                                  _change(t.copyWith(completed: true));
-                                },
-                          icon: const Icon(Icons.check_circle_outline),
-                        ),
-                      PopupMenuButton<String>(
-                        enabled: !locked,
-                        tooltip: 'fos.farm.task_options'.tr(),
-                        onSelected: (v) => v == 'edit' ? _edit(t) : _change(t, delete: true),
-                        itemBuilder: (_) => [
-                          PopupMenuItem(value: 'edit', child: Text('fos.farm.edit'.tr())),
-                          PopupMenuItem(value: 'delete', child: Text('fos.farm.remove'.tr())),
-                        ],
-                      ),
-                    ]),
-                  ),
-                ),
-          ]),
+          child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: children),
         ),
       ),
     );

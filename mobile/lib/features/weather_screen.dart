@@ -28,7 +28,7 @@ String weatherLabel(num? code) {
 IconData weatherIcon(num? code) {
   if (code == null) return Icons.cloud_outlined;
   if (code >= 95) return Icons.thunderstorm_outlined;
-  if (code >= 71 && code <= 89) return Icons.ac_unit;
+  if ((code >= 71 && code <= 77) || code == 85 || code == 86) return Icons.ac_unit;
   if (code >= 51) return Icons.umbrella_outlined;
   if (code >= 45) return Icons.foggy;
   if (code >= 1) return Icons.cloud_outlined;
@@ -175,7 +175,30 @@ class _WeatherBody extends StatelessWidget {
     }
     String v(Object? x, [String unit = '']) => x is num ? '${x.round()}$unit' : '—';
     final source = str(live['source'], str(asMap(forecast['provenance'])['source'], 'fos.farm.regional_forecast'.tr()));
+    String? headline;
+    if (days.isNotEmpty) {
+      final lang = context.locale.languageCode;
+      headline = 'fos.farm2.wx_no_rain'.tr();
+      for (var i = 0; i < days.length && i < 3; i++) {
+        final mm = days[i].$4;
+        if (mm != null && mm >= 1) {
+          final args = {'mm': mm.toStringAsFixed(mm >= 10 ? 0 : 1)};
+          final dt = DateTime.tryParse(days[i].$1);
+          headline = i == 0
+              ? 'fos.farm2.wx_rain_today'.tr(namedArgs: args)
+              : i == 1
+                  ? 'fos.farm2.wx_rain_tomorrow'.tr(namedArgs: args)
+                  : 'fos.farm2.wx_rain_on'.tr(namedArgs: {...args, 'day': dt == null ? days[i].$1 : DateFormat.EEEE(lang).format(dt)});
+          break;
+        }
+      }
+    }
     return ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
+      if (headline != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
+          child: Text(headline, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink)),
+        ),
       FarmCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -226,7 +249,7 @@ class _WeatherBody extends StatelessWidget {
                     Text(t.length >= 16 ? t.substring(11, 16) : t, style: TextStyle(fontSize: 12, color: mutedColor(context))),
                     Icon(weatherIcon(code), size: 22, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
                     Text(v(temp, '°'), style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
-                    Text(pop == null ? '—' : '${pop.round()}%', style: const TextStyle(fontSize: 11, color: AppColors.info)),
+                    Text(pop == null ? '—' : '${pop.round()}%', style: const TextStyle(fontSize: 12, color: AppColors.info)),
                   ]),
                 ),
               );
@@ -240,7 +263,15 @@ class _WeatherBody extends StatelessWidget {
           child: FarmCard(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(children: [
-              SizedBox(width: 92, child: Text(displayDate(date), style: TextStyle(color: ink))),
+              SizedBox(
+                width: 92,
+                child: Text(
+                  DateTime.tryParse(date) == null
+                      ? date
+                      : DateFormat('EEE d MMM', context.locale.toString()).format(DateTime.parse(date)),
+                  style: TextStyle(color: ink),
+                ),
+              ),
               Icon(weatherIcon(code), size: 20, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
               const SizedBox(width: 8),
               Expanded(
@@ -254,7 +285,7 @@ class _WeatherBody extends StatelessWidget {
           ),
         ),
       const SizedBox(height: 8),
-      Text('fos.farm.model_forecast_note'.tr(), style: TextStyle(fontSize: 11.5, color: mutedColor(context))),
+      Text('fos.farm2.wx_note'.tr(), style: TextStyle(fontSize: 12, color: mutedColor(context))),
     ]);
   }
 }

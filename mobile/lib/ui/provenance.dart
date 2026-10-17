@@ -1,5 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/session.dart';
 
 import '../utils/constants.dart';
 import 'kit.dart';
@@ -28,7 +31,7 @@ Color _color(String? origin) => switch (origin) {
       _ => AppColors.textMuted,
     };
 
-class ProvenanceBadge extends StatelessWidget {
+class ProvenanceBadge extends ConsumerWidget {
   const ProvenanceBadge(this.provenance, {super.key});
 
   /// `{origin, source, observed_at, stale, unit}` or null.
@@ -38,9 +41,13 @@ class ProvenanceBadge extends StatelessWidget {
       value is Map ? ProvenanceBadge(value.map((k, v) => MapEntry('$k', v))) : null;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = provenance ?? const {};
     final origin = p['origin'] as String?;
+    // On a demo server one [DemoBanner] says it once; no pill on every card.
+    if (origin == 'synthetic' && ref.watch(authProvider.select((s) => s.mode)) == BackendMode.demo) {
+      return const SizedBox.shrink();
+    }
     final label = provenanceLabel(origin) + (p['stale'] == true ? ' · ${'fos.notebook.prov_older_data'.tr()}' : '');
     final tip = [
       if (p['source'] != null) '${p['source']}',
@@ -50,6 +57,34 @@ class ProvenanceBadge extends StatelessWidget {
     return Semantics(
       label: 'fos.notebook.prov_data_origin'.tr(namedArgs: {'label': label}),
       child: Tag(label, color: _color(origin), tooltip: tip.isEmpty ? null : tip),
+    );
+  }
+}
+
+
+/// One plain notice that this server shows example data.
+class DemoBanner extends ConsumerWidget {
+  const DemoBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(authProvider.select((s) => s.mode)) != BackendMode.demo) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: context.isDark ? 0.18 : 0.14),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(children: [
+        const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.warning),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text('fos.label.demo_banner'.tr(),
+              style: TextStyle(fontSize: 13, color: inkColor(context), fontWeight: FontWeight.w500)),
+        ),
+      ]),
     );
   }
 }

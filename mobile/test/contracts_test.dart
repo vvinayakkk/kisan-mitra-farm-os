@@ -36,7 +36,7 @@ void main() {
             : http.Response('{"detail":[{"msg":"Field required"}]}', 422)),
       );
       await expectLater(api.get('/a'), throwsA(isA<ApiException>().having((e) => e.conflict, 'conflict', isTrue)));
-      await expectLater(api.get('/b'), throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Field required')));
+      await expectLater(api.get('/b'), throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Please check the details you entered.')));
     });
 
     test('network failure is reported as offline, not as an empty result', () async {

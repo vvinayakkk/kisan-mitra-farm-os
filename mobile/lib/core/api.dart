@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 
 import 'config.dart';
@@ -49,16 +50,17 @@ class ApiException implements Exception {
 }
 
 String _detail(String body, int status) {
+  // Unexpected server faults get plain words; the server's specific reasons
+  // (validation, "not configured", conflicts) are kept.
+  if (status >= 500 && status != 503) return 'fos.label.err_server'.tr();
   try {
     final data = jsonDecode(body);
     final detail = data is Map ? data['detail'] : null;
     if (detail is String && detail.isNotEmpty) return detail;
-    if (detail is List && detail.isNotEmpty && detail.first is Map) {
-      final msg = (detail.first as Map)['msg'];
-      if (msg is String) return msg;
-    }
+    // Pydantic field errors are developer text; farmers get a plain hint.
+    if (detail is List && detail.isNotEmpty) return 'fos.label.err_check_input'.tr();
   } catch (_) {}
-  return 'Request failed ($status). Please retry.';
+  return (status == 503 || status == 429 ? 'fos.label.err_busy' : 'fos.label.err_server').tr();
 }
 
 /// Thin JSON client. One instance per session capability so a request started
@@ -154,9 +156,9 @@ class ApiClient {
     try {
       return await call().timeout(timeout);
     } on TimeoutException {
-      throw ApiException(0, 'The server took too long to respond. Please retry.');
+      throw ApiException(0, 'fos.label.err_timeout'.tr());
     } on http.ClientException {
-      throw ApiException(0, 'Could not reach the Kisan Mitra server. Check your connection.');
+      throw ApiException(0, 'fos.label.err_offline'.tr());
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 import '../../core/session.dart';
 import '../../ui/kit.dart';
+import '../../ui/labels.dart';
 import '../../ui/loader.dart';
 import '../../utils/constants.dart';
 
@@ -27,6 +28,32 @@ void showExchangeMitra(BuildContext context,
     useSafeArea: true,
     builder: (_) => _ExchangeMitra(intent: intent, listingId: listingId, conversationId: conversationId, onDraft: onDraft),
   );
+}
+
+const _fieldKeys = {
+  'kind': 'fos.market.i_am',
+  'category': 'fos.market.category',
+  'title': 'fos.market.f_title',
+  'description': 'fos.market.f_description',
+  'quantity': 'fos.market.f_quantity',
+  'unit': 'fos.market.f_unit',
+  'state': 'fos.market.f_state',
+  'district': 'fos.market.district',
+  'available_on': 'fos.market.available_from',
+  'exchange_for': 'fos.market.in_exchange',
+};
+
+String _field(MapEntry<String, dynamic> e) {
+  final label = _fieldKeys[e.key]?.tr() ?? humanize(e.key);
+  final v = e.value;
+  final value = switch (e.key) {
+    'kind' => (v == 'request' ? 'fos.market.looking_for' : 'fos.market.offering').tr(),
+    'category' => ({'equipment': 'fos.market.cat_equipment', 'labour': 'fos.market.cat_labour', 'transport': 'fos.market.cat_transport', 'produce': 'fos.market.cat_produce'}['$v']?.tr() ?? humanize('$v')),
+    'available_on' => displayDate('$v'),
+    'quantity' => qty(v),
+    _ => phrase(v),
+  };
+  return '$label: $value';
 }
 
 class _ExchangeMitra extends ConsumerStatefulWidget {
@@ -105,8 +132,8 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
                   Text(
                       draft['kind'] == 'terms'
                           ? str(draft['text'])
-                          : asMap(draft['fields']).entries.map((e) => '${e.key.replaceAll('_', ' ')}: ${e.value}').join('\n'),
-                      style: TextStyle(color: inkColor(context))),
+                          : asMap(draft['fields']).entries.where((e) => str(e.value).isNotEmpty).map(_field).join('\n'),
+                      style: TextStyle(fontSize: 14, color: inkColor(context))),
                   if (widget.onDraft != null)
                     FilledButton.tonal(
                       onPressed: () {
@@ -140,7 +167,7 @@ class _ExchangeMitraState extends ConsumerState<_ExchangeMitra> {
                 child: Text(_busy ? 'fos.market.thinking'.tr() : 'fos.market.ask_mitra'.tr())),
           ]),
           Text('fos.market.ai_draft_note'.tr(),
-              style: TextStyle(fontSize: 11, color: mutedColor(context))),
+              style: TextStyle(fontSize: 12, color: mutedColor(context))),
         ]),
       ),
     );

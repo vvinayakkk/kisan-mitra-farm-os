@@ -12,6 +12,7 @@ import '../core/workspace_cache.dart';
 import '../services/theme_service.dart';
 import '../ui/form_sheet.dart';
 import '../ui/kit.dart';
+import '../ui/labels.dart';
 import '../ui/loader.dart';
 import '../ui/provenance.dart';
 
@@ -72,7 +73,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           loading: 'fos.market.loading'.tr(),
           load: () async => asMap(asMap(await ref.read(apiProvider).get('/api/profile'))['profile']),
           builder: (context, p) {
-            String list(Object? v, String empty) => v is List && v.isNotEmpty ? v.join(', ') : empty;
+            String list(Object? v, String empty, {bool crops = false}) =>
+                v is List && v.isNotEmpty ? v.map((e) => crops ? cropName(e) : phrase(e)).join(', ') : empty;
             return ListView(padding: const EdgeInsets.all(12), children: [
               if (p.isEmpty)
                 EmptyView(title: 'fos.market.no_profile'.tr())
@@ -83,13 +85,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(child: Text(str(p['name'], 'fos.market.not_provided'.tr()), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink))),
                       ProvenanceBadge(asMap(p['provenance']).isEmpty ? {'origin': p['data_origin']} : asMap(p['provenance'])),
                     ]),
-                    Text('${str(p['location'], 'fos.market.location_not_set'.tr())} · ${str(p['district'], 'fos.market.district_not_set'.tr())}',
-                        style: TextStyle(color: mutedColor(context))),
+                    Text('${phrase(str(p['location'], 'fos.market.location_not_set'.tr()))} · ${phrase(str(p['district'], 'fos.market.district_not_set'.tr()))}',
+                        style: TextStyle(fontSize: 14, color: mutedColor(context))),
                     const Divider(),
                     _row(context, 'fos.market.land_area'.tr(), p['land_size_acres'] is num ? 'fos.market.acres'.tr(namedArgs: {'n': (p['land_size_acres'] as num).toStringAsFixed(2)}) : 'fos.market.not_provided'.tr()),
                     _row(context, 'fos.market.saved_area'.tr(),
                         p['mapped_plot_area_acres'] is num ? 'fos.market.acres'.tr(namedArgs: {'n': (p['mapped_plot_area_acres'] as num).toStringAsFixed(2)}) : 'fos.market.no_fields'.tr()),
-                    _row(context, 'fos.market.crops'.tr(), list(p['crops'], 'fos.market.none_added'.tr())),
+                    _row(context, 'fos.market.crops'.tr(), list(p['crops'], 'fos.market.none_added'.tr(), crops: true)),
                     _row(context, 'fos.market.can_share'.tr(), list(p['excess_resources'], 'fos.market.none_added'.tr())),
                     _row(context, 'fos.market.needs'.tr(), list(p['required_resources'], 'fos.market.none_added'.tr())),
                     Align(alignment: Alignment.centerRight, child: FilledButton.tonal(onPressed: () {
@@ -145,8 +147,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _row(BuildContext context, String label, String value) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(width: 140, child: Text(label, style: TextStyle(color: mutedColor(context)))),
-          Expanded(child: Text(value, style: TextStyle(color: inkColor(context)))),
+          SizedBox(width: 140, child: Text(label, style: TextStyle(fontSize: 14, color: mutedColor(context)))),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 14, color: inkColor(context)))),
         ]),
       );
 }

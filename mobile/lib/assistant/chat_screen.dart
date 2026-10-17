@@ -14,11 +14,15 @@ import 'widgets/pending_card.dart';
 import 'widgets/sheets.dart';
 
 /// Feature chips from the original app, now pointing at the Farm OS screens.
-const kFeatureChips = <(String, IconData, Color, String)>[
-  ('fos.assistant.chip_calendar', Icons.calendar_month_outlined, Color(0xFF3B82F6), '/calendar'),
-  ('fos.assistant.chip_crop_doctor', Icons.healing_rounded, Color(0xFF10B981), '/crops'),
+/// The four things farmers reach for most; everything else is under "More".
+const kMainChips = <(String, IconData, Color, String)>[
   ('fos.assistant.chip_mandi_rates', Icons.storefront_outlined, Color(0xFFF59E0B), '/markets'),
   ('fos.assistant.chip_weather', Icons.cloud_outlined, Color(0xFF0EA5E9), '/weather'),
+  ('fos.assistant.chip_crop_doctor', Icons.healing_rounded, Color(0xFF10B981), '/crops'),
+  ('fos.label.chip_my_tasks', Icons.calendar_month_outlined, Color(0xFF3B82F6), '/calendar'),
+];
+
+const kMoreChips = <(String, IconData, Color, String)>[
   ('fos.assistant.chip_farm_station', Icons.sensors_outlined, Color(0xFFE91E63), '/station'),
   ('fos.assistant.chip_schemes', Icons.account_balance_outlined, Color(0xFF9C27B0), '/schemes'),
   ('fos.assistant.chip_farm_notebook', Icons.menu_book_outlined, Color(0xFF795548), '/notebook'),
@@ -127,21 +131,59 @@ class _Welcome extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: inkColor(context))),
             const SizedBox(height: 20),
             Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10, children: [
-              for (final (label, icon, color, route) in kFeatureChips)
+              for (final (label, icon, color, route) in kMainChips)
                 OutlineChip(label: label.tr(), icon: icon, iconColor: color, onTap: () => context.push(route)),
-              OutlineChip(label: 'fos.assistant.chip_skills'.tr(), icon: Icons.auto_awesome, iconColor: const Color(0xFF10B981), onTap: onSkills),
-              Builder(
-                builder: (chipContext) => OutlineChip(
-                  label: 'language_select.title'.tr(),
-                  icon: Icons.translate_rounded,
-                  iconColor: const Color(0xFF673AB7),
-                  onTap: () => showLanguagePicker(chipContext),
-                ),
+              OutlineChip(
+                label: 'fos.label.chip_more'.tr(),
+                icon: Icons.apps_rounded,
+                iconColor: AppColors.primary,
+                onTap: () => _showMore(context, onSkills),
               ),
             ]),
           ]),
         ),
       );
+}
+
+void _showMore(BuildContext context, VoidCallback onSkills) {
+  showModalBottomSheet<void>(
+    context: context,
+    builder: (sheet) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Wrap(alignment: WrapAlignment.center, spacing: 10, runSpacing: 10, children: [
+          for (final (label, icon, color, route) in kMoreChips)
+            OutlineChip(
+              label: label.tr(),
+              icon: icon,
+              iconColor: color,
+              onTap: () {
+                Navigator.pop(sheet);
+                context.push(route);
+              },
+            ),
+          OutlineChip(
+            label: 'fos.assistant.chip_skills'.tr(),
+            icon: Icons.auto_awesome,
+            iconColor: const Color(0xFF10B981),
+            onTap: () {
+              Navigator.pop(sheet);
+              onSkills();
+            },
+          ),
+          OutlineChip(
+            label: 'language_select.title'.tr(),
+            icon: Icons.translate_rounded,
+            iconColor: const Color(0xFF673AB7),
+            onTap: () {
+              Navigator.pop(sheet);
+              showLanguagePicker(context);
+            },
+          ),
+        ]),
+      ),
+    ),
+  );
 }
 
 Future<void> showLanguagePicker(BuildContext context) async {

@@ -8,6 +8,7 @@ import '../../assistant/helper_sheet.dart';
 import '../../assistant/widgets/farm_result.dart';
 import '../../core/session.dart';
 import '../../ui/kit.dart';
+import '../../ui/labels.dart';
 import '../../ui/loader.dart';
 import '../../ui/provenance.dart';
 import '../../utils/constants.dart';
@@ -21,11 +22,13 @@ const kNotebookTabs = <(String, String, String)>[
   ('today', 'fos.notebook.tab_today', 'today'),
   ('fields', 'fos.notebook.tab_fields', 'fields'),
   ('ledger', 'fos.notebook.tab_money', 'ledger'),
-  ('cases', 'fos.notebook.tab_followups', 'followups'),
+  ('cases', 'fos.notebook2.tab_crop_checks', 'followups'),
   ('missions', 'fos.notebook.tab_plans', 'missions'),
-  ('memory', 'fos.notebook.tab_memory', 'memory'),
-  ('files', 'fos.notebook.tab_files', 'records'),
+  ('more', 'fos.notebook2.tab_more', 'records'),
 ];
+
+// Old links used separate Memory and Files tabs; both now live under More.
+String? _tabAlias(String? id) => (id == 'memory' || id == 'files') ? 'more' : id;
 
 class NotebookScreen extends StatefulWidget {
   const NotebookScreen({super.key, this.initialTab});
@@ -40,7 +43,7 @@ class _NotebookScreenState extends State<NotebookScreen> with SingleTickerProvid
   late final _tabs = TabController(
     length: kNotebookTabs.length,
     vsync: this,
-    initialIndex: kNotebookTabs.indexWhere((t) => t.$1 == widget.initialTab).clamp(0, kNotebookTabs.length - 1),
+    initialIndex: kNotebookTabs.indexWhere((t) => t.$1 == _tabAlias(widget.initialTab)).clamp(0, kNotebookTabs.length - 1),
   )..addListener(() => setState(() {}));
 
   @override
@@ -72,11 +75,32 @@ class _NotebookScreenState extends State<NotebookScreen> with SingleTickerProvid
           LedgerTab(),
           CasesTab(),
           MissionsTab(),
-          MemoryTab(),
-          FilesTab(),
+          MoreTab(),
         ]),
       ),
     );
+  }
+}
+
+final _isoStamp = RegExp(r'\d{4}-\d{2}-\d{2}(T[\d:.+]+(Z|[+-]\d{2}:\d{2})?)?');
+
+/// One plain line per action, composed here so the server's English text never shows.
+String _actionLine(Map<String, dynamic> a, Map<String, dynamic> counts) {
+  switch (a['kind']) {
+    case 'task':
+      final m = _isoStamp.firstMatch(str(a['detail']));
+      final due = m == null ? null : DateTime.tryParse(m.group(0)!);
+      if (due == null) return '';
+      // Compare calendar days: a task due today is not overdue.
+      final day = DateUtils.dateOnly(due.toLocal());
+      final today = DateUtils.dateOnly(DateTime.now());
+      if (day == today) return 'fos.label.due_today'.tr();
+      return (day.isBefore(today) ? 'fos.notebook2.today_overdue' : 'fos.notebook2.today_due')
+          .tr(namedArgs: {'date': displayDate(m!.group(0))});
+    case 'crop_case':
+      return 'fos.notebook2.today_cases_open'.tr(namedArgs: {'n': '${counts['cases'] ?? 0}'});
+    default:
+      return '';
   }
 }
 
@@ -88,6 +112,7 @@ class TodayTab extends ConsumerWidget {
     final api = ref.watch(apiProvider);
     final ink = inkColor(context);
     return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
+      const DemoBanner(),
       const PreparedBySaathi(area: 'records'),
       Loader<Map<String, dynamic>>(
         loading: 'fos.notebook.loading'.tr(),
@@ -98,7 +123,7 @@ class TodayTab extends ConsumerWidget {
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(
-                child: Text('fos.notebook.counts_summary'.tr(namedArgs: {'tasks': '${counts['tasks'] ?? 0}', 'cases': '${counts['cases'] ?? 0}', 'plans': '${counts['missions'] ?? 0}'}), style: TextStyle(color: mutedColor(context))),
+                child: Text('fos.notebook2.counts_summary'.tr(namedArgs: {'tasks': '${counts['tasks'] ?? 0}', 'cases': '${counts['cases'] ?? 0}', 'plans': '${counts['missions'] ?? 0}'}), style: TextStyle(fontSize: 14, color: mutedColor(context))),
               ),
               ProvenanceBadge.maybe(d['provenance']) ?? const SizedBox.shrink(),
             ]),
@@ -121,11 +146,8 @@ class TodayTab extends ConsumerWidget {
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(str(a['title']), style: TextStyle(fontWeight: FontWeight.w600, color: ink)),
-                          Text(
-                            str(a['detail']).replaceAllMapped(
-                                RegExp(r'\d{4}-\d{2}-\d{2}T[\d:.+]+(Z|[+-]\d{2}:\d{2})?'), (m) => displayDate(m.group(0))),
-                            style: TextStyle(fontSize: 12.5, color: mutedColor(context)),
-                          ),
+                          if (_actionLine(a, counts).isNotEmpty)
+                            Text(_actionLine(a, counts), style: TextStyle(fontSize: 13, color: mutedColor(context))),
                         ]),
                       ),
                       const Icon(Icons.chevron_right),
@@ -173,8 +195,8 @@ class TodayTab extends ConsumerWidget {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 title: Text(str(i['title'])),
-                subtitle: Text('${displayDate(str(i['occurred_at']))} · ${str(i['kind']).replaceAll('_', ' ')}'
-                    '${asMap(i['detail'])['status'] != null ? ' · ${asMap(i['detail'])['status']}' : ''}'),
+                subtitle: Text('${displayDate(str(i['occurred_at']))} · ${kindLabel(i['kind'])}'
+                    '${asMap(i['detail'])['status'] != null ? ' · ${statusLabel(asMap(i['detail'])['status'])}' : ''}'),
                 trailing: asMap(i['detail'])['origin'] == null ? null : ProvenanceBadge({'origin': asMap(i['detail'])['origin']}),
               ),
           ]);
@@ -184,15 +206,26 @@ class TodayTab extends ConsumerWidget {
   }
 }
 
-class FilesTab extends ConsumerWidget {
-  const FilesTab({super.key});
+/// Memory and Files together, as two sections.
+class MoreTab extends StatelessWidget {
+  const MoreTab({super.key});
+
+  @override
+  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: const [
+        MemorySection(),
+        FilesSection(),
+      ]);
+}
+
+class FilesSection extends ConsumerWidget {
+  const FilesSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final artifacts = ref.watch(assistantProvider.select((s) => s.artifacts));
     final running = ref.watch(assistantProvider.select((s) => s.running));
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
-      SectionTitle('fos.notebook.saved_files'.tr()),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SectionTitle('fos.notebook2.reports_files'.tr()),
       if (artifacts.isEmpty)
         EmptyView(title: 'fos.notebook.no_saved_files'.tr())
       else
@@ -215,9 +248,9 @@ class FilesTab extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 title: Text(str(e['description'])),
                 subtitle: Text(displayDate(str(e['date']))),
-                trailing: Text('₹${e['amount']}'),
+                trailing: Text(rupees(e['amount']), style: const TextStyle(fontSize: 14)),
               ),
-            Align(alignment: Alignment.centerRight, child: Text('fos.notebook.total'.tr(namedArgs: {'amount': total.toStringAsFixed(2)}))),
+            Align(alignment: Alignment.centerRight, child: Text('fos.notebook.total'.tr(namedArgs: {'amount': inr(total)}), style: const TextStyle(fontWeight: FontWeight.w600))),
           ]);
         },
       ),

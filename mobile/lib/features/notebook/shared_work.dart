@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/session.dart';
 import '../../ui/form_sheet.dart';
 import '../../ui/kit.dart';
+import '../../ui/labels.dart';
 import '../../ui/loader.dart';
 import 'records_tabs.dart';
 
@@ -24,25 +25,23 @@ class _SharedFarmWorkState extends ConsumerState<SharedFarmWork> {
 
   Map<String, String> get _types => {'labour': 'fos.notebook.svc_labour'.tr(), 'machinery': 'fos.notebook.svc_machinery'.tr(), 'transport': 'fos.notebook.svc_transport'.tr(), 'expert': 'fos.notebook.svc_expert'.tr(), 'other': 'fos.notebook.other'.tr()};
   Map<String, String> get _statuses => {
-        'planned': 'fos.notebook.svc_planned'.tr(),
-        'requested': 'fos.notebook.svc_requested'.tr(),
-        'quote_recorded': 'fos.notebook.svc_quote_recorded'.tr(),
-        'farmer_confirmed': 'fos.notebook.svc_confirmed'.tr(),
-        'farmer_completed': 'fos.notebook.svc_completed'.tr(),
-        'cancelled': 'fos.notebook.st_cancelled'.tr(),
+        for (final k in const ['planned', 'requested', 'quote_recorded', 'farmer_confirmed', 'farmer_completed', 'cancelled']) k: statusLabel(k)
       };
 
   Future<void> _service([Map<String, dynamic>? s]) async {
-    final v = await showFormSheet(context,
+    final v = await showFormWithDetails(context,
         title: s == null ? 'fos.notebook.new_arrangement'.tr() : 'fos.notebook.update_arrangement'.tr(),
         note: 'fos.notebook.arrangement_note'.tr(),
-        fields: [
+        hasExtra: s != null && (str(s['supplier']).isNotEmpty || s['quote_inr'] != null || s['scheduled_on'] != null || str(s['notes']).isNotEmpty),
+        main: [
           FieldSpec('title', 'fos.notebook.what_need'.tr(), required: true, initial: s?['title'], maxLength: 160),
           FieldSpec('service_type', 'fos.notebook.type'.tr(), kind: FieldKind.select, required: true, initial: s?['service_type'] ?? 'labour', options: _types),
+          FieldSpec('status', 'fos.notebook.status'.tr(), kind: FieldKind.select, required: true, initial: s?['status'] ?? 'planned', options: _statuses),
+        ],
+        extra: [
           FieldSpec('supplier', 'fos.notebook.supplier'.tr(), initial: s?['supplier'], maxLength: 160),
           FieldSpec('quote_inr', 'fos.notebook.quote_received'.tr(), kind: FieldKind.number, initial: s?['quote_inr']),
           FieldSpec('scheduled_on', 'fos.notebook.planned_date'.tr(), kind: FieldKind.date, initial: s?['scheduled_on']),
-          FieldSpec('status', 'fos.notebook.status'.tr(), kind: FieldKind.select, required: true, initial: s?['status'] ?? 'planned', options: _statuses),
           FieldSpec('notes', 'fos.notebook.notes'.tr(), kind: FieldKind.multiline, initial: s?['notes'], maxLength: 2000),
         ]);
     if (v == null || !mounted) return;
@@ -95,7 +94,7 @@ class _SharedFarmWorkState extends ConsumerState<SharedFarmWork> {
                 child: ListTile(
                   title: Text(str(s['title'])),
                   subtitle: Text([
-                    _statuses[s['status']] ?? str(s['status']),
+                    statusLabel(s['status']),
                     if (str(s['supplier']).isNotEmpty) str(s['supplier']),
                     if (s['quote_inr'] != null) 'fos.notebook.quote_suffix'.tr(namedArgs: {'amount': rupees(s['quote_inr'])}),
                     if (s['scheduled_on'] != null) 'fos.notebook.planned_on'.tr(namedArgs: {'date': displayDate(str(s['scheduled_on']))}),
@@ -142,6 +141,12 @@ class _GroupCardState extends ConsumerState<_GroupCard> {
 
   String get _gid => str(widget.group['id']);
   String get _role => str(widget.group['role']);
+  String get _roleName => switch (_role) {
+        'owner' => 'fos.notebook2.role_owner'.tr(),
+        'contributor' => 'fos.notebook.can_edit'.tr(),
+        'reader' => 'fos.notebook.can_view'.tr(),
+        _ => humanize(_role),
+      };
 
   Future<void> _invite() async {
     final v = await showFormSheet(context, title: 'fos.notebook.invite_to'.tr(namedArgs: {'group': '${widget.group['name']}'}), fields: [
@@ -199,7 +204,7 @@ class _GroupCardState extends ConsumerState<_GroupCard> {
       child: ExpansionTile(
         shape: const Border(),
         title: Text(str(widget.group['name'])),
-        subtitle: Text(_role),
+        subtitle: Text(_roleName),
         childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         children: [
           Loader<Map<String, dynamic>>(

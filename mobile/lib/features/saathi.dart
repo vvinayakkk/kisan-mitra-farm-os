@@ -129,6 +129,11 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
     }
   }
 
+  String _headline() => switch (widget.area) {
+        'today' || 'markets' || 'schemes' || 'crops' || 'records' || 'exchange' => 'fos.farm2.saathi_head_${widget.area}'.tr(),
+        _ => 'fos.farm2.saathi_head_default'.tr(),
+      };
+
   @override
   Widget build(BuildContext context) {
     final p = _proposal;
@@ -168,17 +173,18 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
             ])
           else if (!_open && !_editing)
             Row(children: [
-              Icon(Icons.spa_outlined, size: 16, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
-              const SizedBox(width: 8),
+              Icon(Icons.spa_outlined, size: 20, color: context.isDark ? AppColors.primaryLight : AppColors.primaryDark),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(str(p['title'], 'fos.farm.next_step'.tr()),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(_headline(),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: ink)),
+                  Text(approved ? 'fos.farm2.saathi_saved'.tr() : 'fos.farm2.saathi_not_saved'.tr(),
+                      style: TextStyle(fontSize: 13, color: approved ? (context.isDark ? AppColors.primaryLight : AppColors.primaryDark) : mutedColor(context))),
+                  Text('fos.farm2.saathi_hint'.tr(), style: TextStyle(fontSize: 12, color: mutedColor(context))),
+                ]),
               ),
-              const SizedBox(width: 6),
-              approved ? Tag('fos.farm.saved'.tr()) : Tag('fos.farm.draft'.tr(), color: AppColors.warning),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               FilledButton.tonal(
                 onPressed: () {
                   HapticFeedback.selectionClick();
@@ -203,9 +209,12 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
                 child: Text(str(p['title'], 'fos.farm.next_step'.tr()),
                     style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
               ),
-              const SizedBox(width: 6),
-              approved ? Tag('fos.farm.saved'.tr()) : Tag('fos.farm.draft'.tr(), color: AppColors.warning),
             ]),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(approved ? 'fos.farm2.saathi_saved'.tr() : 'fos.farm2.saathi_not_saved'.tr(),
+                  style: TextStyle(fontSize: 13, color: mutedColor(context))),
+            ),
             if (str(p['summary']).isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
@@ -245,7 +254,7 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
               Text('fos.farm.translation_unavailable'.tr(),
                   style: TextStyle(fontSize: 12, color: mutedColor(context))),
             Text('fos.farm.prepared_on'.tr(namedArgs: {'date': displayDate(str(p['created_at'] ?? p['updated_at']))}),
-                style: TextStyle(fontSize: 11, color: mutedColor(context))),
+                style: TextStyle(fontSize: 12, color: mutedColor(context))),
           ],
           if (_error != null) ErrorView(_error!, onRetry: _load),
           if (p != null && (_open || _editing)) ...[
@@ -450,7 +459,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                           Text(str(a['detail'], 'fos.farm.review_notebook'.tr()),
                               style: TextStyle(color: mutedColor(context))),
                           Text(displayDate(str(a['created_at']), withTime: true),
-                              style: TextStyle(fontSize: 11, color: mutedColor(context))),
+                              style: TextStyle(fontSize: 12, color: mutedColor(context))),
                         ]),
                       ),
                     ),
