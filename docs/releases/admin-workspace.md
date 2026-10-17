@@ -23,7 +23,7 @@ Deletes never silently cascade; restrictive FK links block deletion, and resourc
 
 Exports cover the visible page (25 records), explicitly labeled. Bulk selection is page-local. There is no unattended import queue or offline mutation queue. Private data is fetched with bearer authorization and `no-store`, held in memory, and cleared on identity changes. The admin API is excluded from the existing service-worker cache.
 
-## Deployment — not executed
+## Deployment — completed 2026-10-17
 
 This release requires **both web and backend deployment**, a reviewed SQL migration, and administrator configuration. No APK update is required. The normal app remains usable if administrator configuration is absent; admin data requests fail closed.
 
@@ -33,7 +33,7 @@ This release requires **both web and backend deployment**, a reviewed SQL migrat
 4. Deploy the backend and web build together and verify an authorized owner, an unauthorized farmer, all three roles, a harmless preview/commit, audit creation and session suspension. Production credentials, live writes and Firebase SMS delivery were not exercised by local review.
 5. Preview payloads are cleared after commit; uncommitted previews expire after ten minutes and are pruned on a subsequent preview after one day. If no admins use the panel they remain until the next cleanup. Add a scheduled retention cleanup if a strict deletion deadline is required. Audit retention/backup is an operator policy.
 
-No cloud deployment or billable cloud resource was created during implementation. Ordinary hosting/API/DB usage will apply after deployment; no price estimate or free-deployment guarantee is implied.
+Production activation is complete on the existing Cloud Run service and Firebase Hosting site. The existing 1 CPU / 512 MiB / maximum 2 instances configuration is retained. Ordinary compute, storage, network, database and authentication usage remains metered; no free-deployment guarantee is implied.
 
 ## Verification
 
@@ -42,4 +42,16 @@ No cloud deployment or billable cloud resource was created during implementation
 - Full frontend suite: 253 tests; TypeScript and production build.
 - Playwright: profile edit → preview → typed confirmation → success; bulk update; CSV import preview; audit; 390px containment. Review screenshots use synthetic records and schema metadata, not production farmer data.
 
-Production activation remains pending UI review and explicit database-access configuration.
+Production release: backend revision `kisan-mitra-api-00005-yus` serves 100% of traffic, with image digest `sha256:5c8f8c097dad3af47a240eecb9b3887547d6fd2c1dd028f95795c2b0eba5e643`. Firebase Hosting release: `1792259360430000`. Application source commit: `50b06ccdd69893b15ac16338e782c3304e26ca88`.
+
+Before migration, the live database was backed up and the PostgreSQL archive catalog validated. The separate admin login is NOBYPASSRLS and the ordinary app login has no admin membership. One existing, verified Firebase account was configured as owner in Secret Manager version 6. The backend service account received only `firebaseauth.users.get` through a custom role for revocation checks.
+
+Live read-only checks discovered 43 resources, 34 editable, and existing counts of 402 farmers, 400 farms, 2,401 tasks and 1,201 exchange listings. Recursive schema discovery was replaced with batched reflection; the combined local-to-production resource/count check completed in 3.20 seconds. All 19 admin integration tests passed again after the fix.
+
+Canary and production checks passed: healthy live database, unauthenticated admin requests rejected, malformed bearer token rejected, allowed website CORS. No error-level startup logs were reported during the canary check. The live `/control` sign-in page rendered without JavaScript errors in a fresh browser context; `/`, `/control`, `/onboarding`, `/workspace` and entry JS/CSS exactly matched the tested build. No production customer records were changed for smoke testing.
+
+Owner OTP sign-in, authenticated production admin CRUD, physical APK installation, audible TTS and live voice captions were not exercised in this rollout. CRUD/authorization behavior was covered by the local integration suite; these limits must not be represented as end-to-end production verification.
+
+APK v1.1.3 (version code 5) is published at GitHub Releases with matching upload SHA-256 and the existing signing certificate; see `v1.1.3.md`. The admin panel remains web-only.
+
+Rollback references: previous backend revision `kisan-mitra-api-00004-6cn` and previous Hosting version `8289d74f7d0b0dbf`. The additive database migration does not need to be undone to restore those versions. Deployment used the immutable previous image as its base with current application directories replaced, because dependencies and Dockerfile are unchanged and the local package mirror was unavailable.
