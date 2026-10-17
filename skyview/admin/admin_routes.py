@@ -202,7 +202,7 @@ def table_for(db, name):
         raise HTTPException(
             503, "This resource is not installed in the current database."
         )
-    return Table(name, MetaData(), schema="sv3", autoload_with=db)
+    return Table(name, MetaData(), schema="sv3", autoload_with=db, resolve_fks=False)
 
 
 def clean(value):
@@ -257,7 +257,7 @@ def metadata(table, role):
                 and c.name not in OWNERSHIP_FIELDS,
                 "generated": bool(c.computed or c.identity),
                 "references": [
-                    f"{f.column.table.name}.{f.column.name}" for f in c.foreign_keys
+                    f.target_fullname.removeprefix("sv3.") for f in c.foreign_keys
                 ],
             }
             for c in table.c
@@ -276,9 +276,9 @@ def overview(actor=ADMIN_ACCESS):
     with connection() as db:
         result = {}
         for name in ("farmers", "farms", "tasks", "exchange_listings"):
-            table = table_for(db, name)
+            # Names are a fixed server-side allowlist, never request input.
             result[name] = db.execute(
-                select(func.count()).select_from(table)
+                text(f'SELECT count(*) FROM sv3."{name}"')
             ).scalar_one()
         return {"counts": result, "checked_at": str(datetime.now(UTC))}
 
@@ -287,11 +287,13 @@ def overview(actor=ADMIN_ACCESS):
 def resources(actor=ADMIN_ACCESS):
     with connection() as db:
         installed = set(inspect(db).get_table_names(schema="sv3"))
+        names = [name for name in RESOURCES if name in installed]
+        schema = MetaData()
+        schema.reflect(bind=db, schema="sv3", only=names, resolve_fks=False)
         return {
             "resources": [
-                metadata(table_for(db, name), actor["role"])
-                for name in RESOURCES
-                if name in installed
+                metadata(schema.tables[f"sv3.{name}"], actor["role"])
+                for name in names
             ]
         }
 
