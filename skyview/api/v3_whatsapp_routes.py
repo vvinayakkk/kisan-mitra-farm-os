@@ -22,6 +22,10 @@ from skyview.utils.config import get_settings
 router = APIRouter(tags=["WhatsApp companion"])
 
 
+def trial_limited():
+    return os.getenv("TWILIO_TRIAL_MODE", "").strip().lower() in {"1", "true", "yes"}
+
+
 def public_base():
     value = os.getenv("SKYVIEW_PUBLIC_URL", "").rstrip("/")
     if not value:
@@ -49,18 +53,21 @@ def channel_summary(conn):
         "SELECT connected_at,last_received_at,disconnected_at,sender_number FROM sv3.whatsapp_connections LIMIT 1",
     )
     settings = get_settings()
+    limited = trial_limited()
     configured = bool(
         settings.TWILIO_ACCOUNT_SID
         and settings.TWILIO_AUTH_TOKEN
         and settings.TWILIO_WHATSAPP_NUMBER
         and public_base()
+        and not limited
     )
     row = item[0] if item else None
-    connected = bool(row and row["disconnected_at"] is None)
+    connected = bool(configured and row and row["disconnected_at"] is None)
     return {
         "configured": configured,
         "connected": connected,
         "enabled": connected,
+        "trial_limited": limited,
         "masked_number": ("•••• " + row["sender_number"][-4:]) if row else None,
         "last_received_at": row["last_received_at"] if row else None,
         "proactive_enabled": False,
@@ -82,6 +89,8 @@ def channel(owner: Owner):
 
 @router.post("/api/whatsapp/link")
 def link(owner: Owner):
+    if trial_limited():
+        raise HTTPException(503, "WhatsApp trial cannot deliver agent replies yet.")
     settings = get_settings()
     if not (
         settings.TWILIO_ACCOUNT_SID
@@ -179,6 +188,8 @@ async def verified_form(request, path):
 @router.post("/webhook/whatsapp")
 async def incoming(request: Request):
     form = await verified_form(request, "/webhook/whatsapp")
+    if trial_limited():
+        return twiml()
     settings = get_settings()
     sender = str(form.get("From", ""))
     body = str(form.get("Body", "")).strip()
