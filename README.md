@@ -67,12 +67,16 @@ A farmer should be able to describe a problem in their own words without first c
 
 ### Four ways to use Kisan Mitra
 
-| Access | Farmer experience | Integration boundary |
+![Four Indian farmers using Kisan Mitra through the web, mobile app, messaging and a phone call](docs/media/four-ways-to-farm.png)
+
+*From a cooperative desk to a crop row, a mandi stall or an orchard: one connected farm companion, reached in the way that fits the moment.*
+
+| Access | Where it fits | Farmer experience |
 | :--- | :--- | :--- |
-| **Website** | Chat, calendar, weather, Crop Doctor, mandi research, notebook, exchange, profile and the 3D station | Farm OS and Classic share the backend and farmer records |
-| **Flutter app** | A pocket-sized assistant with feature chips, calendar, station, weather, crops, markets, notebook, exchange, Saathi and profile | Connects to the same API with configured account access |
-| **WhatsApp** | Send text, a crop image, voice note or supported document; receive answers and supported files through a linked account | Requires Twilio credentials, signed callbacks and a public HTTPS origin |
-| **Phone** | Tap the website's call control to reach the configured voice support number | The dial action depends on the configured line; browser live voice uses the Mitra API |
+| **Website** | Reviewing the season at home or at a cooperative desk | Explore the full Farm OS or Classic workspace: chat, calendar, weather, Crop Doctor, mandi research, notebook, exchange, profile and the 3D station. |
+| **Flutter app** | Walking a plot and making decisions in the field | Use a pocket-sized assistant with feature chips, calendar, station, weather, crops, markets, notebook, exchange, Saathi and profile. |
+| **WhatsApp** | Sharing a crop photo, voice note or question from an existing conversation | Send text and supported media to a linked account. A signed Twilio webhook brings the request into Mitra; reply delivery depends on the sender's capabilities. |
+| **Phone** | Speaking with support when typing is inconvenient | Use the website's call control to reach the configured support line. Browser live voice is available separately through the Mitra API. |
 
 Farmers can type or speak naturally in supported languages, including Hinglish. The assistant keeps the original-language question and uses the farmer's selected language and conversation context when answering. Speech recognition and synthesis depend on configured services.
 
