@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -147,7 +148,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final runContext = RunContext(view: 'calendar', selectedDate: key);
     final loading = !state.ready && state.loading;
 
-    Widget addButton(String forKey) => FilledButton.tonalIcon(
+    Widget addButton(String forKey) => TourAnchor(id: 'add-task', child: FilledButton.tonalIcon(
           onPressed: locked
               ? null
               : () => ref
@@ -163,9 +164,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   }),
           icon: const Icon(Icons.add),
           label: Text('fos.farm.add'.tr()),
-        );
+        ));
 
-    final toggle = FilledButton.tonalIcon(
+    final toggle = TourAnchor(id: 'calendar-view', child: FilledButton.tonalIcon(
       onPressed: () => setState(() => _monthView = !_monthView),
       icon: Icon(_monthView
           ? Icons.view_agenda_outlined
@@ -173,7 +174,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       label: Text(_monthView
           ? 'fos.farm2.cal_week_view'.tr()
           : 'fos.farm2.cal_month_view'.tr()),
-    );
+    ));
 
     final children = <Widget>[];
     if (_monthView) {
@@ -238,11 +239,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: Text('fos.farm.calendar'.tr()), actions: [
-        IconButton(
+          const TourReplayButton(),
+        TourAnchor(id: 'deleted', child: IconButton(
           tooltip: 'fos.farm.deleted_tasks'.tr(),
           icon: const Icon(Icons.restore_from_trash_outlined),
           onPressed: () => _showDeleted(context),
-        ),
+        )),
       ]),
       floatingActionButton:
           HelperButton(contextKey: 'calendar', runContext: runContext),

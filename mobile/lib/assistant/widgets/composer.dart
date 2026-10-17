@@ -1,3 +1,4 @@
+import '../../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -226,13 +227,13 @@ class ComposerState extends ConsumerState<Composer> {
               ],
             ),
             child: Row(children: [
-              IconButton(
+              TourAnchor(id: 'attachment', child: IconButton(
                 tooltip: 'fos.assistant.attach_tooltip'.tr(),
                 onPressed: locked || offline || _uploading ? null : _attach,
                 icon: Icon(Icons.add_rounded, color: mutedColor(context)),
-              ),
+              )),
               Expanded(
-                child: TextField(
+                child: TourAnchor(id: 'message', child: TextField(
                   controller: _text,
                   onChanged: _saveDraft,
                   enabled: true,
@@ -252,13 +253,13 @@ class ComposerState extends ConsumerState<Composer> {
                     disabledBorder: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                ),
+                )),
               ),
-              VoiceButton(
+              TourAnchor(id: 'dictate', child: VoiceButton(
                 enabled: !locked,
                 onTranscript: (t) =>
                     setDraft(_text.text.isEmpty ? t : '${_text.text} $t'),
-              ),
+              )),
               Padding(
                 padding: const EdgeInsets.only(right: 2),
                 child: state.busy

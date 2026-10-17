@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -279,7 +280,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => _restoring ? const SplashScreen() : Scaffold(
+  Widget build(BuildContext context) => _restoring ? const SplashScreen() : TourSection(scope: 'onboarding-$_step', child: Scaffold(
           body: FarmBackground(
               child: SafeArea(
                   child: Column(children: [
@@ -297,10 +298,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           fontSize: 10,
                           letterSpacing: 2,
                           color: mutedColor(context)))),
+              const TourReplayButton(),
               const Spacer(),
-              TextButton(
+              TourAnchor(id: 'skip', child: TextButton(
                   onPressed: _busy ? null : _leave,
-                  child: const Text('Skip for now')),
+                  child: const Text('Skip for now'))),
             ])),
         Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -335,7 +337,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   fontSize: 15,
                                   height: 1.6,
                                   color: mutedColor(context))),
-                          TextButton.icon(
+                          TourAnchor(id: 'read', child: TextButton.icon(
                               onPressed: () async {
                                 try {
                                   await ref.read(speechProvider).speak(
@@ -351,17 +353,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               },
                               icon: const Icon(Icons.volume_up_outlined,
                                   size: 18),
-                              label: const Text('Read this to me')),
+                              label: const Text('Read this to me'))),
                           const SizedBox(height: 20),
                           if (_step == 0)
-                            _field(_name, 'What should I call you?'),
+                            TourAnchor(id: 'name', child: _field(_name, 'What should I call you?')),
                           if (_step == 1) ...[
-                            FilledButton.icon(
+                            TourAnchor(id: 'location', child: FilledButton.icon(
                                 onPressed: _busy ? null : _locate,
                                 icon: const Icon(Icons.my_location),
                                 label: Text(_busy
                                     ? 'Finding your place…'
-                                    : 'Use my location')),
+                                    : 'Use my location'))),
                             const SizedBox(height: 20),
                             _field(_place, 'Village or town'),
                             DropdownButtonFormField<String>(
@@ -379,9 +381,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ],
                           if (_step == 2) ...[
                             _field(_farm, 'Farm name (optional)'),
-                            _field(_crops, 'Your crops, separated by commas'),
-                            _field(_area, 'Field area in hectares (optional)',
-                                number: true),
+                            TourAnchor(id: 'crops', child: _field(_crops, 'Your crops, separated by commas')),
+                            TourAnchor(id: 'area', child: _field(_area, 'Field area in hectares (optional)',
+                                number: true)),
                             DropdownButtonFormField<String>(
                                 initialValue: _ownership,
                                 decoration: const InputDecoration(
@@ -442,7 +444,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 ])),
                             const SizedBox(height: 20),
                             const StarterPlans(compact: true),
-                            CheckboxListTile(
+                            TourAnchor(id: 'routines', child: CheckboxListTile(
                                 contentPadding: EdgeInsets.zero,
                                 value: _saveRoutines,
                                 onChanged: (value) =>
@@ -450,7 +452,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 title: const Text(
                                     'Add these starter drafts to my notebook'),
                                 subtitle: const Text(
-                                    'You can edit or remove them. Nothing is marked as done.')),
+                                    'You can edit or remove them. Nothing is marked as done.'))),
                           ],
                           if (_error != null)
                             ErrorView(_error!, onRetry: _load),
@@ -459,7 +461,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             padding: const EdgeInsets.fromLTRB(28, 8, 28, 24),
             child: SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: TourAnchor(id: 'continue', child: FilledButton(
                   onPressed: _busy
                       ? null
                       : () {
@@ -471,6 +473,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           }
                         },
                   child: Text(_step == 3 ? 'Save & open my farm' : 'Continue'),
-                ))),
-      ]))));
+                )))),
+      ])))));
 }

@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -129,7 +130,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
         .toList();
     final markets = asMaps(_catalogue['markets']).take(12).toList();
     return Scaffold(
-      appBar: AppBar(title: Text('fos.market.title'.tr())),
+      appBar: AppBar(actions: const [TourReplayButton()], title: Text('fos.market.title'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'markets'),
       body: FarmBackground(
         child: ListView(padding: const EdgeInsets.fromLTRB(12, 8, 12, 96), children: [
@@ -138,7 +139,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
             Text('PREPARED BY MITRA', style: TextStyle(fontSize: 10, letterSpacing: 1.3, fontWeight: FontWeight.w600, color: accentColor(context))),
             const SizedBox(height: 8), Text('Let’s compare your ${cropName(_crop.text.trim())}.', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8), Text('${rows.length} dated records are ready. Compare matching grades and units, then include transport and market fees.', style: const TextStyle(fontSize: 13, height: 1.5)),
-            TextButton.icon(onPressed: () => _calculate(rows.take(3).toList()), icon: const Icon(Icons.calculate_outlined, size: 18), label: const Text('Compare what I take home')),
+            TourAnchor(id: 'comparison', child: TextButton.icon(onPressed: () => _calculate(rows.take(3).toList()), icon: const Icon(Icons.calculate_outlined, size: 18), label: const Text('Compare what I take home'))),
           ]))),
           if (_myCrops.isNotEmpty) ...[
             Text('fos.market2.your_crops'.tr(),
@@ -162,11 +163,11 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
           // search stays one tap away.
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton.icon(
+            child: TourAnchor(id: 'market-search', child: TextButton.icon(
               onPressed: () => setState(() => _showSearch = !_showSearch),
               icon: Icon(_showSearch ? Icons.expand_less : Icons.search, size: 18),
               label: Text((_showSearch ? 'fos.label.hide_search' : 'fos.label.other_crop').tr()),
-            ),
+            )),
           ),
           if (_showSearch)
             FarmCard(

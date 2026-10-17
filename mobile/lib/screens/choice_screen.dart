@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -133,10 +134,11 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
                     fontSize: 17,
                     letterSpacing: -.5)),
             const Spacer(),
-            IconButton(
+            const TourReplayButton(),
+            TourAnchor(id: 'profile', child: IconButton(
                 tooltip: 'Your profile',
                 onPressed: () => context.push('/profile'),
-                icon: const Icon(Icons.person_outline_rounded)),
+                icon: const Icon(Icons.person_outline_rounded))),
           ]),
           const SizedBox(height: 28),
           Text(
@@ -152,7 +154,7 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
           Text(str(_profile['location'], 'Your farm companion, always close.'),
               style: TextStyle(color: mutedColor(context), fontSize: 14)),
           const SizedBox(height: 28),
-          FarmCard(
+          TourAnchor(id: 'voice', child: FarmCard(
               color:
                   context.isDark ? AppColors.darkCard : const Color(0xFFEAEEDD),
               padding: const EdgeInsets.fromLTRB(22, 12, 12, 20),
@@ -186,9 +188,9 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
                       ]),
                     ])),
                 const MitraOrb(size: 130),
-              ])),
+              ]))),
           const SizedBox(height: 12),
-          FarmCard(
+          TourAnchor(id: 'chat', child: FarmCard(
               onTap: () => context.push('/chat'),
               child: Row(children: [
                 const Icon(Icons.edit_note_rounded),
@@ -207,7 +209,7 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
                               fontSize: 12, color: mutedColor(context))),
                     ])),
                 const Icon(Icons.arrow_forward_rounded, size: 18),
-              ])),
+              ]))),
           const SizedBox(height: 22),
           const PreparedBySaathi(area: 'today'),
           SectionTitle('A little ahead of your day',
@@ -227,8 +229,8 @@ class _ChoiceScreenState extends ConsumerState<ChoiceScreen> {
                         : '${assistant.tasks.length} saved tasks. Pick up where you left off.'))
               ])),
           const SizedBox(height: 14),
-          const SectionTitle('Everything for your farm',
-              eyebrow: 'YOUR TOOLSHED'),
+          const TourAnchor(id: 'tools', child: SectionTitle('Everything for your farm',
+              eyebrow: 'YOUR TOOLSHED')),
           LayoutBuilder(
               builder: (context, box) =>
                   Wrap(spacing: 12, runSpacing: 12, children: [

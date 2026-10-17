@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -214,7 +215,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
         .where((f) => f != 'synthetic')
         .toList();
     return Scaffold(
-      appBar: AppBar(title: Text('fos.farm.farm_station'.tr())),
+      appBar: AppBar(actions: const [TourReplayButton()], title: Text('fos.farm.farm_station'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'station'),
       body: FarmBackground(
         child: RefreshIndicator(
@@ -223,12 +224,12 @@ class _StationScreenState extends ConsumerState<StationScreen> {
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 96),
               children: [
                 const PreparedBySaathi(area: 'today'),
-              const FeatureIntro(
+              const TourAnchor(id: 'station', child: FeatureIntro(
                     eyebrow: 'FARM STATION',
                     title: 'A pulse on your field.',
                     detail:
                         'Actual readings from your connected station, with the time they were received.',
-                    icon: Icons.sensors_outlined),
+                    icon: Icons.sensors_outlined)),
 
                 if (_error != null) ErrorView(_error!, onRetry: _load),
                 if (s == null && _error == null)

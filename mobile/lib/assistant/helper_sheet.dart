@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,14 +23,14 @@ class HelperButton extends StatelessWidget {
   final RunContext? runContext;
 
   @override
-  Widget build(BuildContext context) => FloatingActionButton.extended(
+  Widget build(BuildContext context) => TourAnchor(id: 'helper', child: FloatingActionButton.extended(
         heroTag: 'helper-$contextKey',
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         onPressed: () => showHelperSheet(context, contextKey, runContext: runContext),
         icon: const Icon(Icons.eco),
         label: Text('fos.assistant.ask_mitra'.tr()),
-      );
+      ));
 }
 
 void showHelperSheet(BuildContext context, String contextKey, {RunContext? runContext}) {

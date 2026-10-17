@@ -1,3 +1,4 @@
+import '../../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,7 +125,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
         loading: 'fos.notebook.loading'.tr(),
         load: _load,
         builder: (context, d) => ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
-          SectionTitle('fos.notebook.farms'.tr(), trailing: FilledButton.tonalIcon(onPressed: () => _farm(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_farm'.tr()))),
+          SectionTitle('fos.notebook.farms'.tr(), trailing: TourAnchor(id: 'fields-add', child: FilledButton.tonalIcon(onPressed: () => _farm(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_farm'.tr())))),
           if (d.farms.isEmpty) EmptyView(title: 'fos.notebook.no_farms'.tr()),
           for (final f in d.farms) ...[
             Card(
@@ -144,7 +145,7 @@ class _FieldsTabState extends ConsumerState<FieldsTab> {
             ),
           ],
           SectionTitle('fos.notebook.fields'.tr(),
-              trailing: FilledButton.tonalIcon(onPressed: d.farms.isEmpty ? null : () => _plot(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_field'.tr()))),
+              trailing: TourAnchor(id: 'add-field', child: FilledButton.tonalIcon(onPressed: d.farms.isEmpty ? null : () => _plot(d), icon: const Icon(Icons.add), label: Text('fos.notebook.btn_field'.tr())))),
           for (final p in d.plots)
             Card(
               child: ListTile(

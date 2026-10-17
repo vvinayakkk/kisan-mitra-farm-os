@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -230,13 +231,13 @@ class _PreparedBySaathiState extends ConsumerState<PreparedBySaathi> {
                     ]),
               ),
               const SizedBox(width: 8),
-              FilledButton.tonal(
+              TourAnchor(id: 'prepared', child: FilledButton.tonal(
                 onPressed: () {
                   HapticFeedback.selectionClick();
                   setState(() => _open = true);
                 },
                 child: Text('fos.farm.review'.tr()),
-              ),
+              )),
             ])
           else if (_editing) ...[
             TextField(
@@ -488,7 +489,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
   Widget build(BuildContext context) {
     final ink = inkColor(context);
     return Scaffold(
-      appBar: AppBar(title: Text('fos.farm.saathi'.tr())),
+      appBar: AppBar(actions: const [TourReplayButton()], title: Text('fos.farm.saathi'.tr())),
       body: FarmBackground(
         child: Loader<Map<String, dynamic>>(
           key: _loader,
@@ -522,14 +523,14 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                             (_status[data['status']] ?? 'fos.farm.connecting')
                                 .tr(),
                             style: TextStyle(color: mutedColor(context))),
-                        SwitchListTile(
+                        TourAnchor(id: 'checkins', child: SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text('fos.farm.background_followups'.tr()),
                           value: enabled,
                           onChanged: (v) =>
                               _savePrefs(settings, {'enabled': v}),
-                        ),
-                        DropdownButtonFormField<int>(
+                        )),
+                        TourAnchor(id: 'frequency', child: DropdownButtonFormField<int>(
                           initialValue: _frequencies
                                   .containsKey(settings['frequency_hours'])
                               ? settings['frequency_hours'] as int
@@ -544,7 +545,7 @@ class _SaathiScreenState extends ConsumerState<SaathiScreen> {
                           onChanged: (v) => v == null
                               ? null
                               : _savePrefs(settings, {'frequency_hours': v}),
-                        ),
+                        )),
                         const SizedBox(height: 8),
                         Text(
                             'fos.farm.quiet_hours_range'.tr(namedArgs: {

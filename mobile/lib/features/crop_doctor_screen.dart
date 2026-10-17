@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,7 +80,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
     final d = _diagnostic;
     final confidence = (d?['confidence'] as num?)?.toDouble() ?? 0;
     return Scaffold(
-      appBar: AppBar(title: Text('fos.farm.crop_doctor'.tr())),
+      appBar: AppBar(actions: const [TourReplayButton()], title: Text('fos.farm.crop_doctor'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'crops'),
       body: FarmBackground(
         child: ListView(
@@ -120,14 +121,14 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                           icon: const Icon(Icons.photo_camera_outlined),
                           label: Text('fos.farm.take_photo'.tr()),
                         ),
-                        FilledButton.tonalIcon(
+                        TourAnchor(id: 'photo', child: FilledButton.tonalIcon(
                           onPressed: _phase != 'idle'
                               ? null
                               : () => _pick(ImageSource.gallery),
                           icon: const Icon(Icons.photo_library_outlined),
                           label: Text('fos.farm.choose_photo'.tr()),
-                        ),
-                        FilledButton.icon(
+                        )),
+                        TourAnchor(id: 'diagnose', child: FilledButton.icon(
                           onPressed: _fileId == null || _phase != 'idle'
                               ? null
                               : () {
@@ -140,7 +141,7 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                               : _phase == 'uploading'
                                   ? 'fos.farm.uploading'.tr()
                                   : 'fos.farm.check_crop'.tr()),
-                        ),
+                        )),
                       ]),
                   if (_phase != 'idle')
                     Padding(

@@ -1,3 +1,4 @@
+import '../../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,17 +61,18 @@ class _NotebookScreenState extends State<NotebookScreen>
   @override
   Widget build(BuildContext context) {
     final helper = kNotebookTabs[_tabs.index].$3;
-    return Scaffold(
+    return TourSection(scope: 'notebook-$helper', child: Scaffold(
       appBar: AppBar(
+        actions: const [TourReplayButton()],
         title: Text('fos.notebook.notebook'.tr()),
-        bottom: TabBar(
+        bottom: PreferredSize(preferredSize: const Size.fromHeight(48), child: TourAnchor(id: 'tabs', child: TabBar(
           controller: _tabs,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           labelColor: accentColor(context),
           unselectedLabelColor: mutedColor(context),
           tabs: [for (final t in kNotebookTabs) Tab(text: t.$2.tr())],
-        ),
+        ))),
       ),
       floatingActionButton:
           HelperButton(key: ValueKey(helper), contextKey: helper),
@@ -84,7 +86,7 @@ class _NotebookScreenState extends State<NotebookScreen>
           MoreTab(),
         ]),
       ),
-    );
+    ));
   }
 }
 

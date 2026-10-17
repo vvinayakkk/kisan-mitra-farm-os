@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -156,16 +157,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: Row(children: [const SizedBox(width: 42, height: 42, child: MitraOrb(size: 38)), const SizedBox(width: 8), Text('Mitra', style: const TextStyle(fontWeight: FontWeight.w600))]),
         centerTitle: false,
         actions: [
-          IconButton(
+          const TourReplayButton(),
+          TourAnchor(id: 'history', child: IconButton(
             tooltip: 'fos.assistant.conversations'.tr(),
             icon: const Icon(Icons.history_rounded),
             onPressed: () => showHistorySheet(context),
-          ),
-          IconButton(
+          )),
+          TourAnchor(id: 'new-chat', child: IconButton(
             tooltip: 'fos.assistant.new_chat'.tr(),
             icon: const Icon(Icons.edit_square),
             onPressed: state.busy ? null : controller.newConversation,
-          ),
+          )),
         ],
       ),
       body: FarmBackground(

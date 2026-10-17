@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'dart:ui' as ui;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -77,7 +78,7 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
   Widget build(BuildContext context) {
     final schemes = _schemes;
     return Scaffold(
-      appBar: AppBar(title: Text('fos.market.support_title'.tr())),
+      appBar: AppBar(actions: const [TourReplayButton()], title: Text('fos.market.support_title'.tr())),
       floatingActionButton: const HelperButton(contextKey: 'schemes'),
       body: FarmBackground(
         child: ListView(
@@ -92,11 +93,11 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
               const PreparedBySaathi(area: 'schemes'),
               FarmCard(
                 child: Column(children: [
-                  TextField(
+                  TourAnchor(id: 'scheme-search', child: TextField(
                       controller: _query,
                       decoration: InputDecoration(
                           labelText: 'fos.market.search_support'.tr(),
-                          hintText: 'fos.market.search_hint'.tr())),
+                          hintText: 'fos.market.search_hint'.tr()))),
                   const SizedBox(height: 8),
                   TextField(
                       controller: _state,

@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,7 +90,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final ink = inkColor(context);
     return Scaffold(
-      appBar: AppBar(title: Text('fos.market.my_profile'.tr())),
+      appBar: AppBar(actions: const [TourReplayButton()], title: Text('fos.market.my_profile'.tr())),
       body: FarmBackground(
         child: Loader<Map<String, dynamic>>(
           key: _loader,
@@ -198,29 +199,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 'fos.market.none_added'.tr())),
                         Align(
                             alignment: Alignment.centerRight,
-                            child: FilledButton.tonal(
+                            child: TourAnchor(id: 'edit-profile', child: FilledButton.tonal(
                                 onPressed: () {
                                   HapticFeedback.selectionClick();
                                   _edit(p);
                                 },
-                                child: Text('fos.market.edit'.tr()))),
+                                child: Text('fos.market.edit'.tr())))),
                       ]),
                 ),
               const SizedBox(height: 12),
               FarmCard(
                 padding: EdgeInsets.zero,
                 child: Column(children: [
-                  ListTile(
+                  TourAnchor(id: 'profile-fields', child: ListTile(
                     leading: const Icon(Icons.agriculture_outlined),
                     title: Text('fos.market.my_fields'.tr()),
                     onTap: () => context.push('/notebook?tab=fields'),
-                  ),
+                  )),
                   ListTile(
                     leading: const Icon(Icons.spa_outlined),
                     title: Text('fos.market.saathi_followups'.tr()),
                     onTap: () => context.push('/saathi'),
                   ),
-                  ListTile(
+                  TourAnchor(id: 'language', child: ListTile(
                     leading: const Icon(Icons.translate),
                     title: Text('fos.market.language'.tr()),
                     subtitle: Text(kAppLanguages
@@ -228,7 +229,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             (l) => l.$1 == ref.watch(languageProvider).code)
                         .$2),
                     onTap: () => showLanguagePicker(context),
-                  ),
+                  )),
                   SwitchListTile(
                     secondary: const Icon(Icons.dark_mode_outlined),
                     title: Text('fos.market.dark_theme'.tr()),

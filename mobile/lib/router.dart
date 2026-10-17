@@ -1,3 +1,4 @@
+import 'tour/app_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -65,23 +66,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           pageBuilder: (_, s) => _fade(s, const LanguageSelectScreen())),
       GoRoute(
           path: '/login', pageBuilder: (_, s) => _fade(s, const LoginScreen())),
-      GoRoute(path: '/', pageBuilder: (_, s) => _fade(s, const ChoiceScreen())),
+      GoRoute(path: '/', pageBuilder: (_, s) => _fade(s, const AppTour(scope: 'home', child: ChoiceScreen()))),
       GoRoute(
           path: '/onboarding',
-          pageBuilder: (_, s) => _fade(s, const OnboardingScreen())),
+          pageBuilder: (_, s) => _fade(s, const AppTour(scope: 'onboarding', child: OnboardingScreen()))),
       GoRoute(path: '/choice', redirect: (_, __) => '/'),
-      GoRoute(path: '/chat', builder: (_, __) => const ChatScreen()),
-      GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
-      GoRoute(path: '/station', builder: (_, __) => const StationScreen()),
-      GoRoute(path: '/weather', builder: (_, __) => const WeatherScreen()),
-      GoRoute(path: '/crops', builder: (_, __) => const CropDoctorScreen()),
-      GoRoute(path: '/markets', builder: (_, __) => const MarketsScreen()),
-      GoRoute(path: '/schemes', builder: (_, __) => const SchemesScreen()),
+      GoRoute(path: '/chat', builder: (_, __) => const AppTour(scope: 'chat', child: ChatScreen())),
+      GoRoute(path: '/calendar', builder: (_, __) => const AppTour(scope: 'calendar', child: CalendarScreen())),
+      GoRoute(path: '/station', builder: (_, __) => const AppTour(scope: 'station', child: StationScreen())),
+      GoRoute(path: '/weather', builder: (_, __) => const AppTour(scope: 'weather', child: WeatherScreen())),
+      GoRoute(path: '/crops', builder: (_, __) => const AppTour(scope: 'crops', child: CropDoctorScreen())),
+      GoRoute(path: '/markets', builder: (_, __) => const AppTour(scope: 'markets', child: MarketsScreen())),
+      GoRoute(path: '/schemes', builder: (_, __) => const AppTour(scope: 'schemes', child: SchemesScreen())),
       GoRoute(
           path: '/notebook',
           builder: (_, s) =>
-              NotebookScreen(initialTab: s.uri.queryParameters['tab'])),
-      GoRoute(path: '/exchange', builder: (_, __) => const ExchangeScreen()),
+              AppTour(scope: 'notebook', child: NotebookScreen(initialTab: s.uri.queryParameters['tab']))),
+      GoRoute(path: '/exchange', builder: (_, __) => const AppTour(scope: 'exchange', child: ExchangeScreen())),
       GoRoute(
         path: '/exchange/thread/:id',
         redirect: (_, s) =>
@@ -90,8 +91,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 : '/exchange',
         builder: (_, s) => ThreadScreen(threadId: s.pathParameters['id']!),
       ),
-      GoRoute(path: '/saathi', builder: (_, __) => const SaathiScreen()),
-      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: '/saathi', builder: (_, __) => const AppTour(scope: 'saathi', child: SaathiScreen())),
+      GoRoute(path: '/profile', builder: (_, __) => const AppTour(scope: 'profile', child: ProfileScreen())),
     ],
   );
 });

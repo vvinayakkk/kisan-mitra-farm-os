@@ -1,3 +1,5 @@
+import 'package:skyview_app/tour/app_tour.dart';
+import 'package:skyview_app/tour/tour_steps.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
@@ -321,6 +323,7 @@ void main() {
     '14-markets': const MarketsScreen()
   };
   for (final entry in screens.entries) {
+    final tourScope = <String, String>{'01': 'home', '02': 'onboarding', '04': 'chat', '05': 'profile', '06': 'weather', '07': 'station', '08': 'calendar', '09': 'crops', '10': 'notebook', '11': 'exchange', '12': 'saathi', '13': 'schemes', '14': 'markets'}[entry.key.substring(0, 2)];
     testWidgets('review ${entry.key}', (tester) async {
       SharedPreferences.setMockInitialValues(entry.key == '02d-onboarding-resumed' ? {
         'onboarding_draft_$_sid': jsonEncode({'step': 2, 'name': 'Ravi', 'place': 'Guntur', 'farm': 'My north field', 'area': '2.5', 'crops': 'Groundnut', 'ownership': 'leased', 'irrigation': 'drip', 'saveRoutines': false})
@@ -383,7 +386,7 @@ void main() {
                       localizationsDelegates: context.localizationDelegates,
                       supportedLocales: context.supportedLocales,
                       locale: context.locale,
-                      home: RepaintBoundary(key: key, child: entry.value)))));
+                      home: RepaintBoundary(key: key, child: const bool.fromEnvironment('CAPTURE_TOURS') && tourScope != null ? TourHost(owner: 'review', scope: tourScope, steps: tourSteps(tourScope), autoStart: false, child: entry.value) : entry.value)))));
       await tester.pumpWidget(app);
       for (var i = 0; i < 12; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -455,6 +458,14 @@ void main() {
         final semantics = tester.ensureSemantics(); await tester.pump();
         await expectLater(tester, meetsGuideline(textContrastGuideline));
         semantics.dispose();
+      }
+      if (const bool.fromEnvironment('CAPTURE_TOURS') && tourScope != null) {
+        await tester.tap(find.byTooltip('Take a tour'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.text('Skip tour'), findsOneWidget);
+        expect(find.text('Finding your next stop…'), findsNothing);
       }
       if (const bool.fromEnvironment('CAPTURE_REVIEW')) {
         final boundary =

@@ -1,3 +1,4 @@
+import '../tour/app_tour.dart';
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -140,14 +141,15 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                 ? 'fos.farm.farm_weather'.tr()
                 : 'fos.farm.city_weather'.tr()),
         actions: [
-          IconButton(
+          const TourReplayButton(),
+          TourAnchor(id: 'nearby', child: IconButton(
               tooltip: 'Weather near me',
               icon: const Icon(Icons.my_location),
-              onPressed: _useLocation),
-          IconButton(
+              onPressed: _useLocation)),
+          TourAnchor(id: 'city', child: IconButton(
               tooltip: 'fos.farm.choose_city'.tr(),
               icon: const Icon(Icons.location_city),
-              onPressed: _pickCity),
+              onPressed: _pickCity)),
           if (_city != null)
             IconButton(
               tooltip: 'fos.farm.back_to_farm'.tr(),

@@ -1,3 +1,4 @@
+import '../../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -137,7 +138,7 @@ class _LedgerTabState extends ConsumerState<LedgerTab> {
               ),
             ]),
           ),
-          SectionTitle('fos.notebook.entries'.tr(), trailing: FilledButton.tonalIcon(onPressed: _edit, icon: const Icon(Icons.add), label: Text('fos.notebook.add'.tr()))),
+          SectionTitle('fos.notebook.entries'.tr(), trailing: TourAnchor(id: 'ledger-add', child: FilledButton.tonalIcon(onPressed: _edit, icon: const Icon(Icons.add), label: Text('fos.notebook.add'.tr())))),
           if (items.isEmpty) EmptyView(title: 'fos.notebook.no_entries'.tr()),
           for (final e in items.take(_shown))
             Card(
@@ -223,7 +224,7 @@ class _CasesTabState extends ConsumerState<CasesTab> {
           final items = asMaps(d['items']);
           return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 96), children: [
             SectionTitle('fos.notebook2.tab_crop_checks'.tr(),
-                trailing: FilledButton.tonalIcon(onPressed: _create, icon: const Icon(Icons.add), label: Text('fos.notebook.btn_new'.tr()))),
+                trailing: TourAnchor(id: 'followups-add', child: TourAnchor(id: 'missions-add', child: FilledButton.tonalIcon(onPressed: _create, icon: const Icon(Icons.add), label: Text('fos.notebook.btn_new'.tr()))))),
             if (items.isEmpty) EmptyView(title: 'fos.notebook2.no_crop_checks'.tr()),
             for (final c in items)
               Card(

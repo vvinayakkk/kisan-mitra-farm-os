@@ -1,3 +1,4 @@
+import '../../tour/app_tour.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:async';
 
@@ -231,14 +232,15 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen>
       appBar: AppBar(
         title: Text('fos.market.farmer_exchange'.tr()),
         actions: [
-          IconButton(
+          const TourReplayButton(),
+          TourAnchor(id: 'exchange-mitra', child: IconButton(
             tooltip: 'fos.market.ask_mitra_draft'.tr(),
             icon: const Icon(Icons.auto_awesome),
             onPressed: () => showExchangeMitra(context,
                 intent: 'prepare_listing', onDraft: (d) {
               if (d['kind'] == 'listing') _edit(null, asMap(d['fields']));
             }),
-          ),
+          )),
         ],
         bottom: TabBar(
           controller: _tabs,
@@ -247,16 +249,16 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen>
           tabs: [
             Tab(text: 'fos.market.tab_browse'.tr()),
             Tab(text: 'fos.market.tab_mine'.tr()),
-            Tab(text: 'fos.market.tab_chats'.tr())
+            TourAnchor(id: 'exchange-tabs', child: Tab(text: 'fos.market.tab_chats'.tr()))
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: TourAnchor(id: 'exchange-new', child: FloatingActionButton.extended(
         heroTag: 'exchange-new',
         onPressed: _edit,
         icon: const Icon(Icons.add),
         label: Text('fos.market.new'.tr()),
-      ),
+      )),
       body: FarmBackground(
         child: TabBarView(controller: _tabs, children: [
           _list(mine: false, key: _browse),
