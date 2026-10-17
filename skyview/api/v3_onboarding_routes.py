@@ -924,3 +924,17 @@ def starter_plans(payload: StarterPlanReview, owner: Owner):
                 steps=json.dumps([{"title": step, "done": False} for step in steps]))
             ids.append(str(identifier))
     return {"saved": True, "status": "draft", "mission_ids": ids}
+
+
+@router.get("/api/onboarding/starter-plans")
+def starter_plan_catalog(owner: Owner):
+    """One routine catalog and saved-state source for every client."""
+    with db.connection(owner) as conn:
+        saved = {str(row["id"]) for row in repository.rows(
+            conn, "SELECT id FROM sv3.farm_missions WHERE farmer_id=:owner", {"owner": owner}
+        )}
+    return {"plans": [
+        {"key": key, "title": title, "steps": steps,
+         "saved": str(uuid.uuid5(uuid.NAMESPACE_URL, f"kisan-mitra:starter:v1:{owner}:{key}")) in saved}
+        for key, title, steps in STARTER_PLANS
+    ]}

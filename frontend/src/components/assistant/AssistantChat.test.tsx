@@ -169,3 +169,12 @@ it("opens Saathi over a non-chat page without navigating or inheriting the hidde
   expect(screen.getByRole("button", { name: "Your farm companion" })).toHaveFocus();
   page.unmount(); anchor.remove();
 });
+
+it("accepts a written answer alongside suggested choices", async () => {
+  (state as any).pending = {id:"custom-question",kind:"question",arguments:{fields:[{id:"water",type:"select",label:"Water source",options:["Well","Canal"]}]}};
+  render(<AssistantChat/>);
+  fireEvent.change(await screen.findByLabelText("Or type your own answer"),{target:{value:"Shared rainwater tank"}});
+  fireEvent.submit(screen.getByLabelText("Or type your own answer").closest("form")!);
+  expect(sendAssistant).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({answers:{water:"Shared rainwater tank"},pending_id:"custom-question"}));
+  (state as any).pending=null;
+});

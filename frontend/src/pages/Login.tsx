@@ -36,7 +36,7 @@ export default function Login() {
     setPhone(demoNum);
     setDialCode('+91');
     const success = await loginDemoUser(`+91${demoNum}`);
-    if (success) navigate('/dashboard');
+    if (success) navigate('/workspace');
     else setError('Your workspace could not connect. Please retry.');
     setIsLoading(false);
   };
@@ -53,7 +53,7 @@ export default function Login() {
       setError('');
       setIsLoading(true);
       const success = await loginDemoUser(fullPhone());
-      if (success) navigate('/dashboard');
+      if (success) navigate('/workspace');
       else setError('This account could not sign in. Please check your number.');
       setIsLoading(false);
       return;
@@ -65,7 +65,7 @@ export default function Login() {
     if (result.success) {
       if (result.demo_bypass) {
         const success = await loginDemoUser(fullPhone());
-        if (success) navigate('/dashboard');
+        if (success) navigate('/workspace');
         else setError('Your workspace could not connect. Please retry.');
         setIsLoading(false);
         return;
@@ -84,7 +84,7 @@ export default function Login() {
 
     if (!firebasePhoneEnabled && (isDemoPhoneNumber(fullPhone()) || otp === '999999')) {
       const success = await loginDemoUser(fullPhone());
-      if (success) navigate('/dashboard');
+      if (success) navigate('/workspace');
       else setError('This account could not sign in. Please check your number.');
       setIsLoading(false);
       return;
@@ -92,7 +92,7 @@ export default function Login() {
 
     const success = await login(fullPhone(), otp);
     if (success) {
-      navigate('/dashboard');
+      navigate('/workspace');
     } else {
       setError('Wrong OTP. Please try again.');
     }

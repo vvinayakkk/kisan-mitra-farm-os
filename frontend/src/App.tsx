@@ -56,9 +56,10 @@ const queryClient = new QueryClient({
 
 
 function LoginRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authReady } = useAuth();
+  if (!authReady) return <div role="status" className="workspace-loading">Opening your farm…</div>;
   if (!isAuthenticated) return <Login />;
-  return <Navigate to={"/dashboard"} replace />;
+  return <Navigate to={"/workspace"} replace />;
 }
 
 import { AnimatePresence, motion } from "framer-motion";

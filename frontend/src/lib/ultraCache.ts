@@ -81,7 +81,8 @@ export class UltraCacheEngine {
   }
   warmUpPlatform(_phone?: string, stationId = "WS01"): void {
     void this.warmPaths([
-      "/api/profile", "/api/farms", "/api/plots", "/api/farm-workspace/today",
+      "/api/profile", "/api/onboarding/starter-plans", "/api/farms", "/api/plots", "/api/farm-workspace/today",
+      "/api/farm-workspace/missions",
       `/api/sensors/latest/${encodeURIComponent(stationId)}`,
       "/api/farm-workspace/weather-brief",
     ]).catch(() => {});

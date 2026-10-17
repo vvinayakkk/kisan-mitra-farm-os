@@ -8,6 +8,7 @@ import {
 import { afterEach, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import Advisor from "./Advisor";
+vi.mock("@/components/assistant/FarmSetup", () => ({ FarmSetup: () => null }));
 vi.mock("@/contexts/LanguageContext", () => ({
   useLanguage: () => ({ language: "en", setLanguage: vi.fn() }),
 }));

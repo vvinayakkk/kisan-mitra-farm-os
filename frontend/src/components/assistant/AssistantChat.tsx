@@ -269,6 +269,10 @@ function FarmerQuestion({ pending }: { pending: Pending }) {
                   </button>
                 ))}
               </div>
+              <label className="question-entry">
+                <span>Or type your own answer</span>
+                <input maxLength={500} value={values[field.id] || ""} onChange={event => setAnswer(field.id, event.target.value)} placeholder="Your answer, in your own words" />
+              </label>
             </fieldset>
           ) : field.type === "photo" ? (
             <label className="question-entry">

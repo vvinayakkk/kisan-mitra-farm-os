@@ -440,6 +440,8 @@ def profile(farmer_id):
     attrs = farmer["profile_attributes"]
     p = {
         "id": farmer["id"],
+        "onboarding_required": farmer["status"] == "onboarding" or farmer["region_id"] is None,
+        "region_id": farmer["region_id"],
         "phone": farmer["contact_phone"],
         "name": farmer["display_name"],
         "land_size_acres": attrs.get("land_size_acres", fields[0]["acres"]),

@@ -570,3 +570,43 @@ def test_coarse_weather_link_requires_explicit_owner_consent_and_revokes(
             ).scalar_one()
             == 0
         )
+
+
+def test_app_profile_and_starter_plans_are_shared_with_second_device(live, monkeypatch):
+    client, app_session, app_headers = live
+    region = complete(client, app_headers)
+    fid, pid, _, _ = farm_and_plot(client, app_headers, region)
+    result = client.post('/api/profile/save', headers=app_headers,
+                         json={'crops': ['Groundnut'], 'land_size_acres': 4})
+    assert result.status_code == 200
+    assert not result.json()['profile']['onboarding_required']
+    first = client.post('/api/onboarding/starter-plans', headers=app_headers, json={'approved': True})
+    assert first.status_code == 200
+    # Another verified sign-in for the same identity gets a distinct capability,
+    # while the database profile, farms and deterministic routine IDs are shared.
+    laptop = auth.create_live_session('same-verified-identity-on-laptop')
+    assert laptop['id'] != app_session['id']
+    headers = {'Authorization': 'Bearer ' + laptop['token'], 'X-Assistant-Session': laptop['id']}
+    profile = client.get('/api/profile', headers=headers).json()['profile']
+    assert profile['id'] == result.json()['profile']['id']
+    assert profile['crops'] == ['Groundnut'] and profile['land_size_acres'] == 4
+    assert not profile['onboarding_required']
+    assert any(f['id'] == fid for f in client.get('/api/farms', headers=headers).json()['farms'])
+    assert any(p['id'] == pid for p in client.get('/api/plots', headers=headers).json()['plots'])
+    routines = client.get('/api/onboarding/starter-plans', headers=headers).json()['plans']
+    assert len(routines) == 3 and all(p['saved'] for p in routines)
+    repeated = client.post('/api/onboarding/starter-plans', headers=headers, json={'approved': True})
+    assert repeated.json()['mission_ids'] == first.json()['mission_ids']
+    assert client.get('/api/onboarding/starter-plans').status_code == 401
+    assert client.post('/api/profile/save', headers=headers, json={'crops': ['Maize']}).status_code == 200
+    assert client.get('/api/profile', headers=app_headers).json()['profile']['crops'] == ['Maize']
+
+    monkeypatch.setattr(auth, 'verify_identity', lambda token: {
+        'auth_subject': 'oidc:' + uuid.uuid4().hex + uuid.uuid4().hex,
+        'issuer': 'https://identity.example.invalid/'})
+    other = auth.create_live_session('another-farmer')
+    other_headers = {'Authorization': 'Bearer ' + other['token'], 'X-Assistant-Session': other['id']}
+    other_profile = client.get('/api/profile', headers=other_headers).json()['profile']
+    assert other_profile['id'] != profile['id'] and other_profile['onboarding_required']
+    assert not any(p['saved'] for p in client.get('/api/onboarding/starter-plans', headers=other_headers).json()['plans'])
+    assert client.get('/api/farms', headers=other_headers).json()['farms'] == []

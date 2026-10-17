@@ -9,7 +9,7 @@ const requests = new Set<AbortController>();
 let cacheEpoch = 0;
 const READ_TTL = 15_000;
 const CACHE_CAPACITY = 48;
-const READ_PATHS = /^\/api\/(?:profile(?:$|\?)|farms(?:$|\?)|plots(?:$|\?)|mandi(?:\/|$|\?)|sensors\/|marketplace\/(?:farmers|pooling)(?:$|\?)|farm-workspace\/|onboarding\/options(?:$|\?))/;
+const READ_PATHS = /^\/api\/(?:profile(?:$|\?)|farms(?:$|\?)|plots(?:$|\?)|mandi(?:\/|$|\?)|sensors\/|marketplace\/(?:farmers|pooling)(?:$|\?)|farm-workspace\/|onboarding\/(?:options|starter-plans)(?:$|\?))/;
 onWorkspaceCacheInvalidated(reason => {
   cacheEpoch++;
   responses.clear();

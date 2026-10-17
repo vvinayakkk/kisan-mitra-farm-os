@@ -1,3 +1,4 @@
+import { onWorkspaceCacheInvalidated } from "@/lib/workspaceCacheLifecycle";
 import { applyLanguagePreference, APP_LANGUAGES } from "@/lib/languagePreference";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, Pencil, UserRound, X } from "lucide-react";
@@ -74,6 +75,7 @@ export default function FarmProfile({
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
     [revision, setRevision] = useState(0);
+  useEffect(() => onWorkspaceCacheInvalidated(() => setRevision(r => r + 1)), []);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -92,9 +94,6 @@ export default function FarmProfile({
       })
       .catch((e) => {
         if (active) {
-          setProfile(null);
-          setFarms([]);
-          setPlots([]);
           setError(e.message);
         }
       })
@@ -168,7 +167,7 @@ export default function FarmProfile({
           {notice}
         </p>
       )}
-      {loading ? (
+      {loading && !profile ? (
         <p>Loading your profile…</p>
       ) : !profile ? (
         <p>

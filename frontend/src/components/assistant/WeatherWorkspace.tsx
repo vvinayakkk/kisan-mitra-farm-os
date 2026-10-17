@@ -74,6 +74,17 @@ const particles = Array.from({ length: 24 }, (_, index) => index);
 
 export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: string) => void }) {
   const [farmKey, setFarmKey] = useState("");
+  const [nearby, setNearby] = useState<{latitude: number; longitude: number} | null>(null);
+  const [locating, setLocating] = useState(false);
+  function useNearby() {
+    if (!navigator.geolocation) { setError("Location is unavailable. Search for a city instead."); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(position => {
+      setSelectedCity(null); setCityQuery(""); setData(null);
+      setNearby({latitude: Number(position.coords.latitude.toFixed(2)), longitude: Number(position.coords.longitude.toFixed(2))});
+      setLocating(false);
+    }, () => { setLocating(false); setError("Location was not available. You can still search for a city."); }, {timeout: 10000, maximumAge: 300000, enableHighAccuracy: false});
+  }
   const [data, setData] = useState<Dashboard | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [cityData, setCityData] = useState<Dashboard | null>(null);
@@ -96,12 +107,12 @@ export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: st
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    void workspaceRequest<Dashboard>(`/api/weather/dashboard${farmKey ? `?farm_key=${encodeURIComponent(farmKey)}` : ""}`, "GET", undefined, { signal: controller.signal, fresh: revision > 0 })
+    void workspaceRequest<Dashboard>(nearby ? `/api/weather/location-dashboard?latitude=${nearby.latitude}&longitude=${nearby.longitude}` : `/api/weather/dashboard${farmKey ? `?farm_key=${encodeURIComponent(farmKey)}` : ""}`, "GET", undefined, { signal: controller.signal, fresh: revision > 0 })
       .then(result => { if (!controller.signal.aborted) { setData(result); if (result.farm_choices?.length) setFarmOptions(result.farm_choices); } })
       .catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Weather could not be loaded."); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [farmKey, revision, selectedCity]);
+  }, [farmKey, revision, selectedCity, nearby]);
 
   useEffect(() => {
     const query = cityQuery.trim();
@@ -181,7 +192,7 @@ export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: st
         <div className="farm-weather-side-note">Farm forecasts use an approximate regional grid. City views are regional forecasts too.</div>
       </aside>
       <div className="farm-weather-main">
-        <div className="farm-weather-toolbar"><span>{selectedCity ? "CITY WEATHER" : "FARM WEATHER"}</span><button onClick={() => setRevision(n => n + 1)} disabled={loading}><RefreshCw size={15} className={loading ? "spin" : ""} /> Refresh</button></div>
+        <div className="farm-weather-toolbar"><button disabled={locating} onClick={useNearby}>{locating ? "Finding your area…" : "Use my location"}</button>{nearby && <button onClick={() => {setNearby(null); setSelectedCity(null); setData(null);}}>Back to farm weather</button>}<span>{selectedCity ? "CITY WEATHER" : nearby ? "NEAR YOU" : "FARM WEATHER"}</span><button onClick={() => setRevision(n => n + 1)} disabled={loading}><RefreshCw size={15} className={loading ? "spin" : ""} /> Refresh</button></div>
         {loading && !displayed && <div className="farm-weather-loading">Getting the forecast…</div>}
         {error && <div className="farm-weather-message" role="alert">{error}</div>}
         {displayed?.requires_farm_selection && <div className="farm-weather-message">Select a farm to see its local outlook.</div>}
@@ -190,7 +201,7 @@ export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: st
           <section className={`farm-weather-hero weather-${atmosphere}`} aria-label="Current weather">
             <div className="farm-weather-orbit orbit-one" /><div className="farm-weather-orbit orbit-two" />
             {(isNight || isRain || isSnow) && <div className={`farm-weather-particles ${isRain ? "weather-drops" : isSnow ? "weather-flakes" : "weather-stars"}`} aria-hidden="true">{particles.map(index => <i key={index} style={{ "--particle-x": `${(index * 37 + 13) % 97}%`, "--particle-y": `${(index * 23 + 7) % 78}%`, "--particle-delay": `${(index * 7) % 19 / 10}s`, "--particle-duration": `${1.1 + index % 5 * .21}s` } as React.CSSProperties} />)}</div>}
-            <div className="farm-weather-hero-copy"><span className="farm-weather-eyebrow">{selectedCity ? "CITY OUTLOOK" : "YOUR FARM"} · {selectedCity ? cityLabel(selectedCity) : forecast.farm}</span><div className="farm-weather-hero-temp"><WeatherIcon size={48} strokeWidth={1.4}/><strong>{rounded(current?.temperature_2m, "°")}</strong></div><h1>{current ? weather.label : "Daily outlook"}</h1><p>{current ? `Feels like ${rounded(current.apparent_temperature, "°")} · High ${rounded(high, "°")} · Low ${rounded(low, "°")}` : `High ${rounded(high, "°")} · Low ${rounded(low, "°")}`}</p></div>
+            <div className="farm-weather-hero-copy"><span className="farm-weather-eyebrow">{selectedCity ? "CITY OUTLOOK" : nearby ? "NEAR YOUR DEVICE" : "YOUR FARM"} · {selectedCity ? cityLabel(selectedCity) : forecast.farm}</span><div className="farm-weather-hero-temp"><WeatherIcon size={48} strokeWidth={1.4}/><strong>{rounded(current?.temperature_2m, "°")}</strong></div><h1>{current ? weather.label : "Daily outlook"}</h1><p>{current ? `Feels like ${rounded(current.apparent_temperature, "°")} · High ${rounded(high, "°")} · Low ${rounded(low, "°")}` : `High ${rounded(high, "°")} · Low ${rounded(low, "°")}`}</p></div>
             <div className="farm-weather-hero-bottom"><span>{current ? "Current regional model" : "Latest stored regional forecast"}</span><span>Updated {clock(issued, live?.timezone)}</span></div>
           </section>
           {displayed?.live_error && <p className="farm-weather-soft-note" role="status">{displayed.live_error}</p>}

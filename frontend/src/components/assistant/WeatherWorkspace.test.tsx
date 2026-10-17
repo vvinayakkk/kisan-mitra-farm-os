@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { vi, test, expect } from "vitest";
+import { render, screen, waitFor, fireEvent, cleanup } from "@testing-library/react";
+import { vi, test, expect, afterEach } from "vitest";
 import WeatherWorkspace from "./WeatherWorkspace";
 import { workspaceRequest } from "@/lib/farmWorkspaceClient";
 
@@ -26,4 +26,15 @@ test("uses current rain and night data to render lightweight weather effects", a
   await waitFor(() => expect(screen.getByRole("heading", { name: "Rain" })).toBeInTheDocument());
   expect(container.querySelector(".farm-weather-hero.weather-rain-night .weather-drops")?.children).toHaveLength(24);
   expect(screen.getByRole("button", { name: "Ask Mitra" })).toBeInTheDocument();
+});
+
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+test("nearby weather uses consented coarse device coordinates without saving a farm location", async () => {
+  vi.mocked(workspaceRequest).mockClear();
+  vi.mocked(workspaceRequest).mockResolvedValue(forecast);
+  Object.defineProperty(navigator, "geolocation", {configurable:true, value:{getCurrentPosition:vi.fn(success => success({coords:{latitude:19.123456,longitude:73.987654}}))}});
+  render(<WeatherWorkspace onNavigate={vi.fn()}/>);
+  fireEvent.click(screen.getByRole("button",{name:"Use my location"}));
+  await waitFor(() => expect(workspaceRequest).toHaveBeenCalledWith("/api/weather/location-dashboard?latitude=19.12&longitude=73.99", "GET", undefined, expect.any(Object)));
+  expect(vi.mocked(workspaceRequest).mock.calls.every(([,method]) => !method || method === "GET")).toBe(true);
 });

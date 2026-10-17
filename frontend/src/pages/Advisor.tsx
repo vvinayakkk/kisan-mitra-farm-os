@@ -1,3 +1,4 @@
+import { FarmSetup } from "@/components/assistant/FarmSetup";
 import { DataStatus } from "@/components/assistant/DataStatus";
 import { WorkspaceHeaderActions } from "@/components/assistant/WorkspaceHeaderActions";
 import { WeatherShortcut } from "@/components/assistant/WeatherShortcut";
@@ -184,6 +185,7 @@ export default function Advisor() {
           <WeatherShortcut onOpen={() => setView("weather")} />
           <WorkspaceHeaderActions />
         </div>
+        <FarmSetup onOpenPlans={() => { const next = new URLSearchParams(params); next.set("view", "records"); next.set("tab", "missions"); setParams(next); }} />
         <div className={`mitra-page-chat workspace-pane workspace-${view}`}>
           <div
             style={{
