@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="120" height="120" role="img" aria-labelledby="saathiTitle saathiDesc">
+  <title id="saathiTitle">Saathi  Your 24/7 Farm Companion</title>
+  <desc id="saathiDesc">Cute sprout-crowned Saathi mascot with friendly eyes, rosy cheeks, and an active status pulse.</desc>
+  <defs>
+    <radialGradient id="saathiBody" cx="32%" cy="22%" r="72%">
+      <stop offset="0%" stop-color="#f2f8df"/>
+      <stop offset="58%" stop-color="#cfe2b0"/>
+      <stop offset="100%" stop-color="#afc886"/>
+    </radialGradient>
+    <radialGradient id="saathiShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2d4620" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#2d4620" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leafLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6fa050"/>
+      <stop offset="100%" stop-color="#436c2f"/>
+    </linearGradient>
+    <linearGradient id="leafRight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#58883e"/>
+      <stop offset="100%" stop-color="#82b460"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Soft ground shadow -->
+  <ellipse cx="80" cy="146" rx="44" ry="8" fill="url(#saathiShadow)"/>
+
+  <!-- Sprout stem & leaves on top (tilted 16 deg like the live UI) -->
+  <g transform="translate(82, 34) rotate(14)">
+    <path d="M0 16 C 0 4, 2 -6, 0 -16" fill="none" stroke="#487036" stroke-width="5" stroke-linecap="round"/>
+    <!-- Left leaf -->
+    <path d="M0 -4 C -18 -20, -30 -8, -14 6 C -8 10, -2 4, 0 -4 Z" fill="url(#leafLeft)"/>
+    <!-- Right leaf -->
+    <path d="M1 -12 C 20 -26, 32 -12, 15 2 C 8 7, 2 -3, 1 -12 Z" fill="url(#leafRight)"/>
+  </g>
+
+  <!-- Organic pebble/seed body (matches border-radius: 45% 48% 43% 48%) -->
+  <path d="M80 38
+           C 114 38, 134 59, 133 91
+           C 132 122, 111 140, 79 140
+           C 47 140, 27 120, 28 89
+           C 29 57, 48 38, 80 38 Z"
+        fill="url(#saathiBody)"
+        stroke="#9bb874"
+        stroke-width="2"/>
+
+  <!-- Subtle inner bottom shading -->
+  <path d="M35 104 C 44 129, 115 129, 125 104 C 117 134, 43 134, 35 104 Z"
+        fill="#89a85d"
+        opacity="0.28"/>
+
+  <!-- Cute rosy cheeks -->
+  <ellipse cx="52" cy="98" rx="8.5" ry="4.8" fill="#e59882" opacity="0.45"/>
+  <ellipse cx="108" cy="98" rx="8.5" ry="4.8" fill="#e59882" opacity="0.45"/>
+
+  <!-- Eyes (matches .saathi-eyes i) -->
+  <g fill="#2e4a33">
+    <rect x="61" y="80" width="9" height="15" rx="4.5"/>
+    <rect x="90" y="80" width="9" height="15" rx="4.5"/>
+  </g>
+  <!-- Eye sparkles -->
+  <g fill="#ffffff">
+    <circle cx="64" cy="84" r="2.2"/>
+    <circle cx="93" cy="84" r="2.2"/>
+  </g>
+
+  <!-- Gentle warm smile -->
+  <path d="M73 100 Q 80 106 87 100" fill="none" stroke="#345038" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 24/7 Active green status badge -->
+  <g transform="translate(118, 122)">
+    <circle cx="0" cy="0" r="13" fill="#dce9d0"/>
+    <circle cx="0" cy="0" r="8" fill="#5e8a41" stroke="#f6faee" stroke-width="2.5"/>
+  </g>
+</svg>

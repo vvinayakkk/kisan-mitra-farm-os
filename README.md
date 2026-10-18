@@ -84,6 +84,8 @@ The counts describe the current code and catalog. They are not latency or produc
 - [Four ways to use Kisan Mitra](#-four-ways-to-use-kisan-mitra)
 - [Agentic AI Platform at a Glance](#-agentic-ai-platform-at-a-glance)
 - [Agentic System Design & Multi-Agent Orchestration](#-agentic-system-design--multi-agent-orchestration)
+- [Meet Saathi — Your Always-Active 24/7 Background Companion](#-meet-saathi--your-always-active-247-background-companion)
+- [Complex Multi-Agent Workflows & 52+ Real Farm Tasks](#-complex-multi-agent-workflows--52-real-farm-tasks)
 - [Multilingual Voice Pipeline (STT · TTS · Live Turn-Taking)](#-multilingual-voice-pipeline-stt--tts--live-turn-taking)
 - [Overview & Vision](#-overview--vision)
 - [System Architecture](#-system-architecture)
@@ -188,6 +190,139 @@ Long-running farm relationships require memory that neither overflows the contex
 ### 4. Lease-Coordinated Background Workers & Async Queues
 - **PostgreSQL Advisory-Leased Worker ([`skyview/data/v3/worker.py`](skyview/data/v3/worker.py)):** Coordinates recurring background jobs across stateless Cloud Run instances without duplicate execution—refreshing weather forecasts, syncing mandi price arrivals, tracking source health, and warming `Saathi` companion plans.
 - **Asynchronous WhatsApp & Media Worker ([`skyview/assistant/whatsapp_tasks.py`](skyview/assistant/whatsapp_tasks.py)):** Signed Twilio webhooks enqueue inbound farmer voice notes, crop photos, and messages into **Google Cloud Tasks**, allowing a background worker to transcribe audio, run the multi-step Mitra orchestrator, and deliver the response reliably.
+
+---
+
+## 🌱 Meet Saathi — Your Always-Active 24/7 Background Companion
+
+<table>
+  <tr>
+    <td width="150" align="center">
+      <img src="docs/media/saathi-mascot.svg" width="125" alt="Saathi — Cute sprout-crowned 24/7 farm companion mascot" />
+      <br />
+      <sub><b>Saathi · Watching 24/7</b></sub>
+    </td>
+    <td>
+      <b>While Mitra answers when you ask, <i>Saathi</i> works quietly in the background so your next farm move is already prepared before you even type a prompt.</b><br /><br />
+      Represented across the web workspace and Flutter app by its signature <b>sprout-crowned pebble mascot</b> (<a href="frontend/src/components/assistant/CompanionPanel.tsx"><code>CompanionAvatar</code></a>), <b>Saathi</b> (<a href="skyview/assistant/companion_plans.py"><code>skyview/assistant/companion_plans.py</code></a>) is an autonomous background planning sub-agent that continuously watches six core farm areas—<code>today</code>, <code>markets</code>, <code>schemes</code>, <code>records</code>, <code>crops</code>, and <code>exchange</code>—and gets actionable checklists, mandi comparisons, and scheme drafts ready in the farmer's preferred language.
+    </td>
+  </tr>
+</table>
+
+### How Saathi Works 24/7 in the Background
+- **Autonomous Farm Snapshot & Signal Detection:** On scheduled check-in intervals (configurable every `1h`, `6h`, `12h`, `24h`, or `weekly`, respecting the farmer's `quiet_start`–`quiet_end` sleeping hours in `Asia/Kolkata`), Saathi snapshots the farmer's live plots, growing crop cycles, open/overdue calendar tasks, unresolved Crop Doctor disease cases, 30-day ledger balances, and published exchange listings.
+- **Durable Leased Background Jobs (`/api/companion/prepare`):** When a farmer opens Markets, Schemes, Crops, Notebook, or Exchange—or when the background worker runs—Saathi claims a durable database lease (`sv3.companion_preparation_jobs`), pulls dated mandi arrivals or grounded Google Search evidence (`research.py`), and synthesizes a step-by-step proposal with linked evidence cards.
+- **Native Multilingual Translation:** Every background plan drafted by Saathi is automatically translated into the farmer's chosen Indian language (`hi-IN`, `mr-IN`, `ta-IN`, `te-IN`, `kn-IN`, `pa-IN`, etc.) while keeping every number, date, unit (`INR/quintal`), and official source link intact.
+- **Zero Unapproved Mutations (1-Tap Review, Voice Edit, or Dismiss):** Saathi *prepares* the work in the background (`PreparedBySaathi.tsx` & `CompanionPanel.tsx`) so it is waiting when the farmer arrives. The farmer can inspect the evidence, **speak or type edits** to the steps, and click **Approve plan** to convert the draft into a persistent multi-step farm mission (`sv3.farm_missions`) with version-checked safety (`row_version`).
+
+---
+
+## 🚀 Complex Multi-Agent Workflows & 52+ Real Farm Tasks
+
+Kisan Mitra handles everything from **single-sentence deterministic fast actions** to **10-step cross-domain agentic workflows** that chain weather, sensors, vision, mandi economics, web research, and document generation in a single turn.
+
+### 6 Deep End-to-End Complex Workflow Examples
+
+#### Workflow 1 · Pre-Monsoon / Heavy Rain Risk Audit & Calendar Rescheduling
+> **Farmer says (Hindi / English / Voice):** *"Kal aur parso barish ka kya haal hai? Mere is hafte ke kaam check karo, spray ya khad dalne ka kaam khatre mein ho toh aage badha do aur checklist bana do."*
+> *(“What does the rain look like over the next few days? Audit my tasks this week, move any risky spraying or fertilizer work, and build a checklist.”)*
+1. **Skill & Context Load:** Orchestrator loads `weather-outlook`, `daily-workspace`, and `crop-calendar` skills (`load_skill`).
+2. **Parallel Evidence Gathering:** Calls `field_context` (plots & crop stages), `list_tasks` (this week's scheduled tasks), `station_snapshot` (current soil moisture & wind), and `weather_forecast` (16-day grid forecast with precipitation windows).
+3. **Cross-Domain Reasoning:** Identifies that a scheduled pesticide spray and urea top-dressing collide with a high-rainfall window and high wind speed.
+4. **Guarded Action Staging:** Returns a prioritized rain-readiness checklist, renders an inline precipitation chart, and stages `update_task` / `save_task` approval cards to shift spraying to a dry window and add a field-drainage inspection task.
+
+#### Workflow 2 · Multimodal Crop Doctor Diagnosis $\rightarrow$ Follow-Up Case $\rightarrow$ Official KVK Expert Handoff PDF
+> **Farmer uploads a leaf photo + says:** *"Patti pe peele dhabbe aa rahe hain, dekho kya bimari hai, case save karo aur KVK expert ko dikhane ke liye PDF report bana do."*
+1. **Vision Sub-Agent Execution:** Calls `diagnose_crop` on the uploaded leaf image to extract visual symptom patterns, differential causes, confidence/uncertainty, and safe field inspection checks.
+2. **Historical Case Continuity:** Calls `crop_cases` to check if this plot already has an open symptom timeline, then stages `create_crop_case` / `record_crop_note` with the dated observation.
+3. **Official Referral Lookup:** Loads `expert-handoff` skill and calls `expert_referrals` for official ICAR / KVK and crop-insurance portal references.
+4. **Artifact Synthesis:** Calls `create_file(format="pdf")` to generate a downloadable **Crop Case Handoff Report PDF** containing the symptom timeline, plot context, uncertainty caveats, and inspection checklist.
+
+#### Workflow 3 · Mandi Arbitrage & Net Take-Home Realization after Transport & Handling
+> **Farmer says:** *"Mere paas 45 quintal gehu (wheat) hai. Aas-paas ki mandiyon ka bhav compare karo, bhada aur hammali kaat ke batao kahan bechna faydemand rahega, aur Excel sheet bana do."*
+1. **Market & Trend Retrieval:** Loads `market-prices` and `sale-planning` skills; calls `market_prices` and `market_trend` to fetch dated `data.gov.in` mandi arrivals and modal prices across nearby markets.
+2. **Missing Cost Clarification (`ask_farmer`):** If transport or loading rates aren't in memory (`recall_memory`), pauses with a focused `ask_farmer` card to confirm transport distance/cost per quintal.
+3. **Deterministic Realization Math:** Calls `net_sale` and `calculate_budget` across candidate mandis to compute exact Gross INR vs. Net Take-Home INR after transport, bagging, and market fees.
+4. **Workbook Generation:** Calls `create_file(format="xlsx")` to produce a side-by-side **Mandi Net Realization Excel Workbook** + inline price trend chart.
+
+#### Workflow 4 · Soil Lab Report OCR $\rightarrow$ Nutrient Basis Verification $\rightarrow$ Deficit Irrigation Plan
+> **Farmer uploads a photo of a printed Soil Health Card / lab report:** *"Yeh meri mitti ki जांच report hai, isko padh ke save karo aur agle 7 din ka sinchai (irrigation) plan batao."*
+1. **Document Vision OCR:** Calls `read_document_image` to extract literal visible text (`pH`, `EC`, `Organic Carbon`, `N`, `P`, `K`, micronutrients) and calls `soil_report_options` to verify supported units and nutrient basis (`P` vs `P2O5`, `K` vs `K2O`—never converting silently).
+2. **Farmer Verification Gate:** Stages `save_soil_report` so the farmer confirms the exact extracted numbers, sample date, and depth before saving to `sv3.soil_reports`.
+3. **Sensor + Forecast Fusion:** Calls `station_snapshot` (live soil-moisture probe reading) and `weather_forecast` (evapotranspiration & rain outlook) to build a 7-day crop-stage irrigation schedule.
+
+#### Workflow 5 · Government Scheme Discovery $\rightarrow$ Grounded Web Verification $\rightarrow$ Application Pack
+> **Farmer says:** *"Drip irrigation aur solar pump pe kaunsi सरकारी सब्सिडी mil rahi hai? Eligibility check karo aur zaroori kagazat ki Word file bana do."*
+1. **Catalog + Live Google Search Grounding:** Loads `scheme-checklist` and `web-research` skills; calls `scheme_search` (internal verified catalog) and `web_research` (live Google Search grounding with cited official `.gov.in` URLs and `retrieved_at` timestamps).
+2. **Farm Profile Matching:** Cross-checks the farmer's owned land size, state/district, and crop cycles via `field_context`.
+3. **Document Generation:** Calls `create_file(format="docx")` to create a printable **Scheme Eligibility & Document Checklist (`.docx`)** and stages a calendar reminder task (`save_task`) for document submission.
+
+#### Workflow 6 · FPO / Cooperative Resource Exchange & Shared Group Mission Planning
+> **Farmer says:** *"Mujhe is hafte rotavator chahiye, exchange mein dekho aas-paas kisike paas hai, aur humare FPO group ke liye kutaai-buwai ka shared plan aur PPT presentation bana do."*
+1. **Exchange Matching:** Loads `farmer-exchange` and `shared-work` skills; calls `exchange_listings` and `exchange_matches` to find district-level consenting rotavator/tractor listings and calls `exchange_journeys` to check active negotiations.
+2. **Cooperative Task Coordination:** Calls `shared_groups` and `shared_group_tasks`, staging `create_shared_task` for the FPO group members.
+3. **Slide Deck Synthesis:** Calls `create_file(format="pptx")` to generate a **Cooperative Seasonal Operations Presentation (`.pptx`)** ready for the village/FPO meeting.
+
+---
+
+### Complete Catalog of 52+ Agentic Tasks & Tool Capabilities Across the Farm OS
+
+Every single item below is wired to a real schema-validated tool in [`skyview/assistant/tools.py`](skyview/assistant/tools.py), a domain skill in [`skyview/assistant/skills/`](skyview/assistant/skills/), or a canonical API route:
+
+| # | Domain | Task / Capability | Backing Tool / Sub-Agent | Execution Mode |
+| :- | :--- | :--- | :--- | :--- |
+| **1** | **Search & Grounding** | Search live public agricultural advisories & rules with Google Search citations | `web_research` | Autonomous Read |
+| **2** | **Search & Grounding** | Query curated canonical ICAR / university crop guidance excerpts | `knowledge_search` | Autonomous Read |
+| **3** | **Search & Grounding** | Inspect all active agent skills, tools, examples & safety boundaries | `assistant_capabilities` | Autonomous Read |
+| **4** | **Memory & Context** | Search archived past conversations for farmer-stated facts & prior results | `recall_memory` | Autonomous Read |
+| **5** | **Memory & Context** | Dynamically load any of the 22 specialized markdown skill playbooks mid-turn | `load_skill` | Autonomous Orchestration |
+| **6** | **Memory & Context** | Pause execution & render a 1–5 field interactive clarification form in chat | `ask_farmer` | Interactive Pause/Resume |
+| **7** | **Memory & Context** | Auto-compact >12k token conversations at clean user-turn boundaries | `memory.context` | Background Memory Manager |
+| **8** | **Farms & Plots** | Read owned farms, plot boundaries, hectares & active/planned crop cycles | `field_context` | Autonomous Read |
+| **9** | **Farms & Plots** | Build regional seasonal crop & sowing-window plans from soil/water records | `seasonal_planning_context` | Autonomous Read |
+| **10** | **Tasks & Calendar** | List open, overdue, and upcoming dated farm tasks | `list_tasks` | Autonomous Read |
+| **11** | **Tasks & Calendar** | Create a dated farm task (via deterministic fast-path or reviewed proposal) | `save_task` + `fast_actions.py` | Fast-Path / Guarded Write |
+| **12** | **Tasks & Calendar** | Reschedule or update an existing task's title, due date, and notes | `update_task` | Guarded Write (Reviewed) |
+| **13** | **Tasks & Calendar** | Mark a farm task completed with version-checked receipt | `complete_task` | Guarded Write (Reviewed) |
+| **14** | **Tasks & Calendar** | Soft-delete/remove a farm task while keeping it recoverable | `delete_task` | Guarded Write (Reviewed) |
+| **15** | **Tasks & Calendar** | Audit today's overdue work, active crop follow-ups, missions & ledger summary | `farm_today` | Autonomous Read |
+| **16** | **Missions & Saathi** | Read multi-step persistent farm missions & step completion progress | `farm_missions` | Autonomous Read |
+| **17** | **Missions & Saathi** | Create a multi-day step-by-step farm mission checklist in the notebook | `create_mission` | Guarded Write (Reviewed) |
+| **18** | **Missions & Saathi** | Proactively draft background plans across 6 areas (`today`, `markets`, `schemes`, `records`, `crops`, `exchange`) | `Saathi` (`companion_plans.py`) | 24/7 Background Sub-Agent |
+| **19** | **Soil & Agronomy** | Read supported soil lab parameters, depth limits & explicit nutrient bases (`P` vs `P2O5`) | `soil_report_options` | Autonomous Read |
+| **20** | **Soil & Agronomy** | OCR & extract structured values from a photographed Soil Health Card or lab sheet | `read_document_image` | Multimodal Vision Read |
+| **21** | **Soil & Agronomy** | Save a farmer-verified soil report transcription linked to a specific plot & photo | `save_soil_report` | Guarded Write (Reviewed) |
+| **22** | **Soil & Agronomy** | Query historical dated soil sample transcriptions & nutrient indicators | `soil_reports` | Autonomous Read |
+| **23** | **Crop Doctor & Vision** | Run multimodal AI visual diagnosis on an uploaded diseased leaf/plant photo | `diagnose_crop` | Multimodal Vision Sub-Agent |
+| **24** | **Crop Doctor & Vision** | Read open and historical crop symptom cases & model uncertainty notes | `crop_cases` | Autonomous Read |
+| **25** | **Crop Doctor & Vision** | Open a new tracked crop symptom follow-up case on a plot | `create_crop_case` | Guarded Write (Reviewed) |
+| **26** | **Crop Doctor & Vision** | Append a dated field observation note to an existing crop case timeline | `record_crop_note` | Guarded Write (Reviewed) |
+| **27** | **Crop Doctor & Vision** | Retrieve official KVK, ICAR, and crop-insurance referral portals & handoff checklists | `expert_referrals` | Autonomous Read |
+| **28** | **Weather & Sensors** | Read latest authenticated ESP32 field station telemetry (temp, humidity, wind, rain, soil probe) | `station_snapshot` | Autonomous Read |
+| **29** | **Weather & Sensors** | Query 1 to 168 hours of timestamped physical field station history | `weather_history` | Autonomous Read |
+| **30** | **Weather & Sensors** | Fetch 1–16 day source-backed grid weather forecasts for the farmer's coordinates | `weather_forecast` | Autonomous Read |
+| **31** | **Weather & Sensors** | Query 1–366 days of historical regional weather reanalysis/archive data | `weather_archive` | Autonomous Read |
+| **32** | **Weather & Sensors** | Look up current weather & 10-day forecast for any external city/mandi hub | `city_weather` | Autonomous Read |
+| **33** | **Weather & Sensors** | Hardware AXI4-Lite register bridge for FPGA Q8.8 sensor fusion acceleration | `fpga_agent.py` | Edge Hardware Bridge |
+| **34** | **Mandi & Economics** | Query dated `data.gov.in` mandi arrival prices by commodity and state | `market_prices` | Autonomous Read |
+| **35** | **Mandi & Economics** | Generate historical mandi price trend charts & range statistics (`min`, `max`, `modal`) | `market_trend` | Autonomous Read + Chart |
+| **36** | **Mandi & Economics** | Run explicitly labeled 1–365 day synthetic price planning scenarios with uncertainty bands | `price_scenarios` | Scenario Simulation |
+| **37** | **Mandi & Economics** | Calculate gross vs. net INR take-home sale realization after transport, bagging & mandi fees | `net_sale` | Deterministic Calculator |
+| **38** | **Finance & Ledger** | Calculate itemized input budgets (`quantity × unit_price`) in INR with exact totals | `calculate_budget` | Deterministic Calculator |
+| **39** | **Finance & Ledger** | Read full farm ledger (actual, estimated & receivable income/expenses + net balance) | `farm_ledger` | Autonomous Read |
+| **40** | **Finance & Ledger** | Record a reviewed actual, estimated, or receivable INR ledger transaction | `record_ledger` | Guarded Write (Reviewed) |
+| **41** | **Finance & Ledger** | Record a quick workspace farm expense entry | `record_expense` | Guarded Write (Reviewed) |
+| **42** | **Finance & Ledger** | List workspace expense entries for cost review | `list_expenses` | Autonomous Read |
+| **43** | **Schemes & Benefits** | Search verified government schemes (`PM-KISAN`, `PMFBY`, `PM-KUSUM`, state subsidies) with links | `scheme_search` | Autonomous Read |
+| **44** | **Farmer Exchange** | Browse district-level published farmer resource offers & requests (tractors, seeds, tools) | `exchange_listings` | Autonomous Read |
+| **45** | **Farmer Exchange** | Compute explainable resource matches for an owned exchange listing | `exchange_matches` | Autonomous Matching |
+| **46** | **Farmer Exchange** | Track participant-only exchange negotiations, terms, and handover confirmations | `exchange_journeys` | Autonomous Read |
+| **47** | **FPO & Shared Work** | Read household or FPO cooperative planning groups & member roles | `shared_groups` / `shared_group_tasks` | Autonomous Read |
+| **48** | **FPO & Shared Work** | Create a private household/FPO group or assign a shared checklist task | `create_farm_group` / `create_shared_task` | Guarded Write (Reviewed) |
+| **49** | **Service Notebook** | Read & record labour, harvester, transport, or custom-hiring quotes and arrangements | `service_notebook` / `record_service` | Read + Guarded Write |
+| **50** | **Document & File Studio** | Generate downloadable Word (`.docx`), PDF (`.pdf`), Excel (`.xlsx`), CSV (`.csv`), and PowerPoint (`.pptx`) files | `create_file` (`artifacts.py`) | Autonomous Artifact Gen |
+| **51** | **Document & File Studio** | Read uploaded/generated files or revise an existing artifact into a new version/format | `read_file` / `revise_file` | Autonomous File I/O |
+| **52** | **Multilingual Voice & WhatsApp** | Transcribe 22+ Indian languages (`Sarvam` + `Groq Whisper`), speak replies (`Bulbul v2`), & process WhatsApp voice/photos via Cloud Tasks | `v3_voice_routes.py` + `whatsapp_tasks.py` | Voice & Async Channel |
 
 ---
 
@@ -658,9 +793,11 @@ The repository also includes [C++ HLS sources and testbenches](hardware/hls/READ
 
 **Physical commissioning remains a separate step:** sensor wiring, calibration, firmware uploads, board configuration and end-to-end delivery must be verified on the actual installation. The source code, screenshots and software tests alone do not establish a live connected board or measured hardware latency.
 
-### 10. ✨ Saathi: Prepared Work to Review
+### 10. ✨ Saathi: Always-Active 24/7 Companion & Prepared Work to Review
 
-**Let the farm companion prepare useful next moves.** Saathi considers current farm context and offers compact previews for crop follow-ups, notebook upkeep and exchange planning. A farmer can open, edit, approve or dismiss each proposal; saved work appears in the relevant area.
+<img src="docs/media/saathi-mascot.svg" width="76" align="right" alt="Cute Saathi sprout mascot" />
+
+**Let your cute 24/7 farm companion prepare useful next moves in the background.** While you tend to your fields, Saathi continuously watches your farm context across `today`, `markets`, `schemes`, `records`, `crops`, and `exchange`, preparing ready-to-review previews for crop follow-ups, mandi comparisons, scheme checklists, notebook upkeep, and exchange planning. A farmer can open, voice-edit, approve, or dismiss each proposal; approved work is saved directly into the relevant farm workspace.
 
 | **Saathi in the workspace** | **A plan ready for approval** |
 | :--- | :--- |
