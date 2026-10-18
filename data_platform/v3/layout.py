@@ -24,6 +24,7 @@ RUNTIME_MIGRATIONS = (
     "admin-runtime.sql",
     "default-farm-runtime.sql",
     "station-reference-runtime.sql",
+    "farmer-map-reference-runtime.sql",
 )
 
 

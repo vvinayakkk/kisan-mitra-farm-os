@@ -32,7 +32,7 @@ import "@/components/assistant/assistant.css";
 const Features = lazy(() => import("@/components/assistant/WorkspaceFeatures"));
 const Exchange = lazy(() => import("@/components/assistant/FarmExchange"));
 const Profile = lazy(() => import("@/components/assistant/FarmProfile"));
-const FarmerMap = lazy(() => import("./FarmersMap"));
+const FarmerMap = lazy(() => import("@/components/assistant/WorkspaceFarmerMap"));
 const views = [
   {
     id: "chat",
@@ -228,7 +228,7 @@ export default function Advisor() {
               <Exchange initialListingId={params.get("listing") || undefined} />
             </Suspense>
           )}
-          {view === "map" && <Suspense fallback={<div className="workspace-loading">Preparing the map…</div>}><FarmerMap embedded /></Suspense>}
+          {view === "map" && <Suspense fallback={<div className="workspace-loading">Preparing the map…</div>}><FarmerMap /></Suspense>}
           {view === "profile" && (
             <Suspense
               fallback={

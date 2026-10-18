@@ -679,7 +679,7 @@ export function AssistantChat({
     atBottom.current = true;
     return sendAssistant(value, {
       attachment_ids: draftFiles.map((file) => file.id),
-      workspace_view: context,
+      workspace_view: context === "map" ? "assistant" : context,
       ...(context === "weather" && weatherCity ? { weather_city: weatherCity } : {}),
       ...(context === "calendar" && selectedDate
         ? { selected_date: selectedDate }
@@ -1088,6 +1088,7 @@ export function AssistantChat({
               ? "You can draft your next message while reviewing the card…"
               : minimal
                 ? {
+                    map: "Ask Mitra to find a resource or plan a handover…",
                     calendar: "Ask Mitra to update your plan…",
                     today: "A little help with today…",
                     fields: "Ask about this field or soil report…",

@@ -1,4 +1,5 @@
 export type FarmContext =
+  | "map"
   | "assistant"
   | "station"
   | "weather"
@@ -14,6 +15,12 @@ export type FarmContext =
   | "missions"
   | "memory";
 export const suggestions: Record<FarmContext, [string, string][]> = {
+  map: [
+    ["Find a resource", "Help me find farmers offering equipment or resources in the farmer exchange. Ask what I need and where."],
+    ["Match my needs", "Compare my saved resource needs with available farmer exchange listings."],
+    ["Plan a handover", "Help me plan a resource handover with a farmer. Ask which listing before taking action."],
+    ["Share a resource", "Help me prepare a farmer exchange listing for something I can share."],
+  ],
   weather: [
     ["Plan around rain", "Check the dated weather forecast and help me plan outdoor farm work around rain and wind."],
     ["Heat and crops", "Check the weather outlook and tell me what heat or humidity means for my crops. Ask about crop stage if needed."],
