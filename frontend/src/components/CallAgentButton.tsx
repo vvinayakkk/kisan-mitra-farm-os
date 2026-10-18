@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Phone, X, PhoneCall } from 'lucide-react';
 
-export const SUPPORT_HOTLINE = '+1 (279) 759 9216';
+export const SUPPORT_HOTLINE = '+1 (775) 490 0454';
 
 export function CallAgentButton() {
   const { theme } = useTheme();

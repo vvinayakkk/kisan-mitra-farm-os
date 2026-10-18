@@ -17,7 +17,7 @@ it("shows a small inline number without opening a dialog", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Call support agent" }));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.getByLabelText("Support telephone")).toContainElement(screen.getByRole("link"));
-  expect(screen.getByRole("link")).toHaveAttribute("href", "tel:+12797599216");
+  expect(screen.getByRole("link")).toHaveAttribute("href", "tel:+17754900454");
   fireEvent.click(screen.getByRole("button", { name: "Close call support" }));
   expect(screen.queryByRole("link")).toBeNull();
   expect(screen.getByRole("button", { name: "Call support agent" })).toBeInTheDocument();
