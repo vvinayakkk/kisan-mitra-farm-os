@@ -22,6 +22,24 @@
 
 ---
 
+<a id="our-hardware-in-action"></a>
+
+## 🛰️ Our hardware in action
+
+Frames from our recorded hardware walkthrough show the field station, ESP32 sensor assembly and Raspberry Pi / FPGA setup. Each image combines two views; click to inspect the full-resolution image. Timestamps refer to the original recording.
+
+[![Solar-powered field station: solar panel and power module alongside the installed wind sensors](docs/media/hardware/01-field-station.jpg)](docs/media/hardware/01-field-station.jpg)
+
+[![ESP32 sensor assembly: controller wiring overview and a close-up of the sensor board](docs/media/hardware/02-esp32-sensors.jpg)](docs/media/hardware/02-esp32-sensors.jpg)
+
+[![Recorded wind-speed and rain-gauge demonstrations with the accompanying dashboard readings](docs/media/hardware/03-live-demonstration.jpg)](docs/media/hardware/03-live-demonstration.jpg)
+
+[![Main computing hardware: Raspberry Pi and FPGA development board close-ups](docs/media/hardware/04-edge-hardware.jpg)](docs/media/hardware/04-edge-hardware.jpg)
+
+The field demonstration pairs physical wind and rainfall tests with the dashboard shown in the video. The separate compute-board views show the Raspberry Pi and FPGA hardware used in the walkthrough; see [how the station connects to Mitra](#hardware-integration).
+
+---
+
 ## 🌾 Four ways to use Kisan Mitra
 
 | **Website · the full farm workspace** | **Flutter app · help in the field** |
@@ -56,6 +74,7 @@ The counts describe the current code and catalog. They are not latency or produc
 
 ## 🗺️ Table of Contents
 
+- [Our hardware in action](#our-hardware-in-action)
 - [Four ways to use Kisan Mitra](#-four-ways-to-use-kisan-mitra)
 - [Overview & Vision](#-overview--vision)
 - [System Architecture](#-system-architecture)
@@ -480,6 +499,10 @@ Every feature has a short job description here. The images are clickable for a f
 ### 9. 🛰️ 3D Farm Station & Connected Hardware
 
 **From a measurement in the field to context Mitra can use.** An enrolled station sends authenticated sensor packets to the backend. Validated, dated measurements are stored against its farmer and station, then read by the website, Flutter app and Mitra’s station tools.
+
+[View the physical hardware gallery](#our-hardware-in-action) for the ESP32 assembly, field demonstrations and Raspberry Pi / FPGA boards.
+
+#### The farm station in the interface
 
 [![Interactive 3D farm station showing wind direction, wind speed, rainfall, ESP32 controller, status display, solar array and soil-moisture probe](docs/media/farm-station.png)](docs/media/farm-station.png)
 
