@@ -735,7 +735,11 @@ export function AssistantChat({
         {!compact && !minimal && (companionAnchor ? createPortal(companionButton, companionAnchor) : companionButton)}
         <button
           disabled={state.running}
-          onClick={() => void newConversation()}
+          onClick={() => {
+            setHistory(false); setSkills(false); setInput(""); setDraftFiles([]);
+            setCollapsedReply(false); setUploadError("");
+            void newConversation();
+          }}
           title="New conversation"
           aria-label="New conversation"
         >

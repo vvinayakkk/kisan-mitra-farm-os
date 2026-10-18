@@ -365,18 +365,21 @@ async def run(
 
 @router.post("/sessions/{sid}/reset")
 def reset(sid: str, authorization: str | None = Header(default=None)):
-    authorize(sid, authorization)
-    lease = store.claim_run(sid)
-    if not lease:
-        raise HTTPException(
-            409, "Stop the current request before starting a new conversation."
-        )
-    try:
-        store.archive_conversation(sid)
-        store.save(sid, {"messages": [], "pending": None, "events": []})
-    finally:
-        store.release_run(sid, lease)
-    return {"reset": True, "records_preserved": True, "history_preserved": True}
+    from skyview.assistant.v3_store import identity_scope
+
+    with identity_scope():
+        authorize(sid, authorization)
+        lease = store.claim_run(sid)
+        if not lease:
+            raise HTTPException(
+                409, "Stop the current request before starting a new conversation."
+            )
+        try:
+            store.archive_conversation(sid)
+            store.save(sid, {"messages": [], "pending": None, "events": []})
+        finally:
+            store.release_run(sid, lease)
+        return {"reset": True, "records_preserved": True, "history_preserved": True}
 
 
 @router.post("/sessions/{sid}/restore/{cid}")

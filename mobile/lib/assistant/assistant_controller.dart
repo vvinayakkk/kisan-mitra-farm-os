@@ -155,6 +155,8 @@ class AssistantController extends StateNotifier<AssistantState> {
       'local-${DateTime.now().microsecondsSinceEpoch}-${_localIds++}';
 
   Future<void>? _startup;
+  Future<bool>? _resetting;
+  int _conversationGeneration = 0;
   Future<void> _initialize() async {
     state = state.copyWith(loading: true);
     await _restoreOutbox();
@@ -204,9 +206,10 @@ class AssistantController extends StateNotifier<AssistantState> {
   }
 
   Future<SessionSnapshot> _sync({bool replaceMessages = true}) async {
+    final generation = _conversationGeneration;
     final snapshot = SessionSnapshot.fromJson(
-        await _api.get('/api/assistant/sessions/$_sid'));
-    if (!mounted) return snapshot;
+        await _api.get('/api/assistant/sessions/$_sid', allowSaved: _resetting == null));
+    if (!mounted || generation != _conversationGeneration) return snapshot;
     state = state.copyWith(
       messages: replaceMessages
           ? [
@@ -295,7 +298,9 @@ class AssistantController extends StateNotifier<AssistantState> {
     bool? approval,
     String? pendingId,
   }) async {
-    if (state.busy || _api.session == null) return;
+    final reset = _resetting;
+    if (reset != null && !await reset) return;
+    if (!mounted || state.busy || _api.session == null) return;
     if (!state.ready && _startup != null) await _startup;
     if (!state.ready) await load();
     if (!state.ready) return;
@@ -414,20 +419,40 @@ class AssistantController extends StateNotifier<AssistantState> {
   }
 
   Future<void> newConversation() async {
-    if (state.busy) return;
-    try {
-      await _api.post('/api/assistant/sessions/$_sid/reset');
-      _invalidate();
-      state = state
-          .copyWith(messages: const [], clearPending: true, clearError: true);
-      await _sync();
-    } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+    if (_resetting != null) { await _resetting; return; }
+    if (state.busy || _api.session == null) return;
+    if (!state.ready && _startup != null) await _startup;
+    if (!mounted || !state.ready) return;
+    final previous = state;
+    _conversationGeneration++;
+    state = state.copyWith(messages: const [], clearPending: true,
+        clearError: true, status: '');
+    final operation = _resetConversation(previous);
+    _resetting = operation;
+    try { await operation; } finally {
+      if (identical(_resetting, operation)) _resetting = null;
     }
   }
 
+  Future<bool> _resetConversation(AssistantState previous) async {
+    try {
+      await _api.post('/api/assistant/sessions/$_sid/reset');
+    } catch (e) {
+      if (mounted) state = state.copyWith(messages: previous.messages,
+          pending: previous.pending, clearPending: previous.pending == null,
+          error: e is ApiException ? e.message : 'Could not start a new chat. Please retry.');
+      return false;
+    }
+    if (!mounted) return false;
+    _invalidate();
+    // A stale offline snapshot must never restore the conversation just archived.
+    try { await _sync(replaceMessages: false); } catch (_) {}
+    return mounted;
+  }
+
   Future<void> restoreConversation(String id) async {
-    if (state.busy) return;
+    if (_resetting != null) await _resetting;
+    if (!mounted || state.busy) return;
     try {
       await _api.post('/api/assistant/sessions/$_sid/restore/$id');
       await _sync();

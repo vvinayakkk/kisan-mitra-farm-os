@@ -68,6 +68,54 @@ Future<void> settle(AssistantController c) async {
 void main() {
   setUpAll(loadEnglish);
 
+  test('new chat clears immediately, deduplicates reset and preserves draft send order', () async {
+    final resetReply = Completer<http.Response>();
+    var resetCalls = 0, runCalls = 0, cleared = false;
+    final api = ApiClient(session: session, baseUrl: 'http://test', client: MockClient((r) async {
+      if (r.url.path.endsWith('/catalog')) return http.Response('{"skills":[],"tools":[]}', 200);
+      if (r.url.path.endsWith('/reset')) { resetCalls++; return resetReply.future; }
+      return http.Response(jsonEncode({...emptySession, 'messages': cleared ? [] : [{'role':'user','content':'Old question'}]}), 200);
+    }));
+    final c = AssistantController(api, () => 'en', () {}, streamClient: () => FakeServer.stream((r) {
+      runCalls++;
+      return Stream.value(utf8.encode(ndjson([{'type':'delta','text':'New reply'}, {'type':'done','status':'completed'}])));
+    }));
+    await settle(c);
+    final reset = c.newConversation();
+    final duplicate = c.newConversation();
+    expect(c.state.messages, isEmpty);
+    expect(c.state.ready, isTrue);
+    final send = c.send('Fresh question');
+    expect(runCalls, 0);
+    await Future<void>.delayed(Duration.zero);
+    expect(resetCalls, 1);
+    cleared = true;
+    resetReply.complete(http.Response('{"reset":true}', 200));
+    await Future.wait([reset, duplicate, send]);
+    expect(runCalls, 1);
+    c.dispose();
+  });
+
+  test('failed new chat preserves history and prevents queued send into old chat', () async {
+    final resetReply = Completer<http.Response>();
+    var runCalls = 0;
+    final api = ApiClient(session: session, baseUrl: 'http://test', client: MockClient((r) async {
+      if (r.url.path.endsWith('/catalog')) return http.Response('{"skills":[],"tools":[]}', 200);
+      if (r.url.path.endsWith('/reset')) return resetReply.future;
+      return http.Response(jsonEncode({...emptySession, 'messages': [{'role':'user','content':'Old question'}]}), 200);
+    }));
+    final c = AssistantController(api, () => 'en', () {}, streamClient: () { runCalls++; return http.Client(); });
+    await settle(c);
+    final reset = c.newConversation();
+    final send = c.send('Fresh question');
+    resetReply.complete(http.Response('{"detail":"Please retry"}', 503));
+    await Future.wait([reset, send]);
+    expect(runCalls, 0);
+    expect(c.state.messages.single.text, 'Old question');
+    expect(c.state.error, 'Please retry');
+    c.dispose();
+  });
+
   test('streams real tool activity, then shows the pending approval card', () async {
     final server = FakeServer();
     final c = controller(server, stream: () => FakeServer.stream((r) {

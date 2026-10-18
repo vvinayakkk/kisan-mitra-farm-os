@@ -255,3 +255,54 @@ it('authorizes page reads with a saved session before chat hydration finishes', 
   await initializeAssistant();
   clearAssistantSession();
 });
+
+it('opens new chat immediately, deduplicates clicks and queues sends behind reset', async () => {
+  const { adoptAssistantSession, clearAssistantSession, newConversation } = await import('./assistantClient');
+  clearAssistantSession(); localStorage.clear();
+  let release!: (response: Response) => void;
+  let resetCalls = 0, runCalls = 0, cleared = false;
+  vi.stubGlobal('requestAnimationFrame', (fn: FrameRequestCallback) => setTimeout(() => fn(0), 0));
+  vi.stubGlobal('cancelAnimationFrame', clearTimeout);
+  vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+    if (input.endsWith('/catalog')) return Response.json({ skills: [], tools: [] });
+    if (input.endsWith('/reset')) { resetCalls++; return new Promise<Response>(done => { release = done; }); }
+    if (input.endsWith('/run')) { runCalls++; return stream([{ type: 'delta', text: 'Fresh reply' }, { type: 'done', status: 'completed' }]); }
+    return Response.json({ messages: cleared ? [] : [{ role: 'user', content: 'Old question' }], pending: null, artifacts: [], tasks: [], conversations: [] });
+  }));
+  await adoptAssistantSession('c'.repeat(32), 'test-token');
+  const { result, unmount } = renderHook(() => useAssistant());
+  let reset!: Promise<void>, duplicate!: Promise<void>, send!: Promise<void>;
+  act(() => { reset = newConversation(); duplicate = newConversation(); });
+  expect(result.current.messages).toEqual([]);
+  expect(result.current.ready).toBe(true);
+  expect(resetCalls).toBe(1);
+  act(() => { send = sendAssistant('New question'); });
+  expect(runCalls).toBe(0);
+  cleared = true;
+  await act(async () => { release(Response.json({ reset: true })); await Promise.all([reset, duplicate, send]); });
+  expect(runCalls).toBe(1);
+  expect(result.current.messages.map(m => m.text)).toEqual(['New question', 'Fresh reply']);
+  unmount(); clearAssistantSession();
+});
+
+it('restores the previous chat on reset failure and never sends into it', async () => {
+  const { adoptAssistantSession, clearAssistantSession, newConversation } = await import('./assistantClient');
+  clearAssistantSession(); localStorage.clear();
+  let release!: (response: Response) => void;
+  let runCalls = 0;
+  vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+    if (input.endsWith('/catalog')) return Response.json({ skills: [], tools: [] });
+    if (input.endsWith('/reset')) return new Promise<Response>(done => { release = done; });
+    if (input.endsWith('/run')) runCalls++;
+    return Response.json({ messages: [{ role: 'user', content: 'Keep my history' }], pending: null, artifacts: [], tasks: [] });
+  }));
+  await adoptAssistantSession('d'.repeat(32), 'test-token');
+  const { result, unmount } = renderHook(() => useAssistant());
+  let reset!: Promise<void>, send!: Promise<void>;
+  act(() => { reset = newConversation(); send = sendAssistant('New request'); });
+  await act(async () => { release(Response.json({ detail: 'Please retry' }, { status: 503 })); await Promise.all([reset, send]); });
+  expect(runCalls).toBe(0);
+  expect(result.current.messages[0].text).toBe('Keep my history');
+  expect(result.current.error).toBe('Please retry');
+  unmount(); clearAssistantSession();
+});

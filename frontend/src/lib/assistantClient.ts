@@ -114,6 +114,7 @@ let state: State = {
 const subscribers = new Set<() => void>();
 let session: { id: string; token: string } | null = null;
 let initializing: Promise<void> | null = null;
+let resetting: Promise<boolean> | null = null;
 let sessionGeneration = 0;
 function assertCurrent(generation: number, owner = session): void {
   if (generation !== sessionGeneration || owner?.id !== session?.id || owner?.token !== session?.token)
@@ -283,6 +284,8 @@ export async function sendAssistant(
   message: string,
   extra: Record<string, unknown> = {},
 ) {
+  const reset = resetting;
+  if (reset && !(await reset)) return;
   if (state.running) return;
   const generation = sessionGeneration;
   if (!navigator.onLine) { update({ error: "You are offline. Your draft stays here; reconnect to send it." }); return; }
@@ -433,27 +436,34 @@ export function stopAssistant() {
   controller?.abort("user");
 }
 export async function newConversation() {
+  if (resetting) { await resetting; return; }
   if (state.running) return;
-  const generation = sessionGeneration;
-  if (session) {
+  if (!state.ready) await initializeAssistant();
+  if (!session || !state.ready) return;
+  const previous = state;
+  const generation = ++sessionGeneration;
+  initializing = null;
+  // Open the empty conversation immediately; serialize its first send behind reset.
+  update({ messages: [], pending: null, error: null, status: "", loading: false });
+  const operation = (async () => {
     try {
-      await request(`/sessions/${session.id}/reset`, { method: "POST" });
+      await request(`/sessions/${session!.id}/reset`, { method: "POST" });
       assertCurrent(generation);
     } catch (error) {
-      if (generation !== sessionGeneration) return;
-      update({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Could not start a new conversation.",
-      });
-      return;
+      if (generation !== sessionGeneration) return false;
+      update({ messages: previous.messages, pending: previous.pending,
+        error: error instanceof Error ? error.message : "Could not start a new conversation. Please retry." });
+      return false;
     }
-  }
-  update({ ready: false, messages: [], pending: null, error: null });
-  await initializeAssistant();
+    // Refresh history/cache without reloading the catalog or repainting old messages.
+    try { await sync(); } catch { /* Reset succeeded; optional history refresh can retry later. */ }
+    return generation === sessionGeneration;
+  })();
+  resetting = operation;
+  try { await operation; } finally { if (resetting === operation) resetting = null; }
 }
 export async function restoreConversation(id: string) {
+  if (resetting) await resetting;
   if (state.running || !session) return;
   const generation = sessionGeneration;
   try {
@@ -646,6 +656,7 @@ export function clearAssistantSession(): void {
   controller?.abort("user");
   controller = null;
   initializing = null;
+  resetting = null;
   session = null;
   clearOfflineData();
   try { localStorage.removeItem(key);
