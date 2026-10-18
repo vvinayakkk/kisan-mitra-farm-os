@@ -627,9 +627,14 @@ export function warmWorkspaceReads(): void {
 
 export async function assistantAuthHeaders(): Promise<Record<string, string>> {
   const generation = sessionGeneration;
-  await initializeAssistant();
+  const initialization = initializeAssistant();
+  // A saved capability can authorize independent page reads immediately.
+  // The server still validates every request; transcript/library hydration
+  // must not block weather, profile or station data behind it.
+  if (!session) await initialization;
+  else void initialization.catch(() => {});
   assertCurrent(generation);
-  if (!session || !state.ready) throw new Error(state.error || "Your farm workspace could not connect. Please retry.");
+  if (!session) throw new Error(state.error || "Your farm workspace could not connect. Please retry.");
   return { Authorization: `Bearer ${session.token}`, "X-Assistant-Session": session.id };
 }
 

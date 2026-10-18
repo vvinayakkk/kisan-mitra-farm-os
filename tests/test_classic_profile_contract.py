@@ -43,3 +43,19 @@ def test_invalid_state_or_partial_coordinates_do_not_succeed(monkeypatch):
     assert not any('UPDATE' in sql for sql,args in calls)
     assert http.post('/api/profile/save',json={'latitude':20}).status_code==422
     assert http.post('/api/profile/save',json={'latitude':100,'longitude':78}).status_code==422
+
+
+def test_classic_context_accepts_a_new_profile_without_region(monkeypatch):
+    from skyview.api import v3_compat_routes as routes
+    monkeypatch.setattr(routes.repo, "profile", lambda owner: {"profile": {"state": None, "crops": None}})
+    monkeypatch.setattr(routes.repo, "station_snapshot", lambda *args: {"available": False})
+    seen = []
+    def prices(crop, state, limit):
+        seen.append((crop, state))
+        return {"rates": []}
+    monkeypatch.setattr(routes.repo, "market_rates", prices)
+    monkeypatch.setattr(routes.repo, "schemes", lambda state, limit: {"schemes": []})
+    result = routes.context("owner")
+    assert result["region"] == ""
+    assert result["crops"] == []
+    assert seen == [("", "")]

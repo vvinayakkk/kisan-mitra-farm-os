@@ -239,3 +239,19 @@ it('cancels an attachment before reading bytes or dispatching a network write', 
   await expect(uploadAttachment(new File(['private'], 'photo.jpg'), controller.signal)).rejects.toMatchObject({ name: 'AbortError' });
   expect(fetch).not.toHaveBeenCalled();
 });
+
+it('authorizes page reads with a saved session before chat hydration finishes', async () => {
+  const { clearAssistantSession, assistantAuthHeaders, initializeAssistant } = await import('./assistantClient');
+  clearAssistantSession(); localStorage.clear();
+  const id = 'c'.repeat(32);
+  const base = (import.meta.env.VITE_ASSISTANT_API_URL ?? import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+  localStorage.setItem('skyview-assistant-session-v1:' + base, JSON.stringify({id, token: 'saved-test-token'}));
+  let finishCatalog!: (value: Response) => void;
+  vi.stubGlobal('fetch', vi.fn((url: string) => String(url).endsWith('/catalog')
+    ? new Promise<Response>(resolve => { finishCatalog = resolve; })
+    : Promise.resolve(Response.json({messages: [], tasks: [], artifacts: [], attachments: [], conversations: [], pending: null}))));
+  expect(await assistantAuthHeaders()).toEqual({Authorization: 'Bearer saved-test-token', 'X-Assistant-Session': id});
+  finishCatalog(Response.json({skills: [], tools: []}));
+  await initializeAssistant();
+  clearAssistantSession();
+});
