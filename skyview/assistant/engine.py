@@ -398,7 +398,7 @@ async def run(sid, req, state):
     delta_buffer = []
     delta_checkpoint_at = time.monotonic()
 
-    def event(kind, **kwargs):
+    async def event(kind, **kwargs):
         nonlocal delta_checkpoint_at
         value = {"type": kind, "run_id": run_id, "at": time.time(), **kwargs}
         if kind == "delta":
@@ -440,8 +440,8 @@ async def run(sid, req, state):
             or sum(map(len, delta_buffer)) >= 512
             or time.monotonic() - delta_checkpoint_at >= 1.5
         ):
-            store.append_event(
-                sid,
+            await asyncio.to_thread(
+                store.append_event, sid,
                 {
                     "type": "delta",
                     "run_id": run_id,
@@ -452,11 +452,11 @@ async def run(sid, req, state):
             delta_buffer.clear()
             delta_checkpoint_at = time.monotonic()
         if kind != "delta":
-            store.append_event(sid, value)
+            await asyncio.to_thread(store.append_event, sid, value)
         return value
 
-    store.save(sid, state)
-    yield event("run_started", label="Working on your request")
+    await asyncio.to_thread(store.save, sid, state)
+    yield await event("run_started", label="Working on your request")
     async with httpx.AsyncClient() as client:
         executor = Executor(sid, req.station_id, client)
         pending = state.get("pending")
@@ -472,7 +472,7 @@ async def run(sid, req, state):
                 if pending["kind"] == "question" and req.approval is not False:
                     result = {"farmer_answers": validate_answers(pending, req.answers)}
                 elif req.approval:
-                    yield event(
+                    yield await event(
                         "tool_started",
                         call_id=pending["call_id"],
                         tool=pending["tool"],
@@ -483,7 +483,7 @@ async def run(sid, req, state):
                     result = await executor.run(
                         pending["tool"], pending["arguments"], pending["call_id"]
                     )
-                    completed = event(
+                    completed = await event(
                         "tool_completed",
                         call_id=pending["call_id"],
                         tool=pending["tool"],
@@ -556,8 +556,9 @@ async def run(sid, req, state):
             )
 
             recovery_attempts = 0
+            base_prompt = None
             for iteration in range(MAX_ROUNDS):
-                yield event(
+                yield await event(
                     "status",
                     label="Choosing the next useful step"
                     if iteration
@@ -569,7 +570,7 @@ async def run(sid, req, state):
                     )
                     > memory.CONTEXT_BUDGET
                 ):
-                    yield event(
+                    yield await event(
                         "status",
                         label="Keeping the important details from earlier in this conversation",
                     )
@@ -636,6 +637,8 @@ async def run(sid, req, state):
                     instructions += "\nThe farmer CANCELLED the pending action. Acknowledge cancellation in one short sentence. Do not ask for confirmation again or offer to repeat the declined action. Nothing was changed by this cancelled action."
                 elif req.approval is True:
                     instructions += "\nThe farmer has already approved the reviewed action. Report its actual result; do not ask to approve that same action again."
+                if "save_task" in contract["reads"]:
+                    instructions += "\nThe farmer explicitly asked to add a calendar task. Use save_task with the supplied title and date; this reversible entry is already authorized. Ask only for missing essential details. Do not claim you cannot schedule calendar tasks, and do not promise push notifications. After saving, confirm the saved title and date."
                 if needs_execution:
                     instructions += (
                         "\nExecution still required for this request: "
@@ -660,12 +663,8 @@ async def run(sid, req, state):
                     tool["function"]["parameters"] = provider.inline_schema(
                         tool["function"]["parameters"]
                     )
-                base_prompt = system_prompt(
-                    req,
-                    sid,
-                    state.get("mission_context"),
-                    reply_style,
-                )
+                if base_prompt is None:
+                    base_prompt = await asyncio.to_thread(system_prompt, req, sid, state.get("mission_context"), reply_style)
                 overhead = memory.tokens([base_prompt, instructions, tool_schemas])
                 context = await memory.context(
                     client, sid, state, budget=max(1200, 7200 - overhead)
@@ -702,11 +701,11 @@ async def run(sid, req, state):
                             if hold_text:
                                 turn_text.append(part["text"])
                             else:
-                                yield event("delta", text=part["text"])
+                                yield await event("delta", text=part["text"])
                         elif part["type"] == "status":
-                            yield event("status", label=part["label"])
+                            yield await event("status", label=part["label"])
                         else:
-                            yield event("model", model=part["model"])
+                            yield await event("model", model=part["model"])
                 except provider.ProviderUnavailable:
                     if hold_text and recovery_attempts < 1:
                         recovery_attempts += 1
@@ -802,7 +801,7 @@ async def run(sid, req, state):
                 if needs_execution and not calls and not provider_failed:
                     recovery_attempts += 1
                     if recovery_attempts >= 2:
-                        yield event(
+                        yield await event(
                             "error",
                             message="The assistant could not finish the requested actions. Any completed files and records are preserved; please retry the remaining work.",
                         )
@@ -846,7 +845,7 @@ async def run(sid, req, state):
                     if unknown_files:
                         recovery_attempts += 1
                         if recovery_attempts >= 2:
-                            yield event(
+                            yield await event(
                                 "error",
                                 message="Your completed files are available below, but the assistant could not accurately summarize the remaining work. Please review the file previews.",
                             )
@@ -866,7 +865,7 @@ async def run(sid, req, state):
                     )
                     message["content"] = public_text or None
                     if public_text:
-                        yield event("delta", text=public_text)
+                        yield await event("delta", text=public_text)
 
                 skill_map = {
                     "seasonal_planning_context": "crop-calendar",
@@ -933,10 +932,10 @@ async def run(sid, req, state):
                     message["tool_calls"] = calls = additions + calls
                 messages.append(message)
                 if not calls:
-                    yield event("done", status="completed")
+                    yield await event("done", status="completed")
                     return
                 if message.get("content"):
-                    yield event("delta", text="\n\n")
+                    yield await event("delta", text="\n\n")
                 read_only = {
                     "read_file",
                     "load_skill",
@@ -972,7 +971,7 @@ async def run(sid, req, state):
                             continue
                         parallel_started[cid] = time.perf_counter()
                         parallel[cid] = asyncio.create_task(executor.run(name, args))
-                        yield event(
+                        yield await event(
                             "tool_started",
                             call_id=cid,
                             tool=name,
@@ -1000,7 +999,7 @@ async def run(sid, req, state):
                         )
                         if name in {"create_file", "revise_file"}:
                             execution_contract.validate_seasonal_draft(args, contract)
-                        if name == "ask_farmer" or TOOLS[name].approval:
+                        if name == "ask_farmer" or (TOOLS[name].approval and not (name == "save_task" and "save_task" in contract["reads"])):
                             review_labels = (
                                 await executor.approval_labels(args)
                                 if TOOLS[name].approval
@@ -1027,15 +1026,15 @@ async def run(sid, req, state):
                                         "content": '{"skipped":true,"reason":"Waiting for farmer input"}',
                                     }
                                 )
-                            yield event(
+                            yield await event(
                                 state["pending"]["kind"],
                                 pending=state["pending"],
                                 label=TOOLS[name].label,
                             )
-                            yield event("done", status="waiting")
+                            yield await event("done", status="waiting")
                             return
                         if call_id not in parallel:
-                            yield event(
+                            yield await event(
                                 "tool_started",
                                 call_id=call_id,
                                 tool=name,
@@ -1048,14 +1047,14 @@ async def run(sid, req, state):
                         result = await asyncio.wait_for(
                             parallel[call_id]
                             if call_id in parallel
-                            else executor.run(name, args),
+                            else executor.run(name, args, execution_id=f"{run_id}:{call_id}"),
                             timeout=45 if name == "diagnose_crop" else 20,
                         )
                         if name == "load_skill":
                             if args["skill"] in loaded:
                                 loaded.remove(args["skill"])
                             loaded.append(args["skill"])
-                        yield event(
+                        yield await event(
                             "tool_completed",
                             call_id=call_id,
                             tool=name,
@@ -1065,7 +1064,7 @@ async def run(sid, req, state):
                         )
                     except (ValueError, ValidationError) as exc:
                         result = {"error": str(exc)[:300]}
-                        yield event(
+                        yield await event(
                             "tool_failed",
                             call_id=call_id,
                             tool=name,
@@ -1079,7 +1078,7 @@ async def run(sid, req, state):
                         result = {
                             "error": "This tool could not finish. Its data source may be unavailable. No success is implied."
                         }
-                        yield event(
+                        yield await event(
                             "tool_failed",
                             call_id=call_id,
                             tool=name,
@@ -1093,24 +1092,24 @@ async def run(sid, req, state):
                             "content": bounded_result(result),
                         }
                     )
-            yield event(
+            yield await event(
                 "error",
                 message="This request reached its step limit. Try one smaller task at a time.",
             )
         except asyncio.CancelledError:
-            event("cancelled", label="Run stopped")
+            await event("cancelled", label="Run stopped")
             raise
         except provider.ProviderUnavailable as exc:
-            yield event("error", message=str(exc))
+            yield await event("error", message=str(exc))
         except Exception as exc:
             logger.warning("Assistant run failed (%s)", type(exc).__name__)
-            yield event(
+            yield await event(
                 "error",
                 message="The run could not finish. Please retry or start a new conversation.",
             )
         finally:
             if visible["status"] == "working":
-                event("cancelled", label="Run interrupted")
+                await event("cancelled", label="Run interrupted")
                 for activity in visible["activities"]:
                     if activity["status"] == "running":
                         activity["status"] = "error"

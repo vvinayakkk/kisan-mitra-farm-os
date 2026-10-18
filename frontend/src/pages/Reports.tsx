@@ -149,7 +149,7 @@ export default function Reports() {
 
 
   const { data: rawSensor, dataUpdatedAt: sensorUpdatedAt } = useQuery({
-    queryKey: ['latestSensorData', 'WS01'],
+    queryKey: ['classicSensor', 'Reports', 'WS01'],
     queryFn: async () => {
       try {
         const r = await apiFetch(`${API}/latest/WS01`);

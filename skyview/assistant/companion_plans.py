@@ -27,7 +27,7 @@ def snapshot(owner):
     with db.connection(owner) as conn:
         profile = repository.rows(
             conn,
-            "SELECT f.preferred_language,r.name AS state FROM sv3.farmers f JOIN sv3.regions r ON r.id=f.region_id WHERE f.id=:owner",
+            "SELECT f.preferred_language,coalesce(r.name,'') AS state FROM sv3.farmers f LEFT JOIN sv3.regions r ON r.id=f.region_id WHERE f.id=:owner",
             {"owner": owner},
         )[0]
         cycles = repository.rows(

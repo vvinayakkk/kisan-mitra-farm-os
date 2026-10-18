@@ -21,6 +21,9 @@ RUNTIME_MIGRATIONS = (
     "whatsapp-runtime.sql",
     "market-read-runtime.sql",
     "station-read-runtime.sql",
+    "admin-runtime.sql",
+    "default-farm-runtime.sql",
+    "station-reference-runtime.sql",
 )
 
 

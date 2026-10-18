@@ -148,7 +148,19 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet>
       _native = !_useRecording &&
           await _recognizer.initialize(onError: (_) {
             if (mounted && _phase == LivePhase.listening) {
-              _fail('Speech recognition paused. Tap resume or use recording.');
+              if (_heard.trim().isNotEmpty) {
+                _finishTurn(_generation);
+              } else {
+                _fallbackToRecording();
+              }
+            }
+          }, onStatus: (status) {
+            if ((status == 'done' || status == 'notListening') && mounted && _phase == LivePhase.listening) {
+              final activeTurn = _generation;
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (!mounted || activeTurn != _generation || _phase != LivePhase.listening) return;
+                if (_heard.trim().isNotEmpty) { _finishTurn(activeTurn); } else { _fallbackToRecording(); }
+              });
             }
           });
       if (!mounted || turn != _generation) return;
@@ -157,7 +169,7 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet>
           listenOptions: SpeechListenOptions(
               localeId: speechLanguage(ref.read(languageProvider).code),
               listenFor: Duration(seconds: widget.maxSeconds),
-              pauseFor: const Duration(milliseconds: 900),
+              pauseFor: const Duration(seconds: 2),
               partialResults: true,
               cancelOnError: true,
               listenMode: ListenMode.dictation),
@@ -203,6 +215,19 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet>
     });
   }
 
+  bool _recovering = false;
+  Future<void> _fallbackToRecording() async {
+    if (_recovering || !mounted || _phase != LivePhase.listening) return;
+    _recovering = true;
+    _useRecording = true;
+    _generation++;
+    setState(() => _phase = LivePhase.understanding);
+    await _stopListening();
+    await _recognizer.cancel();
+    _recovering = false;
+    if (mounted) await _listen();
+  }
+
   Future<void> _stopListening() async {
     _limit?.cancel();
     await _levels?.cancel();
@@ -223,10 +248,14 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet>
             .stopAndTranscribe(speechLanguage(ref.read(languageProvider).code));
       }
       if (text.isEmpty) {
-        if (mounted) _fail('No words heard yet. Tap resume to try again.');
+        if (mounted && turn == _generation) await _listen();
         return;
       }
     } catch (e) {
+      if (e is ApiException && e.message == 'fos.assistant.no_speech'.tr()) {
+        if (mounted && turn == _generation) await _listen();
+        return;
+      }
       return _fail(e is ApiException
           ? e.message
           : 'Audio could not finish. Please try again.');
@@ -319,6 +348,10 @@ class _LiveVoiceSheetState extends ConsumerState<LiveVoiceSheet>
         }
       });
     } catch (e) {
+      if (e is ApiException && e.message == 'fos.assistant.no_speech'.tr()) {
+        if (mounted && turn == _generation) await _listen();
+        return;
+      }
       return _fail(e is ApiException
           ? e.message
           : 'Audio could not finish. Please try again.');

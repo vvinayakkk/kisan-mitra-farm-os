@@ -24,7 +24,7 @@ declare global {
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-export default function FarmersMap() {
+export default function FarmersMap({embedded = false}: {embedded?: boolean}) {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -63,6 +63,7 @@ export default function FarmersMap() {
     setLoading(true);
     try {
       const res = await apiFetch(`${API_URL}/api/marketplace/farmers`);
+      if (!res.ok) throw new Error("Could not load the farmer directory.");
       const data = await res.json();
       if (data.status === "success") {
         setFarmers(data.farmers);
@@ -205,11 +206,11 @@ export default function FarmersMap() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", position: "relative" }}>
-      <FarmBackground />
-      <div style={{ position: "relative", zIndex: 50 }}>
-        <DashboardHeader lastUpdateSeconds={0} sensorNodeOnline={true} />
-      </div>
+    <div style={{ minHeight: embedded ? "70vh" : "100vh", position: "relative" }}>
+      {!embedded && <FarmBackground />}
+      {!embedded && <div style={{ position: "relative", zIndex: 50 }}>
+        <DashboardHeader lastUpdateSeconds={0} sensorNodeOnline={false} />
+      </div>}
 
       <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "2rem", position: "relative", zIndex: 40 }}>
 

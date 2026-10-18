@@ -86,7 +86,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       _shown = 9;
     });
     final tools = ref.read(workspaceToolsProvider);
-    final args = {'commodity': crop, 'state': _state.text.trim(), 'observed_only': ref.read(authProvider).mode != BackendMode.demo, if (market != null) 'market': market};
+    final args = {'commodity': crop, 'state': _state.text.trim(), 'observed_only': false, if (market != null) 'market': market};
     final generation = ++_searchGeneration;
     final key = args.toString();
     if (_queryKey != key) {

@@ -42,7 +42,7 @@ it("limits Today to three next steps and follows its named calendar destination"
   expect(screen.queryByText("Step 4")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: /Step 1/ }));
   expect(navigate).toHaveBeenCalledWith("calendar");
-  expect(screen.getAllByText("Sample").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("Reference data").length).toBeGreaterThan(0);
 });
 it("saves actual rupee expenses using the exact server contract", async () => {
   mocks.fetch.mockImplementation((_p: string, o: RequestInit) =>

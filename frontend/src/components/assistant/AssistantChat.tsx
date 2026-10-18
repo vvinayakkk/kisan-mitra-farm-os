@@ -112,7 +112,7 @@ function ReviewValue({ value }: { value: unknown }) {
   );
 }
 
-function FarmerQuestion({ pending }: { pending: Pending }) {
+export function FarmerQuestion({ pending }: { pending: Pending }) {
   const workspace = useAssistant();
   const tasks = workspace.tasks;
   const photos = workspace.attachments.filter((file) =>
@@ -1085,7 +1085,7 @@ export function AssistantChat({
           rows={2}
           placeholder={
             state.pending
-              ? "Complete the card above to continue…"
+              ? "You can draft your next message while reviewing the card…"
               : minimal
                 ? {
                     calendar: "Ask Mitra to update your plan…",
@@ -1108,7 +1108,6 @@ export function AssistantChat({
           }
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={!!state.pending || state.loading}
           maxLength={6000}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {

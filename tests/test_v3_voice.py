@@ -329,3 +329,15 @@ def test_transcription_is_reviewable_and_never_saved(client, monkeypatch):
     assert response.json()["requires_review"] is True
     assert response.json()["saved"] is False
     assert response.json()["transcription_mode"] == "completed_recording"
+
+
+@pytest.mark.asyncio
+async def test_gemini_only_deployment_supports_voice_completion(monkeypatch):
+    from skyview.utils import llm_pool
+    monkeypatch.setattr(voice, 'get_settings', lambda: SimpleNamespace(GROQ_API_KEYS=[], GEMINI_API_KEY='fixture-key', GEMINI_MODEL='fixture-model'))
+    async def gemini(messages, **kwargs):
+        assert kwargs['model_name']=='fixture-model'
+        assert 'JSON object' in messages[-1]['content']
+        return '{"name":"Farmer"}'
+    monkeypatch.setattr(llm_pool, '_invoke_gemini', gemini)
+    assert await voice.completion([{'role':'user','content':'Farm profile'}], json_mode=True)=='{"name":"Farmer"}'

@@ -49,14 +49,17 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
           const uid = currentIdentityUid();
           if (!uid) throw new Error('Missing phone identity');
           if (localStorage.getItem('firebase-session-uid') !== uid) clearAssistantSession();
-          await initializeAssistant();
-          await assistantAuthHeaders();
           if (active) {
             localStorage.setItem('firebase-session-uid', uid);
             setIsAuthenticated(true);
+            setAuthReady(true);
           }
+          // Backend session renewal must not hold the signed-in UI hostage.
+          await initializeAssistant();
+          await assistantAuthHeaders();
         } catch {
-          if (active) setIsAuthenticated(false);
+          // Firebase remains authoritative; a temporary API outage is not logout.
+          if (active && !currentIdentityUid()) setIsAuthenticated(false);
         } finally {
           if (active) setAuthReady(true);
         }
@@ -135,7 +138,7 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
         }
         await queryClient.cancelQueries();
         queryClient.clear();
-        await adoptAssistantSession(sid, data.token);
+        await adoptAssistantSession(sid, data.token, { background: true });
         setIsAuthenticated(true);
         if (firebasePhoneEnabled) {
           const uid = currentIdentityUid();

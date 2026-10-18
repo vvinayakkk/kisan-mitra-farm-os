@@ -1,3 +1,5 @@
+import { useAssistant, initializeAssistant, sendAssistant, newConversation } from "@/lib/assistantClient";
+import { FarmerQuestion } from "@/components/assistant/AssistantChat";
 import { VoiceInput } from "@/components/VoiceInput";
 import { ProvenanceBadge, type Provenance } from "@/components/assistant/DataStatus";
 import { apiFetch } from "@/lib/apiClient";
@@ -351,19 +353,21 @@ export default function Advisor() {
   const { t, language } = useLanguage();
 
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const cached = sessionStorage.getItem("advisorChatHistory");
-    return cached ? JSON.parse(cached) : [];
-  });
+  const assistant = useAssistant();
+  const messages: ChatMessage[] = assistant.messages.map(message => ({
+    id: message.id, sender: message.role === 'user' ? 'user' : 'bot', text: message.text,
+    status: message.error ? 'error' : message.status === 'working' ? 'thinking' : 'done',
+    error: message.error,
+    steps: message.activities.map(activity => ({process: activity.call_id, label: activity.label, done: activity.status !== 'running', data: activity.result})),
+  }));
   const [inputText, setInputText] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const error = assistant.error;
+  useEffect(() => { void initializeAssistant(); }, []);
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    sessionStorage.setItem("advisorChatHistory", JSON.stringify(messages));
-  }, [messages]);
+
 
 
   useEffect(() => {
@@ -372,7 +376,7 @@ export default function Advisor() {
 
 
   const { data: sensorData = { temperature: NaN, humidity: NaN, wind_speed: NaN, rainfall: NaN, soil_moisture: NaN, light: NaN, uv_index: NaN, pressure: NaN, provenance: undefined as Provenance | undefined, data_origin: "unavailable", timestamp: "" }, dataUpdatedAt: sensorUpdatedAt } = useQuery({
-    queryKey: ['latestSensorData', 'WS01'],
+    queryKey: ['classicSensor', 'LegacyAdvisor', 'WS01'],
     queryFn: async () => {
       const r = await apiFetch(`${API_URL}/api/sensors/latest/WS01`);
       if (!r.ok) throw new Error('Sensor fetch failed');
@@ -435,128 +439,13 @@ export default function Advisor() {
 
   const handleSendMessage = async (textToSend: string) => {
     const trimmed = textToSend.trim();
-    if (!trimmed) return;
-
+    if (!trimmed || assistant.running || assistant.pending) return;
     setInputText('');
-
-    const userMsgId = Date.now().toString();
-    const userMsg: ChatMessage = {
-      id: userMsgId,
-      sender: 'user',
-      text: trimmed,
-    };
-
-    const botMsgId = (Date.now() + 1).toString();
-    const botMsg: ChatMessage = {
-      id: botMsgId,
-      sender: 'bot',
-      text: '',
-      status: 'thinking',
-      steps: [],
-    };
-
-    setMessages(prev => [...prev, userMsg, botMsg]);
-    setExpandedSteps(prev => ({ ...prev, [botMsgId]: true }));
-
-    setTimeout(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-
-    try {
-      const phone = localStorage.getItem('user_phone') || undefined;
-      const stationId = localStorage.getItem('hardware_device_id') || 'WS01';
-      const langCode = getSarvamLanguageCode(language);
-
-      const response = await apiFetch(`${API_URL}/api/voice/agent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: trimmed,
-          stream_steps: true,
-          language: langCode,
-          phone,
-          station_id: stationId,
-        }),
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let partialLine = '';
-
-      while (reader) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = (partialLine + chunk).split('\n');
-        partialLine = lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const raw = line.startsWith('data: ') ? line.slice(6) : line;
-          try {
-            const evt = JSON.parse(raw);
-            if (evt.type === 'step') {
-              setMessages(prev => prev.map(m => {
-                if (m.id === botMsgId) {
-                  const steps = m.steps || [];
-                  const exists = steps.find(s => s.process === evt.process);
-                  if (exists) {
-                    return {
-                      ...m,
-                      steps: steps.map(s => s.process === evt.process ? { ...s, label: evt.label, data: evt.data || s.data } : s)
-                    };
-                  } else {
-                    return {
-                      ...m,
-                      steps: [...steps, { process: evt.process, label: evt.label, data: evt.data }]
-                    };
-                  }
-                }
-                return m;
-              }));
-            } else if (evt.type === 'done') {
-              setMessages(prev => prev.map(m => {
-                if (m.id === botMsgId) {
-                  const steps = m.steps || [];
-                  const updatedSteps = steps.map((s, idx) => idx === steps.length - 1 ? { ...s, done: true } : s);
-                  return {
-                    ...m,
-                    text: evt.response || '',
-                    status: 'done',
-                    steps: updatedSteps
-                  };
-                }
-                return m;
-              }));
-            }
-          } catch (e) {
-            console.warn("SSE json decode skipped", line, e);
-          }
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      const msg = err instanceof Error ? err.message : 'Unknown connection error';
-      setMessages(prev => prev.map(m => {
-        if (m.id === botMsgId) {
-          return { ...m, status: 'error', error: msg };
-        }
-        return m;
-      }));
-    } finally {
-      setTimeout(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
+    await sendAssistant(trimmed, { language: getSarvamLanguageCode(language) });
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
   const clearChat = () => {
-    if (window.confirm("Are you sure you want to clear conversation history?")) {
-      setMessages([]);
-      sessionStorage.removeItem("advisorChatHistory");
-    }
+    if (!assistant.running && window.confirm('Start a new conversation? Your previous chat stays in history.')) void newConversation();
   };
 
   const toggleSteps = (msgId: string) => {
@@ -1030,6 +919,7 @@ export default function Advisor() {
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
               }}>
+                {assistant.pending && !assistant.running && <FarmerQuestion key={assistant.pending.id} pending={assistant.pending} />}
                 {error && (
                   <p style={{ color: "#EF4444", fontSize: 11, margin: "0 0 8px 4px", textAlign: "left" }}>
                     {error}
@@ -1066,7 +956,7 @@ export default function Advisor() {
                     {                 }
                     <button
                       onClick={() => handleSendMessage(inputText)}
-                      disabled={!inputText.trim()}
+                      disabled={!inputText.trim() || assistant.running || !!assistant.pending}
                       style={{
                         border: "none", background: "none", cursor: "pointer",
                         color: inputText.trim() ? "#2ECC71" : (isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"),

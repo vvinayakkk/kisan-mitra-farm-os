@@ -3,7 +3,7 @@
 abstract final class AppConfig {
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8001',
+    defaultValue: 'https://kisan-mitra-api-344920654513.asia-south1.run.app',
   );
 
   static const stationId = String.fromEnvironment(

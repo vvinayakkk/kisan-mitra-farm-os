@@ -148,6 +148,8 @@ function FeatureFrame({
   );
 }
 interface Diagnostic {
+  bounding_boxes?: {x:number;y:number;width:number;height:number}[];
+  bounding_box_explanation?: string;
   disease_name: string;
   crop_identified: string;
   confidence: number;
@@ -232,7 +234,12 @@ function Crops({ active }: { active: boolean }) {
             aria-label="Choose crop photo"
           >
             {photo ? (
-              <img src={photo} alt="Crop photo selected for inspection" />
+              <span className="crop-annotated-photo" style={{position:"relative",display:"block",width:"100%",lineHeight:0}}>
+                <img src={photo} alt="Crop photo selected for inspection" style={{display:"block",height:"auto",maxHeight:"none",width:"100%"}} />
+                {!!result?.bounding_boxes?.length && <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Areas identified in the crop assessment" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}>
+                  {result.bounding_boxes.map((box,i)=><rect key={i} x={box.x} y={box.y} width={box.width} height={box.height} fill="rgba(245,158,11,.12)" stroke="#f59e0b" strokeWidth=".5" />)}
+                </svg>}
+              </span>
             ) : (
               <>
                 <Camera size={35} />

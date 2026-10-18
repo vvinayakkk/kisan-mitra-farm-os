@@ -179,7 +179,7 @@ async def _stream_attempt(
                 }
             )
         if groq and model.startswith("openai/gpt-oss"):
-            payload["reasoning_effort"] = "medium"
+            payload["reasoning_effort"] = os.getenv("ASSISTANT_REASONING_EFFORT", "low")
         started = False
         calls, content = {}, ""
         try:

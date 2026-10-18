@@ -323,7 +323,7 @@ TOOLS = {
     ),
     "save_task": Tool(
         "Saving a farm task",
-        "Create a dated task after the farmer reviews it. This is a saved task, not a scheduled notification or hardware command.",
+        "Create a dated task immediately when explicitly requested with a title and date; ask for missing details. For an unsolicited suggestion, get the farmer’s approval first. This is a saved task, not a scheduled notification or hardware command.",
         models.TaskArgs,
         True,
     ),

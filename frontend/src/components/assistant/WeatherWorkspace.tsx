@@ -95,6 +95,7 @@ export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: st
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
+  useEffect(() => { if (navigator.geolocation) useNearby(); }, []);
   const [wallClock, setWallClock] = useState(() => new Date());
   useEffect(() => {
     const tick = () => setWallClock(new Date());

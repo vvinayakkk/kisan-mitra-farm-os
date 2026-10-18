@@ -118,6 +118,14 @@ def sync_runtime_catalog():
     with _lock:
         if database_key in _registered:
             return {"skills": len(skills), "tools": len(tools), "changed": False}
+        # A fresh Cloud Run instance normally starts with an already-installed
+        # catalogue. Two reads avoid hundreds of redundant writes on cold start.
+        with db.connection() as conn:
+            installed_tools = set(conn.execute(text("SELECT code,version FROM sv3.tool_versions WHERE active")).all())
+            installed_skills = set(conn.execute(text("SELECT code,version FROM sv3.skill_versions WHERE active")).all())
+        if installed_tools == {(item["code"], item["version"]) for item in tools} and installed_skills == {(item["code"], item["version"]) for item in skills}:
+            _registered.add(database_key)
+            return {"skills": len(skills), "tools": len(tools), "changed": False}
         with db.connection(write=True, ingest=True) as conn:
             conn.execute(
                 text(

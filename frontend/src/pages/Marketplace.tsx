@@ -208,6 +208,7 @@ export default function Marketplace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
+      if (!response.ok) throw new Error("This request could not be completed. Please retry.");
       const data = await response.json();
       if (data.status === "success") {
         setMatches(data.matches);
@@ -231,6 +232,7 @@ export default function Marketplace() {
           body: JSON.stringify({ phone, max_distance_km: 1000.0 }),
         },
       );
+      if (!response.ok) throw new Error("This request could not be completed. Please retry.");
       const data = await response.json();
       if (data.status === "success") {
         setCircularLoops(data.loops);
@@ -249,6 +251,7 @@ export default function Marketplace() {
     setPoolingLoading(true);
     try {
       const response = await apiFetch(`${API_URL}/api/marketplace/pooling`);
+      if (!response.ok) throw new Error("This request could not be completed. Please retry.");
       const data = await response.json();
       if (data.status === "success") {
         setPools(data.clusters);
@@ -306,9 +309,13 @@ export default function Marketplace() {
           crop: cropToUse,
         }),
       });
+      if (!response.ok) throw new Error("This request could not be completed. Please retry.");
       const data = await response.json();
       if (data.status === "success") {
-        setNegotiationResult(data.negotiation);
+        setNegotiationResult({
+          details: { distance_km: match.distance_km ?? 'Not supplied', transport_cost_rs: 'Not quoted', mandi_rate_reference: 'Not supplied', suggested_offset_rs: 'Not agreed', agreement_terms: data.message || 'Proposal only. Confirm availability, dates and terms with the farmer.' },
+          logs: (data.negotiation_log || []).map((text: string) => ({ speaker: 'Mitra', text })),
+        });
       }
     } catch (err) {
       toast({

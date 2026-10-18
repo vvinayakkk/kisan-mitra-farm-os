@@ -259,17 +259,17 @@ async def run(
     request: Request,
     authorization: str | None = Header(default=None),
 ):
-    authorize(sid, authorization)
+    await asyncio.to_thread(authorize, sid, authorization)
     lock = _locks.setdefault(sid, asyncio.Lock())
     if lock.locked():
         raise HTTPException(409, "A request is already running in this conversation.")
     await lock.acquire()
-    lease = store.claim_run(sid)
+    lease = await asyncio.to_thread(store.claim_run, sid)
     if not lease:
         lock.release()
         _locks.pop(sid, None)
         raise HTTPException(409, "A request is already running in this conversation.")
-    state = store.load(sid)
+    state = await asyncio.to_thread(store.load, sid)
     try:
         engine.preflight(state, req)
         if any(
@@ -297,12 +297,17 @@ async def run(
         else:
             state.pop("mission_context", None)
     except ValueError as exc:
-        store.release_run(sid, lease)
+        await asyncio.to_thread(store.release_run, sid, lease)
         lock.release()
         _locks.pop(sid, None)
         raise HTTPException(422, str(exc)) from exc
 
     async def stream():
+        from skyview.assistant.v3_store import identity_scope
+        # Thread offloads inherit this request-local scope. No authentication
+        # decisions or owner identities are cached between requests.
+        scope = identity_scope()
+        scope.__enter__()
         generator = engine.run(sid, req, state)
         try:
             async with asyncio.timeout(180):
@@ -325,10 +330,11 @@ async def run(
                 await generator.aclose()
             finally:
                 try:
-                    store.release_run(sid, lease)
+                    await asyncio.to_thread(store.release_run, sid, lease)
                 finally:
                     lock.release()
                     _locks.pop(sid, None)
+                    scope.__exit__(None, None, None)
 
     return StreamingResponse(
         stream(),
@@ -483,9 +489,7 @@ async def station_data(
             and bool(data.get("timestamp")),
             "station_id": station_id,
             "data": data,
-            "source": "Simulated station readings"
-            if mode() == "v3_demo"
-            else "Station measurements",
+            "source": "Stored station reference" if data.get("reference") else "Station measurements",
             "provenance": data.get("provenance", {}),
         }
     from skyview.assistant.data_sources import station_snapshot

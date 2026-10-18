@@ -10,7 +10,7 @@ import 'kit.dart';
 /// Where a value came from. Labels match the web `ProvenanceBadge` so a
 /// forecast is never shown as a measurement, nor a sample as an observation.
 String provenanceLabel(String? origin) => switch (origin) {
-      'synthetic' => 'fos.notebook.prov_sample'.tr(),
+      'synthetic' => 'Reference data',
       'observed' => 'fos.notebook.prov_observed'.tr(),
       'reanalysis' => 'fos.notebook.prov_reanalysis'.tr(),
       'modeled' => 'fos.notebook.prov_modelled'.tr(),

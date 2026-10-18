@@ -1,5 +1,5 @@
 import { WorkspaceEntry } from "@/components/WorkspaceEntry";
-import { invalidateWorkspaceCaches } from "@/lib/workspaceCacheLifecycle";
+import { invalidateWorkspaceCaches, onWorkspaceCacheInvalidated } from "@/lib/workspaceCacheLifecycle";
 import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -59,7 +59,7 @@ const queryClient = new QueryClient({
 
 function LoginRoute() {
   const { isAuthenticated, authReady } = useAuth();
-  if (!authReady) return <div role="status" className="workspace-loading">Opening your farm…</div>;
+  if (!authReady) return <div role="status" className="workspace-loading">Kisan Mitra</div>;
   if (!isAuthenticated) return <Login />;
   return <Navigate to={"/workspace"} replace />;
 }
@@ -88,6 +88,11 @@ const AppContent = () => {
   const { isAuthenticated } = useAuth();
   const { pathname } = useLocation();
 
+  useEffect(() => onWorkspaceCacheInvalidated(reason => {
+    if (reason === 'session') queryClient.clear();
+    else void queryClient.invalidateQueries({ refetchType: 'none' });
+  }), []);
+
   useEffect(() => {
     if (!isAuthenticated) return;
     ultraCache.warmUpPlatform();
@@ -105,7 +110,7 @@ const AppContent = () => {
       <Suspense
         fallback={
           <div className="workspace-loading" role="status">
-            Opening your farm…
+            Kisan Mitra
           </div>
         }
       >
@@ -184,7 +189,7 @@ const AppContent = () => {
                 <Suspense
                   fallback={
                     <div style={{ padding: 40 }}>
-                      Opening your farm workspace…
+                      Your farm workspace
                     </div>
                   }
                 >

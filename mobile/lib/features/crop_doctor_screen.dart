@@ -98,11 +98,14 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
                   if (_image != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.memory(_image!,
-                          height: 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          semanticLabel: 'fos.farm.selected_crop_photo'.tr()),
+                      child: Stack(children: [
+                        Image.memory(_image!, width: double.infinity,
+                            fit: BoxFit.fitWidth,
+                            semanticLabel: 'fos.farm.selected_crop_photo'.tr()),
+                        Positioned.fill(child: IgnorePointer(child: CustomPaint(
+                          painter: _CropBoxes(d?['bounding_boxes'] as List? ?? const []),
+                        ))),
+                      ]),
                     )
                   else
                     EmptyView(
@@ -244,4 +247,22 @@ class _CropDoctorScreenState extends ConsumerState<CropDoctorScreen> {
       ),
     );
   }
+}
+
+class _CropBoxes extends CustomPainter {
+  _CropBoxes(this.boxes);
+  final List boxes;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pen = Paint()..color = const Color(0xFFFFB300)..style = PaintingStyle.stroke..strokeWidth = 2.5;
+    for (final value in boxes) {
+      if (value is! Map) continue;
+      double n(String key) => ((value[key] as num?)?.toDouble() ?? 0).clamp(0, 100) / 100;
+      final x = n('x'), y = n('y');
+      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x * size.width, y * size.height,
+        n('width').clamp(0, 1 - x) * size.width, n('height').clamp(0, 1 - y) * size.height), const Radius.circular(5)), pen);
+    }
+  }
+  @override
+  bool shouldRepaint(covariant _CropBoxes oldDelegate) => oldDelegate.boxes != boxes;
 }

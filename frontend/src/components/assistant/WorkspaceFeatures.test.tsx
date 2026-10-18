@@ -61,12 +61,12 @@ it("shows dated market observations while an unavailable trend stays unavailable
   render(<WorkspaceFeatures view="markets" />);
   expect(await screen.findByText("Sample market")).toBeInTheDocument();
   expect(screen.getByText(/2026-10-14/)).toBeInTheDocument();
-  expect(screen.getAllByText("Sample").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("Reference data").length).toBeGreaterThan(0);
   expect(screen.getByText(/enough dated observations/)).toBeInTheDocument();
   expect(mocks.inspect).toHaveBeenCalledWith("market_prices", {
     commodity: "Wheat",
     state: "",
-    observed_only: true,
+    observed_only: false,
   });
 });
 it("shows data source failure instead of retaining invented prices", async () => {
@@ -105,7 +105,7 @@ it("searches an exact crop, state and mandi without showing future rates", async
   fireEvent.change(screen.getByRole("textbox", { name: "State optional" }), { target: { value: "Maharashtra" } });
   fireEvent.change(screen.getByRole("textbox", { name: "Mandi optional" }), { target: { value: "Sample mandi" } });
   fireEvent.click(screen.getByRole("button", { name: "Find prices" }));
-  await waitFor(() => expect(mocks.inspect).toHaveBeenCalledWith("market_trend", { commodity: "Tomato", state: "Maharashtra", market: "Sample mandi", observed_only: true }));
+  await waitFor(() => expect(mocks.inspect).toHaveBeenCalledWith("market_trend", { commodity: "Tomato", state: "Maharashtra", market: "Sample mandi", observed_only: false }));
   expect(await screen.findByText("Available mandi")).toBeInTheDocument();
 });
 it("does not query hidden market and support pages", async () => {

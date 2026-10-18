@@ -653,15 +653,18 @@ export function clearAssistantSession(): void {
 }
 
 
-export async function adoptAssistantSession(id: string, token: string): Promise<void> {
+export async function adoptAssistantSession(id: string, token: string, options: { background?: boolean } = {}): Promise<void> {
   if (!/^[a-f0-9]{32}$/.test(id) || !token) throw new Error("Invalid workspace capability.");
   clearAssistantSession();
   session = { id, token };
   const generation = sessionGeneration, owner = session;
   try { localStorage.setItem(key, JSON.stringify(session)); } catch {                                      }
-  await initializeAssistant();
-  assertCurrent(generation, owner);
-  if (!state.ready) throw new Error(state.error || "Your workspace could not initialize.");
+  const hydrate = initializeAssistant().then(() => {
+    assertCurrent(generation, owner);
+    if (!state.ready) throw new Error(state.error || "Your workspace could not initialize.");
+  });
+  if (options.background) { void hydrate.catch(() => {}); return; }
+  await hydrate;
 }
 
 

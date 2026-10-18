@@ -75,11 +75,7 @@ class _StationScreenState extends ConsumerState<StationScreen> {
       if (_station == null) {
         final stations =
             asMaps(asMap(await api.get('/api/sensors/stations'))['stations']);
-        if (stations.isEmpty) {
-          if (mounted) setState(() => _snapshot = {'available': false});
-          return;
-        }
-        _station = str(stations.first['station_id']);
+        _station = stations.isEmpty ? 'WS01' : str(stations.first['station_id']);
       }
       final data =
           asMap(await api.get('/api/assistant/station/$_station', fresh: true));

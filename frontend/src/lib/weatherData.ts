@@ -9,6 +9,12 @@ const API_BASE = HOST_URL.endsWith('/')
   : `${HOST_URL}/api/sensors`;
 const STATION_ID = import.meta.env.VITE_STATION_ID || 'WS01';
 
+export function formatWindDirection(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(((value % 360 + 360) % 360) / 45) % 8];
+}
+
 export interface WeatherData {
   timestamp: Date;
   temperature: number;
@@ -92,7 +98,7 @@ export async function getCurrentWeatherData(): Promise<WeatherData> {
       humidity: data.humidity ?? NaN,
       pressure: data.pressure ?? NaN,
       windSpeed: data.windSpeed ?? data.wind_speed ?? NaN,
-      windDirection: typeof (data.windDirection ?? data.wind_direction) === 'string' ? data.windDirection ?? data.wind_direction : '—',
+      windDirection: formatWindDirection(data.windDirection ?? data.wind_direction),
       rainfall: data.rainfall ?? NaN,
       uvIndex: data.uvIndex ?? data.uv_index ?? NaN,
       lightIntensity: data.lightIntensity ?? data.lux ?? NaN,
@@ -126,7 +132,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
 
     const lastUpdate = new Date(data.timestamp);
     const now = new Date();
-    const lastUpdateSeconds = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
+    const lastUpdateSeconds = Number.isFinite(lastUpdate.getTime()) ? Math.max(0, Math.floor((now.getTime() - lastUpdate.getTime()) / 1000)) : 0;
 
     return {
       batteryVoltage: battery,
@@ -134,7 +140,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       solarCharging: solar > 0,
       loraLinkActive: data.loraLinkActive === true || data.lora_link_active === true,
       edgeSystemRunning: data.edgeSystemRunning === true || data.edge_system_running === true,
-      sensorNodeOnline: lastUpdateSeconds <= 300,
+      sensorNodeOnline: data.available !== false && Number.isFinite(lastUpdate.getTime()) && lastUpdateSeconds <= 300 && !data.provenance?.stale,
       lastUpdateSeconds: Math.max(0, lastUpdateSeconds),
     };
   } catch (error) {
@@ -155,14 +161,14 @@ export async function getRecentAlerts(): Promise<Alert[]> {
     }));
   } catch (error) {
     console.error('Error fetching alerts:', error);
-    return [];
+    throw error;
   }
 }
 
 
 export async function getHistoricalData(hours: number = 24): Promise<{ time: string; temperature: number; humidity: number; rainfall: number }[]> {
   try {
-    const limit = Math.ceil(hours * 30);
+    const limit = Math.min(2000, Math.max(1, Math.ceil(hours * 30)));
     const url = `${API_BASE}/history/${STATION_ID}?limit=${limit}&hours=${hours}`;
 
     const response = await apiFetch(url);
@@ -200,9 +206,9 @@ export async function getHistoricalData(hours: number = 24): Promise<{ time: str
 
         return {
           time: `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`,
-          temperature: Math.round((record.temperature || 0) * 10) / 10,
-          humidity: Math.round(record.humidity || 0),
-          rainfall: Math.round((record.rainfall || 0) * 10) / 10,
+          temperature: record.temperature == null ? NaN : Math.round(record.temperature * 10) / 10,
+          humidity: record.humidity == null ? NaN : Math.round(record.humidity),
+          rainfall: record.rainfall == null ? NaN : Math.round(record.rainfall * 10) / 10,
         };
       } catch (e) {
         console.error('Error transforming record:', record, e);
@@ -217,6 +223,6 @@ export async function getHistoricalData(hours: number = 24): Promise<{ time: str
   } catch (error) {
     console.error(' Error fetching historical data:', error);
 
-    return [];
+    throw error;
   }
 }

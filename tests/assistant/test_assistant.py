@@ -221,7 +221,7 @@ async def test_task_requires_approval_and_is_scoped_to_session(monkeypatch):
     events = [
         e
         async for e in engine.run(
-            sid, models.RunRequest(message="Save task"), store.load(sid)
+            sid, models.RunRequest(message="Suggest something for my farm"), store.load(sid)
         )
     ]
     assert store.records(sid, "task") == []
@@ -650,3 +650,14 @@ def test_pdf_rejects_unsupported_shaping_instead_of_broken_glyphs():
                 sections=[{"heading": "Test", "text": "Public test"}],
             ),
         )
+
+
+@pytest.mark.asyncio
+async def test_explicit_task_request_saves_without_second_approval(monkeypatch):
+    sid = store.create_session()["id"]
+    scripted(monkeypatch, [call("save_task", {"title": "Inspect wheat", "due_date": "2026-10-20", "notes": "Check leaves"}), {"role": "assistant", "content": "Task saved."}])
+    events = [e async for e in engine.run(sid, models.RunRequest(message="Add a task to inspect wheat on 2026-10-20"), store.load(sid))]
+    assert len(store.records(sid, "task")) == 1
+    assert store.records(store.create_session()["id"], "task") == []
+    assert not store.load(sid).get("pending")
+    assert any(e["type"] == "tool_completed" and e.get("tool") == "save_task" for e in events)

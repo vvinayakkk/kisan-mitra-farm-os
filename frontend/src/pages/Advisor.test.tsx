@@ -43,7 +43,7 @@ it("keeps one station control, every page icon and the original return destinati
   const navigation = screen.getByRole("navigation", {
     name: "Farm tools",
   });
-  expect(navigation.querySelectorAll("button")).toHaveLength(6);
+  expect(navigation.querySelectorAll("button")).toHaveLength(7);
   const core = screen.getByRole("navigation", { name: "Workspace views" });
   expect(core.querySelectorAll("button")).toHaveLength(3);
   expect(core.querySelectorAll("a")).toHaveLength(1);

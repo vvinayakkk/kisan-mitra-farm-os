@@ -1,4 +1,3 @@
-import { reportedMarketsOnly } from "@/lib/localPresentation";
 import { VoiceInput } from "@/components/VoiceInput";
 import { apiFetch } from "@/lib/apiClient";
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -20,6 +19,8 @@ import {
 } from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+// Browse all stored origins while preserving API provenance.
+const reportedMarketsOnly = false;
 
 interface MandiRate {
   state: string;
@@ -157,10 +158,10 @@ function CropCard({ title, data, isDark }: { title: string; data: { prices: numb
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <p style={{ fontSize: 11, color: css.text.secondary(isDark), textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em', margin: 0 }}>{title}</p>
-          <p style={{ fontSize: 20, fontWeight: 800, color: css.text.primary(isDark), margin: '4px 0 0', fontVariantNumeric: 'tabular-nums' }}>₹{data.latest.toLocaleString()}</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: css.text.primary(isDark), margin: '4px 0 0', fontVariantNumeric: 'tabular-nums' }}>{Number.isFinite(data.latest) ? `₹${data.latest.toLocaleString()}` : "No reports"}</p>
         </div>
         <Badge
-          label={`${isUp ? '+' : ''}${data.change}%`}
+          label={data.prices.length > 1 ? 'Stored prices' : 'No trend yet'}
           color={color}
           bg={`${color}14`}
         />
@@ -200,6 +201,7 @@ export default function MandiRates() {
   const {
     data: rates = [],
     isFetching: loading,
+    error: ratesError,
     refetch: fetchRates,
     dataUpdatedAt: ratesUpdatedAt,
   } = useQuery({
@@ -219,7 +221,7 @@ export default function MandiRates() {
     refetchInterval: 30 * 60 * 1000,
   });
 
-  const { data: generalHistory = [] } = useQuery({
+  const { data: generalHistory = [], refetch: refetchGeneralHistory } = useQuery({
     queryKey: ['mandiGeneralHistoryReported', reportedMarketsOnly],
     queryFn: async () => {
       const res = await apiFetch(`${API_URL}/api/mandi/history?observed_only=${reportedMarketsOnly}&limit=1000`);
@@ -233,6 +235,7 @@ export default function MandiRates() {
   const {
     data: historyData = [],
     isFetching: loadingHistory,
+    error: historyError,
     isPlaceholderData: isHistoryPlaceholder,
     dataUpdatedAt: historyUpdatedAt,
     refetch: refetchHistory,
@@ -284,18 +287,10 @@ export default function MandiRates() {
   };
 
   const marqueeItems = useMemo(() => {
-    if (!generalHistory.length) {
-      return [
-        { label: 'Wheat', price: 2240, location: 'Nashik', change: 1.2 },
-        { label: 'Rice', price: 2850, location: 'Indore', change: -0.4 },
-        { label: 'Tomato', price: 1800, location: 'Jaipur', change: 3.5 },
-        { label: 'Potato', price: 1250, location: 'Pune', change: 0.8 },
-      ];
-    }
     return generalHistory.slice(0, 15).map(r => {
-      const price = Number(r.modal_price) || 2000;
-      const change = Math.round(((price % 13) - 6) * 10) / 10;
-      return { label: r.commodity, price, location: r.market, change: change === 0 ? 0.5 : change };
+      const price = Number(r.modal_price);
+      const change = 0;
+      return { label: r.commodity, price, location: r.market, change };
     });
   }, [generalHistory]);
 
@@ -308,17 +303,11 @@ export default function MandiRates() {
         if (cName.includes(crop) && partitioned[crop].length < 8) partitioned[crop].push(Number(r.modal_price));
       });
     });
-    const fallbacks: Record<string, number[]> = {
-      wheat: [2100, 2150, 2120, 2180, 2200, 2190, 2240],
-      rice: [2800, 2820, 2810, 2840, 2830, 2860, 2850],
-      onion: [1400, 1450, 1420, 1480, 1500, 1490, 1520],
-      potato: [1100, 1150, 1120, 1180, 1200, 1190, 1250],
-    };
     const result: Record<string, { prices: number[]; change: number; latest: number }> = {};
     crops.forEach(crop => {
       let prices = partitioned[crop].reverse();
-      if (prices.length < 3) prices = fallbacks[crop];
-      const latest = prices[prices.length - 1] || 0;
+
+      const latest = prices[prices.length - 1] ?? NaN;
       const prev = prices[0] || latest;
       const change = prev > 0 ? ((latest - prev) / prev) * 100 : 0;
       result[crop] = { prices, latest, change: Math.round(change * 100) / 100 };
@@ -439,6 +428,7 @@ export default function MandiRates() {
         </div>
 
         <AIOverview page="mandi" />
+          {(ratesError || historyError) && <p role="alert">Market data could not be loaded. Use Refresh Overview to retry.</p>}
 
         {                       }
         <div style={{
@@ -497,7 +487,7 @@ export default function MandiRates() {
 
           {             }
           <button
-            onClick={() => activeTab === 'market-intelligence' ? refetchHistory() : fetchRates()}
+            onClick={() => { void refetchHistory(); void fetchRates(); void refetchGeneralHistory(); }}
             disabled={isLoading}
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
@@ -549,7 +539,7 @@ export default function MandiRates() {
                         color: isUp ? '#2ECC71' : '#EF4444', fontSize: 11,
                         fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 2,
                       }}>
-                        {isUp ? '▲' : '▼'} {Math.abs(item.change)}%
+                        Stored price
                       </span>
                     </div>
                   );
@@ -584,7 +574,7 @@ export default function MandiRates() {
                       {selectedCommodity || 'Wheat'} Price Trends
                     </h2>
                     <p style={{ fontSize: 12, color: textSecondary, margin: '3px 0 0' }}>
-                      {displayedChartData.length} data points · Live database history
+                      {displayedChartData.length} data points · Stored database history
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -614,7 +604,7 @@ export default function MandiRates() {
                       })}
                     </div>
                     <Badge
-                      label={isCacheHit ? '● CACHED · HIT' : '● LIVE · MISS'}
+                      label={isCacheHit ? '● CACHED · HIT' : '● DATABASE'}
                       color={isCacheHit ? '#2ECC71' : '#F59E0B'}
                     />
                   </div>
@@ -639,7 +629,7 @@ export default function MandiRates() {
                     <div style={{ display: 'flex', gap: 20, marginBottom: 12, flexWrap: 'wrap' }}>
                       {[
                         { color: '#2ECC71', label: 'Modal Price', dash: false },
-                        { color: '#3B82F6', label: '5-Day MA', dash: true },
+                        { color: '#3B82F6', label: '5-record average', dash: true },
                         { color: 'rgba(46,204,113,0.25)', label: 'Min/Max Band', band: true },
                       ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: textSecondary }}>
@@ -698,7 +688,7 @@ export default function MandiRates() {
                                 <p style={{ fontWeight: 700, color: textPrimary, margin: '0 0 6px' }}>{d.date}</p>
                                 <p style={{ color: '#2ECC71', fontWeight: 700, margin: '0 0 3px' }}>Modal: ₹{d.modal?.toLocaleString()}</p>
                                 <p style={{ color: textSecondary, margin: '0 0 3px' }}>Range: ₹{d.min?.toLocaleString()} – ₹{d.max?.toLocaleString()}</p>
-                                <p style={{ color: '#3B82F6', margin: '0 0 3px' }}>5-Day MA: ₹{d.ma?.toLocaleString()}</p>
+                                <p style={{ color: '#3B82F6', margin: '0 0 3px' }}>5-record average: ₹{d.ma?.toLocaleString()}</p>
                                 <p style={{ fontSize: 10, color: textSecondary, margin: 0 }}>{d.market}</p>
                               </div>
                             );
@@ -763,8 +753,8 @@ export default function MandiRates() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   {[
                     { label: 'Records', value: String(historyData.length || '0'), mono: true },
-                    { label: 'Source', value: 'Neon Serverless DB', accent: '#2ECC71' },
-                    { label: 'Cache', value: isCacheHit ? 'HIT · Memcached' : 'MISS · DB Query', accent: isCacheHit ? '#2ECC71' : '#F59E0B' },
+                    { label: 'Source', value: 'Farm database', accent: '#2ECC71' },
+                    { label: 'Cache', value: isCacheHit ? 'Loaded in browser' : 'Database query', accent: isCacheHit ? '#2ECC71' : '#F59E0B' },
                     { label: 'Updated', value: historyRefreshTime || 'Pending' },
                     { label: 'Commodity', value: selectedCommodity || 'Wheat' },
                     { label: 'Region', value: selectedState || 'All States' },
@@ -789,11 +779,11 @@ export default function MandiRates() {
                 {                 }
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: textSecondary }}>Data Ingestion Quality</span>
-                    <span style={{ fontSize: 11, color: '#2ECC71', fontWeight: 700 }}>96%</span>
+                    <span style={{ fontSize: 11, color: textSecondary }}>Report availability</span>
+                    <span style={{ fontSize: 11, color: '#2ECC71', fontWeight: 700 }}>{historyData.length ? "Available" : "No reports"}</span>
                   </div>
                   <div style={{ height: 5, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: '96%', height: '100%', background: '#2ECC71', borderRadius: 4 }} />
+                    <div style={{ width: historyData.length ? '100%' : '0%', height: '100%', background: '#2ECC71', borderRadius: 4 }} />
                   </div>
                 </div>
 

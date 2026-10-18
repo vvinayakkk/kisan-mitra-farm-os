@@ -145,7 +145,7 @@ export default function SystemOverview() {
                                         <div className={`p-4 bg-transparent ${isDark ? 'border-white/20' : 'border-black/20'} border rounded-2xl`}>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-[#2ECC71]">Status</span>
                                             <div className="flex justify-between items-center mt-1">
-                                                <span className={`${isDark ? 'text-white' : 'text-[#1B3A20]'} font-bold`}>Operational</span>
+                                                <span className={`${isDark ? 'text-white' : 'text-[#1B3A20]'} font-bold`}>{systemHealth?.sensorNodeOnline ? 'Receiving readings' : 'No recent readings'}</span>
                                                 <div className="w-2 h-2 rounded-full bg-[#2ECC71] shadow-[0_0_10px_#2ECC71]" />
                                             </div>
                                         </div>
@@ -154,7 +154,7 @@ export default function SystemOverview() {
                                             <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-[#1B3A20]/50'}`}>Telemetry</span>
                                             <div className="flex justify-between items-center mt-1">
                                                 <span className={`${isDark ? 'text-white' : 'text-[#1B3A20]'} font-medium`}>Last Sync</span>
-                                                <span className={`${isDark ? 'text-white/70' : 'text-[#1B3A20]/70'} text-sm`}>Just now</span>
+                                                <span className={`${isDark ? 'text-white/70' : 'text-[#1B3A20]/70'} text-sm`}>{systemHealth?.sensorNodeOnline ? `${systemHealth.lastUpdateSeconds}s ago` : 'Not available'}</span>
                                             </div>
                                         </div>
                                     </div>

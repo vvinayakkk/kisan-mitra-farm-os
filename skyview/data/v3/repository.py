@@ -83,22 +83,11 @@ def _station(db, station_id):
 def station_snapshot(farmer_id, station_id="WS01"):
     with connection(farmer_id) as db:
         station = _station(db, station_id)
-        if not station:
-            return {
-                "available": False,
-                "station_id": station_id,
-                "message": "No station is registered to this farm.",
-                "data_origin": "unavailable",
-            }
-        records = [
-            row["record"]
-            for row in rows(
-                db,
-                "SELECT sv3.latest_station_packet(:station) AS record",
-                {"station": station["id"]},
-            )
-            if row["record"] is not None
-        ]
+        records = [row["record"] for row in rows(
+            db, "SELECT sv3.latest_station_packet(:station) AS record", {"station": station["id"]}
+        ) if row["record"] is not None] if station else []
+        if not records and station_id == "WS01":
+            records = [row["record"] for row in rows(db, "SELECT sv3.station_reference_packets(1) AS record")]
     if not records:
         return {
             "available": False,
@@ -109,7 +98,9 @@ def station_snapshot(farmer_id, station_id="WS01"):
     raw = records[0]
     result = {
         "available": True,
-        "station_id": str(station["station_key"]),
+        "station_id": str(station["station_key"]) if station else "REFERENCE",
+        "reference": bool(raw.get("reference")),
+        "station_connected": bool(station) and not raw.get("reference", False),
         "timestamp": raw["observed_at"],
         "received_at": raw["received_at"],
         "quality_flags": raw["quality_flags"],
@@ -156,13 +147,6 @@ def station_snapshot(farmer_id, station_id="WS01"):
 def weather_history(farmer_id, station_id="WS01", hours=24, limit=100):
     with connection(farmer_id) as db:
         station = _station(db, station_id)
-        if not station:
-            return {
-                "station_id": station_id,
-                "data": [],
-                "totalRecords": 0,
-                "returnedRecords": 0,
-            }
         records = [
             row["record"]
             for row in rows(
@@ -174,9 +158,15 @@ def weather_history(farmer_id, station_id="WS01", hours=24, limit=100):
                     "limit": min(2000, max(1, limit)),
                 },
             )
-        ]
+        ] if station else []
+        if not records and station_id == "WS01":
+            records = [row["record"] for row in rows(
+                db, "SELECT sv3.station_reference_packets(:limit) AS record",
+                {"limit": min(2000, max(1, limit))},
+            )]
     return {
         "station_id": station_id,
+        "reference": bool(records and records[0].get("reference")),
         "data": records,
         "totalRecords": len(records),
         "returnedRecords": len(records),
@@ -453,13 +443,13 @@ def profile(farmer_id):
         ),
         "crops": attrs.get("crops", [r["name"] for r in crops]),
         "active_crop_cycles": [r["name"] for r in crops],
-        "latitude": fields[0]["lat"],
-        "longitude": fields[0]["lon"],
+        "latitude": attrs.get("latitude", fields[0]["lat"]),
+        "longitude": attrs.get("longitude", fields[0]["lon"]),
         "excess_resources": attrs.get(
             "excess_resources", [r["name"] for r in resources]
         ),
         "required_resources": attrs.get("required_resources", []),
-        "whatsapp_number": None,
+        "whatsapp_number": attrs.get("whatsapp_number"),
         "preferred_language": farmer["preferred_language"],
         "data_origin": farmer["origin"],
         "provenance": provenance(farmer),

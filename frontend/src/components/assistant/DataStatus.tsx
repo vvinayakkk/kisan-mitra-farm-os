@@ -12,7 +12,7 @@ export interface Provenance {
   unit?: string;
 }
 const labels: Record<string, string> = {
-  synthetic: "Sample", observed: "Observed", reanalysis: "Reanalysis",
+  synthetic: "Reference data", observed: "Observed", reanalysis: "Reanalysis",
   modeled: "Modelled", forecast: "Forecast", scenario: "Scenario",
   user_reported: "Farmer reported", curated: "Reviewed source", derived: "Calculated",
 };

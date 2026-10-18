@@ -198,7 +198,7 @@ void main() {
 
   test('provenance never labels a forecast as observed', () {
     expect(provenanceLabel('forecast'), 'Forecast');
-    expect(provenanceLabel('synthetic'), 'Sample');
+    expect(provenanceLabel('synthetic'), 'Reference data');
     expect(provenanceLabel(null), 'Source not supplied');
   });
 

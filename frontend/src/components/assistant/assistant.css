@@ -2987,3 +2987,5 @@ button.mitra-helper-heading {
     padding: 82px 17px 18px;
   }
 }
+
+.crop-photo.has-photo { aspect-ratio: auto; min-height: 0; }

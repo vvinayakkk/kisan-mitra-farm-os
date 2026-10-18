@@ -178,3 +178,12 @@ it("accepts a written answer alongside suggested choices", async () => {
   expect(sendAssistant).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({answers:{water:"Shared rainwater tank"},pending_id:"custom-question"}));
   (state as any).pending=null;
 });
+
+
+it("keeps the composer editable while a review is pending", () => {
+  (state as any).pending = {id: "pending-draft", kind: "approval", tool: "save_task", arguments: {title: "Inspect leaves", due_date: "2026-10-19"}};
+  try {
+    render(<AssistantChat />);
+    expect(screen.getByRole("textbox", { name: "Message Kisan Mitra" })).toBeEnabled();
+  } finally { (state as any).pending = null; }
+});

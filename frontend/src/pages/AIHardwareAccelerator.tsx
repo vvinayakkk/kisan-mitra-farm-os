@@ -516,7 +516,7 @@ export default function AIHardwareAccelerator() {
     rainfall: 0, soil_moisture: 50, soil_temperature: 26,
     light_level: 70, pm25: 60, pm10: 120, uv_index: 2, battery_voltage: 12.5,
   }, dataUpdatedAt: sensorUpdatedAt } = useQuery({
-    queryKey: ['latestSensorData', 'WS01'],
+    queryKey: ['classicSensor', 'AIHardwareAccelerator', 'WS01'],
     queryFn: async () => {
       const r = await apiFetch(`${API_URL}/api/sensors/latest/WS01`);
       if (!r.ok) throw new Error('Sensor fetch failed');
@@ -531,7 +531,7 @@ export default function AIHardwareAccelerator() {
         rainfall:         d.rainfall          ?? 0,
         soil_moisture:    d.soilMoisture      ?? d.soil_moisture ?? 50,
         soil_temperature: d.soilTemperature   ?? d.soil_temperature ?? 26,
-        light_level:      d.lightIntensity    ?? d.light_level   ?? 70,
+        light_level:      typeof d.light_level === "number" && d.light_level >= 0 && d.light_level <= 100 ? d.light_level : 70,
         pm25:             d.airQualityPM25    ?? d.pm25          ?? 60,
         pm10:             d.airQualityPM10    ?? d.pm10          ?? 120,
         uv_index:         d.uvIndex           ?? d.uv_index      ?? 2,
@@ -686,7 +686,7 @@ export default function AIHardwareAccelerator() {
                 <span key={s} style={{ fontSize: "0.65rem", padding: "0.15rem 0.5rem", borderRadius: 9999, background: "transparent", color: "#60A5FA", border: "1px solid #60A5FA" }}>{s}</span>
               ))}
             </div>
-            <ActionBtn label="Run Rain Prediction" loadingLabel="Processing on FPGA" loading={loadingRain} onClick={predictRain} isDark={isDark} />
+            <ActionBtn label="Run Rain Prediction" loadingLabel="Processing" loading={loadingRain} onClick={predictRain} isDark={isDark} />
           </div>
 
           {            }
@@ -786,7 +786,7 @@ export default function AIHardwareAccelerator() {
               </div>
             )}
             <HowBlock isDark={isDark} steps={[
-              `Four sensor streams — Soil: ${sensor.soil_moisture}%, Temp: ${sensor.temperature}°C, Humidity: ${sensor.humidity}%, Light: ${sensor.light_level} lux — sent to FPGA via AXI4-Lite burst.`,
+              `Four sensor streams — Soil: ${sensor.soil_moisture}%, Temp: ${sensor.temperature}°C, Humidity: ${sensor.humidity}%, Light: ${sensor.light_level}% (simulation input) — sent to FPGA via AXI4-Lite burst.`,
               "Kalman filter on FPGA removes sensor noise, weights each channel by crop-type sensitivity coefficients.",
               "Fusion score is a 0–100 composite where ≥80 = excellent, <40 = critical intervention needed.",
               "Stress index = normalised deviation from the optimal range registered for the current crop type.",

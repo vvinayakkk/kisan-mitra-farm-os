@@ -31,7 +31,7 @@ describe("identity verification", () => {
       const issued = await result.current.sendOtp("9999999999"); expect(issued.sms_sent).toBe(false);
       expect(await result.current.login("9999999999", "999999")).toBe(true);
     });
-    expect(capabilities.adopt).toHaveBeenCalledWith("a".repeat(32), "server-issued"); expect(result.current.isAuthenticated).toBe(true);
+    expect(capabilities.adopt).toHaveBeenCalledWith("a".repeat(32), "server-issued", { background: true }); expect(result.current.isAuthenticated).toBe(true);
   });
   it("clears workspace capabilities on logout", async () => {
     const { result } = hook(); await act(async () => result.current.logout()); expect(capabilities.clear).toHaveBeenCalled();

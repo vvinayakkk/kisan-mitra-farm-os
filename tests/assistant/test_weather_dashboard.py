@@ -164,3 +164,13 @@ def test_device_weather_rounds_coordinates_and_never_claims_farm_readings(monkey
     assert seen == [(19.12, 73.99)]
     assert result["location_kind"] == "device_area"
     assert "not a farm" in result["forecast"]["note"]
+
+
+def test_device_weather_includes_daily_forecast_for_app_and_web(monkeypatch):
+    monkeypatch.setattr(weather_dashboard, "_public_weather", lambda *args: {
+        "source": "Open-Meteo", "captured_at": "2026-10-18",
+        "daily": {"time": ["2026-10-19"], "temperature_2m_max": [31],
+                  "temperature_2m_min": [22], "precipitation_sum": [4]}})
+    result = weather_dashboard.location_dashboard(19.12, 73.99)
+    assert result["forecast"]["records"] == [{"valid_on": "2026-10-19",
+        "temperature_max_c": 31, "temperature_min_c": 22, "rainfall_mm": 4}]

@@ -6,7 +6,7 @@ vi.mock("@/lib/apiClient", () => ({ apiFetch: api }));
 afterEach(() => vi.clearAllMocks());
 describe("source transparency", () => {
   it("separates demo, forecast and scenario and discloses stale measurements", () => {
-    expect(provenanceLabel({ origin: "synthetic" })).toBe("Sample");
+    expect(provenanceLabel({ origin: "synthetic" })).toBe("Reference data");
     expect(provenanceLabel({ origin: "scenario" })).toBe("Scenario");
     expect(provenanceLabel({ origin: "forecast" })).toBe("Forecast");
     render(<ProvenanceBadge value={{ origin: "observed", stale: true, source: "Station packet", observed_at: "2026-10-01" }} />);

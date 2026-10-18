@@ -9,6 +9,8 @@ import json
 import os
 import secrets
 import uuid
+from contextvars import ContextVar
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta, timezone
 
 from sqlalchemy import text
@@ -26,7 +28,23 @@ def dump(value):
     return json.dumps(value, ensure_ascii=False, default=str)
 
 
+_identity_scope = ContextVar("assistant_identity_scope", default=None)
+
+
+@contextmanager
+def identity_scope():
+    """Reuse verified ownership only inside one run, never across requests."""
+    token = _identity_scope.set({})
+    try:
+        yield
+    finally:
+        _identity_scope.reset(token)
+
+
 def identity(sid):
+    cache = _identity_scope.get()
+    if cache is not None and sid in cache:
+        return cache[sid]
     with database.connection() as db:
         row = (
             db.execute(
@@ -35,7 +53,10 @@ def identity(sid):
             .mappings()
             .first()
         )
-    return dict(row) if row else None
+    result = dict(row) if row else None
+    if cache is not None and result:
+        cache[sid] = result
+    return result
 
 
 def farmer_id(sid):
@@ -64,6 +85,13 @@ def create_session_for_farmer(fid):
             },
         ).scalar_one_or_none():
             raise ValueError("Verified farmer account not found")
+        # Idempotent across simultaneous web/mobile sign-ins. An empty farm is
+        # a workspace, not an assertion of land size, location or connected kit.
+        db.execute(text("""INSERT INTO sv3.farms(farmer_id,farm_key,name,region_id,ownership_type,irrigation_method)
+            SELECT id,'HOME-'||id::text,'My farm',region_id,'unspecified','unspecified'
+            FROM sv3.farmers WHERE id=:f
+              AND NOT EXISTS(SELECT 1 FROM sv3.farms WHERE farmer_id=:f)
+            ON CONFLICT(farm_key) DO NOTHING"""), {"f": fid})
         # Preserve completed conversations when a device renews its 30-day
         # capability. The verified owner and RLS scope both constrain this copy.
         db.execute(

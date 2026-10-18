@@ -103,13 +103,19 @@ def city_dashboard(city_id: int) -> dict:
 
 def location_dashboard(latitude: float, longitude: float) -> dict:
     live = _public_weather(round(latitude, 2), round(longitude, 2))
+    daily = live["daily"]
     return {
         "available": True,
         "location_kind": "device_area",
         "live": live,
         "forecast": {
             "farm": "Near you",
-            "records": [],
+            "records": [
+                {"valid_on": date, "temperature_max_c": daily["temperature_2m_max"][index],
+                 "temperature_min_c": daily["temperature_2m_min"][index],
+                 "rainfall_mm": daily["precipitation_sum"][index]}
+                for index, date in enumerate(daily.get("time", []))
+            ],
             "provenance": {"source": live["source"], "issued_at": live["captured_at"]},
             "note": "Regional weather near your device; not a farm sensor measurement.",
         },

@@ -62,7 +62,8 @@ const css = {
 
 function computeTrend(data: HistoricalDataPoint[], key: keyof Omit<HistoricalDataPoint, 'time'>): TrendInfo {
   if (!data || data.length < 2) return { direction: 'stable', rate: 0, avg: 0, min: 0, max: 0 };
-  const values = data.map(d => d[key] as number);
+  const values = data.map(d => d[key] as number).filter(Number.isFinite);
+  if (values.length < 2) return { direction: 'stable', rate: 0, avg: NaN, min: NaN, max: NaN };
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -227,9 +228,9 @@ export default function Trends() {
 
   const marqueeItems = useMemo(() => {
     if (!historicalData.length) return [
-      { label: 'TEMP',     value: '25°C',   change: 0.2,  location: 'WS01' },
-      { label: 'HUMIDITY', value: '60%',    change: -0.1, location: 'WS01' },
-      { label: 'RAINFALL', value: '0mm',    change: 0,    location: 'WS01' },
+      { label: 'TEMP',     value: '—',   change: 0,  location: 'WS01' },
+      { label: 'HUMIDITY', value: '—',    change: 0, location: 'WS01' },
+      { label: 'RAINFALL', value: '—',    change: 0,    location: 'WS01' },
     ];
     const latest = historicalData[historicalData.length - 1];
     return [

@@ -1,3 +1,5 @@
+import { StationEnrollment } from "@/components/hardware/StationEnrollment";
+import { apiFetch } from "@/lib/apiClient";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,17 +16,27 @@ export default function HardwareSetup() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  const [error, setError] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
 
   const handleConnect = async () => {
     setConnecting(true);
 
-    await new Promise(r => setTimeout(r, 1500));
-    connectHardware(DEVICE_ID);
-    setConnected(true);
-    await new Promise(r => setTimeout(r, 800));
-    navigate('/dashboard');
+    setError('');
+    try {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL || ''}/api/sensors/stations`);
+      if (!response.ok) throw new Error('Could not check your registered stations. Please retry.');
+      const data = await response.json();
+      const station = data.stations?.[0];
+      if (!station) throw new Error('No station is registered to your account. Add your farm and plot in the notebook, then enroll your device.');
+      connectHardware(station.station_id);
+      setConnected(true);
+      navigate('/dashboard');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not open your station.');
+    } finally { setConnecting(false); }
+
   };
 
   const textPrimary   = isDark ? '#A8D89A' : '#1B3A20';
@@ -63,6 +75,7 @@ export default function HardwareSetup() {
             </p>
           </div>
 
+          {error && <div role="alert" style={{marginBottom: 20, color: textPrimary}}>{error} <button onClick={() => navigate('/workspace?view=notebook')}>Open farm notebook</button></div>}
           {                      }
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
@@ -215,6 +228,7 @@ export default function HardwareSetup() {
           <p style={{ textAlign: 'center', fontSize: '12px', color: textPrimary, marginTop: '24px' }}>
             You can change your hardware connection at any time from your profile settings.
           </p>
+          <StationEnrollment />
         </motion.div>
       </div>
 

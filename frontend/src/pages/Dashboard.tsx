@@ -76,7 +76,7 @@ export default function Dashboard() {
   });
 
   const { data: currentSensorData, dataUpdatedAt: sensorUpdatedAt } = useQuery({
-    queryKey: ['latestSensorData', 'WS01'],
+    queryKey: ['classicSensor', 'Dashboard', 'WS01'],
     queryFn: async () => {
       try {
         const response = await apiFetch(`${API_URL}/api/sensors/latest/WS01`);
@@ -113,6 +113,7 @@ export default function Dashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', position: 'relative' }}>
         <FarmBackground />
+        <div style={{position:"absolute",top:0,left:0,right:0,zIndex:50}}><DashboardHeader lastUpdateSeconds={0} sensorNodeOnline={false} /></div>
         <div style={{ position: 'relative', zIndex: 10 }}><WeatherLoader /></div>
       </div>
     );
@@ -122,12 +123,13 @@ export default function Dashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', position: 'relative' }}>
         <FarmBackground />
-        <GlassSection title="" noHeader>
+        <div style={{position:"absolute",top:0,left:0,right:0,zIndex:50}}><DashboardHeader lastUpdateSeconds={0} sensorNodeOnline={false} /></div>
+        <div style={{position:"relative",zIndex:10}}><GlassSection title="" noHeader>
           <div style={{ padding: '40px', textAlign: 'center' }}>
             <p style={{ color: '#D32F2F', marginBottom: '12px', fontWeight: 700 }}>{error || t('error')}</p>
-            <p style={{ color: '#5A7A60', fontSize: '13px' }}>Connect your farm station to see live sensor readings. Regional weather is available in the new workspace.</p>
+            <p style={{ color: '#5A7A60', fontSize: '13px' }}>Connect your farm station to see live sensor readings. Regional weather is available in the new workspace.</p><a href="/workspace?view=weather">Open farm weather</a><br/><a href="/hardware-setup">Check registered stations</a>
           </div>
-        </GlassSection>
+        </GlassSection></div>
       </div>
     );
   }

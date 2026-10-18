@@ -70,6 +70,7 @@ export function WeatherInsightPanel() {
         body: JSON.stringify({
           message: `Current weather: ${weatherData.temperature}°C, ${weatherData.humidity}% humidity, ${weatherData.windSpeed} km/h wind, pressure ${weatherData.pressure} hPa. Provide farming recommendations.`,
           station_id: 'WS01',
+          language,
           user_id: 'dashboard_user'
         }),
       });

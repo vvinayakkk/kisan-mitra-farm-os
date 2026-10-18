@@ -72,25 +72,24 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       return asMap(await api
           .get('/api/weather/city-dashboard', query: {'city_id': city['id']}));
     }
-    if (!_nearby) {
-      final farm = asMap(await api.get('/api/weather/dashboard'));
-      if (farm['available'] == true || farm['requires_farm_selection'] == true) {
-        return farm;
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
       }
-      final permission = await Geolocator.checkPermission();
-      if (permission != LocationPermission.whileInUse &&
-          permission != LocationPermission.always) {
-        return farm;
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        final position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 8)));
+        final data = asMap(await api.get('/api/weather/location-dashboard', query: {
+          'latitude': position.latitude.toStringAsFixed(2),
+          'longitude': position.longitude.toStringAsFixed(2),
+        }));
+        _nearby = true;
+        return data;
       }
-    }
-    final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 10)));
-    final data = asMap(await api.get('/api/weather/location-dashboard', query: {
-      'latitude': position.latitude.toStringAsFixed(2),
-      'longitude': position.longitude.toStringAsFixed(2),
-    }));
-    _nearby = true;
+    } catch (_) { /* Saved farm weather is still usable without device GPS. */ }
+    final data = asMap(await api.get('/api/weather/dashboard'));
     return data;
   }
 

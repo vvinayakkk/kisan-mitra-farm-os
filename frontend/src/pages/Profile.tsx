@@ -369,12 +369,11 @@ export default function Profile() {
     whatsapp_number:  localStorage.getItem("user_whatsapp_number") || "",
   };
 
-  const { data: profileData = cachedProfile } = useQuery({
+  const { data: profileData = cachedProfile, error: profileError } = useQuery({
     queryKey: ['profile', phone],
     queryFn: async () => {
-      if (!phone) return cachedProfile;
       const res = await apiFetch(`${API_URL}/api/profile`);
-      if (!res.ok) return cachedProfile;
+      if (!res.ok) throw new Error("Could not load your saved profile.");
       const data = await res.json();
       if (data.status === "success" && data.profile) {
         const p = data.profile;
@@ -387,8 +386,8 @@ export default function Profile() {
         if (p.location)        localStorage.setItem("user_location", p.location);
         if (cropsList?.length) localStorage.setItem("user_crops", cropsList.join(", "));
 
-        localStorage.setItem("user_latitude", p.latitude ? String(p.latitude) : "");
-        localStorage.setItem("user_longitude", p.longitude ? String(p.longitude) : "");
+        localStorage.setItem("user_latitude", p.latitude != null ? String(p.latitude) : "");
+        localStorage.setItem("user_longitude", p.longitude != null ? String(p.longitude) : "");
         localStorage.setItem("user_state", p.state || "");
         localStorage.setItem("user_district", p.district || "");
         localStorage.setItem("user_excess_resources", excessList.join(", "));
@@ -400,8 +399,8 @@ export default function Profile() {
           land_size_acres: String(p.land_size_acres || ""),
           location: p.location || "",
           crops: cropsList,
-          latitude: p.latitude ? String(p.latitude) : "",
-          longitude: p.longitude ? String(p.longitude) : "",
+          latitude: p.latitude != null ? String(p.latitude) : "",
+          longitude: p.longitude != null ? String(p.longitude) : "",
           state: p.state || "",
           district: p.district || "",
           excess_resources: excessList,
@@ -411,8 +410,8 @@ export default function Profile() {
       }
       return cachedProfile;
     },
-    enabled: !!phone,
     initialData: cachedProfile,
+    initialDataUpdatedAt: 0,
   });
 
   const [editing, setEditing]   = useState(false);
@@ -433,18 +432,21 @@ export default function Profile() {
   const [hwConnecting, setHwConnecting] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
-  const { hardwareConnected, connectHardware, disconnectHardware } = useAuth();
+  const { data: stations = [], error: stationsError } = useQuery({
+    queryKey: ['classicStations'],
+    queryFn: async () => {
+      const response = await apiFetch(`${API_URL}/api/sensors/stations`);
+      if (!response.ok) throw new Error('Could not load registered stations.');
+      const data = await response.json();
+      return (data.stations || []) as { station_id: string }[];
+    },
+  });
+  const hardwareConnected = stations.length > 0;
   const navigate = useNavigate();
 
-  const handleConnectHardware = async () => {
-    setHwConnecting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    connectHardware('AGRISENSE-WS01');
-    setHwConnecting(false);
-    toast({ title: "Hardware Connected", description: "AgriSense WS01 is now paired to your account." });
-  };
+  const handleConnectHardware = () => navigate('/hardware-setup');
 
-  const { data: schemes = LOCAL_SCHEMES, isFetching: schemesLoading, refetch: refetchSchemes } = useQuery({
+  const { data: schemes = [], error: schemesError, isFetching: schemesLoading, refetch: refetchSchemes } = useQuery({
     queryKey: ['schemes'],
     queryFn: async () => {
       try {
@@ -455,8 +457,8 @@ export default function Profile() {
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         const backendSchemes = Array.isArray(data) ? data : Array.isArray(data?.schemes) ? data.schemes : [];
-        return backendSchemes.length > 0 ? backendSchemes : LOCAL_SCHEMES;
-      } catch { return LOCAL_SCHEMES; }
+        return backendSchemes;
+      } catch (error) { throw error; }
     },
   });
 
@@ -572,6 +574,7 @@ export default function Profile() {
         </div>
 
         <AIOverview page="schemes" />
+        {(profileError || schemesError || stationsError) && <p role="alert">Some saved data could not be loaded. Please refresh to retry.</p>}
 
         {                          }
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 24 }}>
@@ -687,13 +690,13 @@ export default function Profile() {
                   }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2ECC71', animation: 'profile-pulse 2s infinite', flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, fontWeight: 800, color: textPrimary, margin: 0 }}>AgriSense WS01</p>
-                      <p style={{ fontSize: 11, color: textSecondary, margin: 0 }}>FPGA Weather Station · Live</p>
+                      <p style={{ fontSize: 13, fontWeight: 800, color: textPrimary, margin: 0 }}>{stations[0]?.station_id}</p>
+                      <p style={{ fontSize: 11, color: textSecondary, margin: 0 }}>Registered station · check readings for freshness</p>
                     </div>
                     <Wifi size={16} color="#2ECC71" />
                   </div>
-                  <PrimaryBtn danger outline onClick={() => { disconnectHardware(); toast({ title: "Hardware Disconnected" }); }}>
-                    <WifiOff size={15} /> Disconnect
+                  <PrimaryBtn outline onClick={() => navigate("/dashboard")}>
+                    <Wifi size={15} /> View readings
                   </PrimaryBtn>
                 </div>
               ) : (

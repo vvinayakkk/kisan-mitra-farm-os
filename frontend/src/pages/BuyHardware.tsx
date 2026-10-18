@@ -1,3 +1,4 @@
+import { HardwarePlanDialog } from "@/components/hardware/HardwarePlanDialog";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { HardwareCheckoutModal } from "@/components/hardware/HardwareCheckoutModal";
+
 import { Truck, FileText } from "lucide-react";
 
 const DEVICE_ID = "AGRISENSE-WS01";
@@ -83,16 +84,6 @@ export default function BuyHardware() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [existingOrder, setExistingOrder] = useState<any>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("agrisense_order_info");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setExistingOrder(parsed);
-        setOrdered(true);
-      } catch (e) {}
-    }
-  }, []);
 
   const textPrimary = isDark ? "#A8D89A" : "#1B3A20";
   const textSecondary = isDark ? "#6A8A6A" : "#5A7A60";
@@ -101,10 +92,7 @@ export default function BuyHardware() {
     : "rgba(255, 255, 255, 0.92)";
 
   const handleDemoConnect = async () => {
-    setConnecting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    connectHardware(DEVICE_ID);
-    navigate("/dashboard");
+    navigate('/hardware-setup');
   };
 
   return (
@@ -266,7 +254,7 @@ export default function BuyHardware() {
               </div>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-                {!ordered ? (
+
                   <button
                     onClick={() => {
                       setExistingOrder(null);
@@ -289,76 +277,9 @@ export default function BuyHardware() {
                     }}
                   >
                     <ShoppingCart style={{ width: "18px", height: "18px" }} />
-                    Order Now — ₹21,000 (Govt DBT 50% Available)
+                    Plan a farm station
                   </button>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                      padding: "14px 18px",
-                      borderRadius: "16px",
-                      border: "1.5px solid #2ECC71",
-                      background: "transparent",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <CheckCircle2 style={{ width: "18px", height: "18px", color: "#2ECC71" }} />
-                      <span style={{ fontSize: "14px", fontWeight: 800, color: textPrimary }}>
-                        Station Ordered ({existingOrder?.orderId || "SKY-ORD-849201"})
-                      </span>
-                    </div>
 
-                    <div style={{ fontSize: "12px", color: textSecondary }}>
-                      Dispatched • Arriving{" "}
-                      <strong style={{ color: "#2ECC71" }}>
-                        {existingOrder?.estDelivery || "in 3–4 days"}
-                      </strong>{" "}
-                      via {existingOrder?.courier?.partner || "India Post Kisan Priority"}
-                    </div>
-
-                    <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                      <button
-                        onClick={() => setIsCheckoutOpen(true)}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          padding: "6px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid #2ECC71",
-                          background: "transparent",
-                          color: "#2ECC71",
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <Truck size={13} /> View Tracking & Invoice
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setExistingOrder(null);
-                          setIsCheckoutOpen(true);
-                        }}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "8px",
-                          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
-                          background: "transparent",
-                          color: textSecondary,
-                          fontSize: "11.5px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Re-Order Unit
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 <button
                   onClick={handleDemoConnect}
@@ -504,22 +425,7 @@ export default function BuyHardware() {
         </motion.div>
       </div>
 
-      <HardwareCheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => {
-          setIsCheckoutOpen(false);
-          const saved = localStorage.getItem("agrisense_order_info");
-          if (saved) {
-            try {
-              setExistingOrder(JSON.parse(saved));
-              setOrdered(true);
-            } catch (e) {}
-          }
-        }}
-        onConnectHardware={handleDemoConnect}
-        isDark={isDark}
-        initialOrder={existingOrder}
-      />
+      <HardwarePlanDialog open={isCheckoutOpen} onClose={()=>setIsCheckoutOpen(false)} />
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>

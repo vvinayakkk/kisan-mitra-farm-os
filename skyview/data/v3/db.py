@@ -71,12 +71,13 @@ def connection(farmer_id=None, write=False, ingest=False):
     role = "sv3_ingest" if ingest else "sv3_writer" if write else "sv3_app"
     with engine().begin() as db:
         db.execute(text(f"SET LOCAL ROLE {role}"))
-        db.execute(text("SELECT set_config('search_path','sv3,pg_catalog',true)"))
-        db.execute(
-            text("SELECT set_config('app.farmer_id',:owner,true)"), {"owner": owner}
-        )
-        db.execute(text("SET LOCAL statement_timeout = '12s'"))
-        db.execute(text("SET LOCAL lock_timeout = '3s'"))
+        # One round trip for transaction-local settings; tenant scope remains
+        # isolated and is reset by commit/rollback exactly as before.
+        db.execute(text("""SELECT
+            set_config('search_path','sv3,pg_catalog',true),
+            set_config('app.farmer_id',:owner,true),
+            set_config('statement_timeout','12s',true),
+            set_config('lock_timeout','3s',true)"""), {"owner": owner})
         yield db
 
 

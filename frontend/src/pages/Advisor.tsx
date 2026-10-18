@@ -25,12 +25,14 @@ import {
   Handshake,
   UserRound,
   CloudSun,
+  MapPin,
 } from "lucide-react";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 import "@/components/assistant/assistant.css";
 const Features = lazy(() => import("@/components/assistant/WorkspaceFeatures"));
 const Exchange = lazy(() => import("@/components/assistant/FarmExchange"));
 const Profile = lazy(() => import("@/components/assistant/FarmProfile"));
+const FarmerMap = lazy(() => import("./FarmersMap"));
 const views = [
   {
     id: "chat",
@@ -86,6 +88,7 @@ const views = [
     caption: "Find a resource, agree together, track the handover",
     icon: Handshake,
   },
+  {id:"map",label:"Farmer map",caption:"Explore nearby farmers and resources",icon:MapPin},
   {
     id: "profile",
     label: "My farm profile",
@@ -225,6 +228,7 @@ export default function Advisor() {
               <Exchange initialListingId={params.get("listing") || undefined} />
             </Suspense>
           )}
+          {view === "map" && <Suspense fallback={<div className="workspace-loading">Preparing the map…</div>}><FarmerMap embedded /></Suspense>}
           {view === "profile" && (
             <Suspense
               fallback={

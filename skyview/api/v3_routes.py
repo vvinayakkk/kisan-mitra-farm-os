@@ -257,6 +257,10 @@ class ProfileUpdate(BaseModel):
 
     location: str | None = Field(None, max_length=200)
     district: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=100)
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
+    whatsapp_number: str | None = Field(None, max_length=30)
     land_size_acres: float | None = Field(None, gt=0, le=100000)
     crops: list[str] | str | None = None
     excess_resources: list[str] | str | None = None
@@ -269,12 +273,20 @@ def save_profile(body: ProfileUpdate, owner: Owner):
     changes = body.model_dump(exclude_none=True)
     name = changes.pop("name", None)
     language = changes.pop("preferred_language", None)
+    state = changes.pop("state", None)
+    if (body.latitude is None) != (body.longitude is None):
+        raise HTTPException(422, "Supply both latitude and longitude together.")
     for key in ("crops", "excess_resources", "required_resources"):
         if isinstance(changes.get(key), str):
             changes[key] = [
                 part.strip() for part in changes[key].split(",") if part.strip()
             ]
     with db.connection(owner, write=True) as conn:
+        if state is not None and state.strip():
+            region = conn.execute(text("SELECT id FROM sv3.regions WHERE level IN ('state','ut') AND lower(name)=lower(:name)"), {"name": state.strip()}).scalar()
+            if region is None:
+                raise HTTPException(422, "Choose a valid state or union territory.")
+            conn.execute(text("UPDATE sv3.farmers SET region_id=:region WHERE id=:owner"), {"region": region, "owner": owner})
         conn.execute(
             text(
                 "UPDATE sv3.farmers SET display_name=coalesce(:name,display_name),preferred_language=coalesce(:language,preferred_language),profile_attributes=profile_attributes||CAST(:attrs AS jsonb) WHERE id=:owner"

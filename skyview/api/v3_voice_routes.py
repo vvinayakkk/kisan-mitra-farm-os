@@ -442,6 +442,20 @@ async def completion(messages, *, json_mode=False):
                 return answer[:10000]
         except (HTTPException, KeyError, IndexError, TypeError):
             continue
+    # Deployments using Gemini must also support classic voice/profile helpers.
+    if getattr(settings, "GEMINI_API_KEY", ""):
+        from skyview.utils.llm_pool import _invoke_gemini
+
+        prompt = list(messages)
+        if json_mode:
+            prompt.append({"role": "user", "content": "Return only a valid JSON object, without markdown fences."})
+        answer = await asyncio.wait_for(
+            _invoke_gemini(prompt, api_key=settings.GEMINI_API_KEY,
+                           model_name=getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")),
+            timeout=20,
+        )
+        if answer:
+            return answer[:10000]
     raise HTTPException(
         503, "The assistant could not respond. Please retry or open Mitra chat."
     )

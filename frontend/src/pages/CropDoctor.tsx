@@ -190,7 +190,7 @@ export default function CropDoctor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "https://brics-agrin-backend.onrender.com";
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
 
   const sanitizeBox = (box: BoundingBox) => {
@@ -205,6 +205,11 @@ export default function CropDoctor() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Choose a JPEG, PNG or WebP image smaller than 5 MB.');
+      e.target.value = '';
+      return;
+    }
     const previewUrl = URL.createObjectURL(file);
     setSelectedImage(previewUrl);
     setResult(null);
@@ -215,13 +220,14 @@ export default function CropDoctor() {
     formData.append("image", file);
 
     try {
-      const resp = await apiFetch(`${API_URL}/disease/detect`, {
+      const resp = await apiFetch(`${API_URL}/api/disease/detect`, {
         method: "POST",
         body: formData,
       });
 
       if (!resp.ok) {
-        throw new Error(`Diagnostic service returned status ${resp.status}`);
+        const error = await resp.json().catch(() => ({}));
+        throw new Error(typeof error.detail === "string" ? error.detail : "Crop screening is unavailable. Please retry.");
       }
 
       const data = await resp.json();
@@ -233,20 +239,8 @@ export default function CropDoctor() {
       }
     } catch (err: any) {
       console.warn("Disease detect API warning:", err);
-      const fallback = SAMPLE_DIAGNOSES[0];
-      setResult({
-        disease_name: fallback.name,
-        crop_identified: fallback.crop,
-        severity: fallback.severity,
-        confidence: fallback.confidence,
-        bounding_boxes: fallback.boxes,
-        bounding_box_explanation: fallback.explanation,
-        description: fallback.desc,
-        symptoms: fallback.symptoms,
-        solutions: fallback.solutions,
-        prevention: fallback.prevention,
-      });
-      toast.info("Using edge-accelerated pathology heuristic.");
+      setResult(null);
+      toast.error(err instanceof Error ? err.message : "Crop screening is unavailable. Please retry. No diagnosis was made.");
     } finally {
       setAnalyzing(false);
     }
