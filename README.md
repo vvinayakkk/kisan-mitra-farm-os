@@ -87,6 +87,7 @@ The counts describe the current code and catalog. They are not latency or produc
 - [Meet Saathi — Your Always-Active 24/7 Background Companion](#-meet-saathi--your-always-active-247-background-companion)
 - [Complex Multi-Agent Workflows & 52+ Real Farm Tasks](#-complex-multi-agent-workflows--52-real-farm-tasks)
 - [Multilingual Voice Pipeline (STT · TTS · Live Turn-Taking)](#-multilingual-voice-pipeline-stt--tts--live-turn-taking)
+- [Data Collection & Crawling Pipeline](#️-data-collection--crawling-pipeline)
 - [Overview & Vision](#-overview--vision)
 - [System Architecture](#-system-architecture)
 - [UltraCache & Background Data](#-ultracache--background-data)
@@ -346,6 +347,87 @@ flowchart LR
 - **Neural Text-to-Speech (TTS) & Spoken Onboarding:** Responses, guided tours, and onboarding prompts are synthesized via **Sarvam AI (`bulbul:v2`)** with preprocessing enabled for natural Indian cadence across 11 spoken output languages.
 - **Hands-Free Live Conversation Mode ([`LiveConversation.tsx`](frontend/src/components/assistant/LiveConversation.tsx)):** Supports automatic speech turn detection (`automatic_speech_turns`), live streaming captions, and voice-driven tool execution while strictly preserving review gates—voice input never bypasses farmer approval for record changes.
 - **Structured Voice-to-Field Extraction:** Spoken farmer introductions are transcribed and parsed into editable profile/farm proposal fields without silently overwriting existing database records.
+
+---
+
+## 🕸️ Data Collection & Crawling Pipeline
+
+Every answer Mitra gives is grounded in data that was harvested, validated and versioned before the farmer ever asked. The collection layer lives in [`skyview/data/v3/ingestion.py`](skyview/data/v3/ingestion.py) and [`skyview/data/v3/worker.py`](skyview/data/v3/worker.py), runs under a dedicated `sv3_ingest` database role that browser clients never touch, and writes every release with a SHA-256 content hash, an immutable `release_key`, the raw payload and a provenance tag.
+
+```mermaid
+flowchart LR
+    subgraph Sources["External Sources"]
+        OGD["data.gov.in OGD · AGMARKNET mandi feed"]
+        OMF["Open-Meteo · 16-day grid forecast"]
+        ERA["Open-Meteo Archive · ERA5 reanalysis"]
+        POW["NASA POWER · agroclimate (AG community)"]
+        GOV["Official .gov.in / ICAR scheme & advisory pages"]
+        WEB["Live web research · Gemini + Google Search grounding"]
+        DEV["Farm stations · signed device envelopes"]
+    end
+    subgraph Harvest["Harvest & Validate"]
+        CR["Paginated crawlers (1,000 rows/page, cursor resume)"]
+        PARSE["Parsers: units, ranges, dates, price bands"]
+        MAP["Entity mapping: state · district · mandi · crop · variety"]
+        QA["Quarantine → sv3.quality_issues"]
+    end
+    subgraph Store["Versioned Store (PostgreSQL sv3)"]
+        RAW["raw_objects + datasets (hash, release_key)"]
+        TBL["price_observations · weather_daily · weather_forecasts · scheme_versions · document_chunks · sensor_packets"]
+        HEALTH["source_health + ingest_runs"]
+    end
+    OGD --> CR
+    OMF --> CR
+    ERA --> CR
+    POW --> CR
+    GOV --> PARSE
+    DEV --> PARSE
+    CR --> PARSE --> MAP --> RAW --> TBL
+    MAP --> QA
+    RAW --> HEALTH
+    WEB -.->|"runtime, cited URLs"| Agents["Mitra & Saathi agents"]
+    TBL --> Agents
+```
+
+### Sources, end to end
+
+| Source | Endpoint | What is captured | How it is collected | Cadence |
+|:---|:---|:---|:---|:---|
+| **AGMARKNET via data.gov.in (OGD)** | `api.data.gov.in/resource/9ef84268-…` | State, district, mandi, commodity, variety, grade, arrival date, min / modal / max price (₹/quintal) | Paginated crawl at 1,000 records per page with a persisted page cursor (`ogd-agmarknet:page-cursor`), 3 retries with backoff on 408 / 429 / 5xx | Pages every 60 s until the cycle completes, then daily |
+| **Open-Meteo Forecast** | `api.open-meteo.com/v1/forecast` | 16-day daily min/max temperature and rainfall per farm grid cell | REST harvest per consented location, batched 3 locations at a time | Refreshed when older than 6 h |
+| **Open-Meteo Archive (ERA5)** | `archive-api.open-meteo.com/v1/archive` | Daily reanalysis temperature and rainfall (25 km) | Full 365-day backfill per location, then daily append (ERA5 lags ~7 days) | Daily |
+| **NASA POWER** | `power.larc.nasa.gov/api/temporal/daily/point` | `T2M_MIN`, `T2M_MAX`, `PRECTOTCORR`, `RH2M` agroclimate history (50 km) | 365-day point backfill; `-999` sentinels normalised to missing | Daily |
+| **Official scheme & advisory sources** | ~27 reviewed `.gov.in` / ICAR / TNAU URLs ([`reviewed_sources.json`](data_platform/v3/catalog/reviewed_sources.json)) | PM-KISAN, PMFBY, PM-KUSUM, SHC, KCC and more: eligibility, benefits, documents, MSP, crop guides, disease references | Captured from official pages with source URL, reviewer and verbatim evidence text; chunked into full-text search | On every source update |
+| **eNAM market directory** | eNAM aspirational-district mapping | 158 market names and locations | Directory capture (names only) to extend mandi coverage | Snapshot |
+| **Live web research** | Gemini `google_search` grounding ([`research.py`](skyview/assistant/research.py)) | Fresh scheme circulars, market news, pest alerts — up to 20 cited sources per query | Runtime crawl; only grounded URLs are kept, and the evidence is treated as untrusted input, never as instructions | On demand + Saathi background sweeps |
+| **City weather & air quality** | Open-Meteo geocoding + air-quality APIs | Current / hourly / 10-day city outlook, AQI on a 3×3 neighbour grid | Runtime harvest with a 15-minute cache (24 h for geocoding) | On demand |
+| **Farm stations** | `POST /api/sensors/ingest` | Temperature, humidity, pressure, wind, rain, soil moisture, PM, battery, solar, lux, UV | Device-key signed envelopes with boot ID, sequence numbers, clock-window and replay checks | Every device interval |
+| **Farmers themselves** | Onboarding, voice, WhatsApp, photos | Profiles, farms, plots, crop cycles, ledgers, tasks, soil cards (OCR), crop cases | Captured through the app channels under row-level security and explicit consent | Continuous |
+
+### How the harvest runs
+
+1. **Always-on collection worker.** A PostgreSQL advisory lease (`731840126`) makes exactly one worker the collector at a time. It loops every 60 seconds across sources, markets, Saathi sweeps and the WhatsApp queues.
+2. **Production scheduling.** On Cloud Run, Cloud Scheduler job `kisan-mitra-refresh` calls `POST /internal/sources/refresh` with OIDC every 2 hours, which runs `run_due_once()` to pick up whichever weather and mandi jobs are due.
+3. **Long-running backfills.** Each consented farm location pulls a full year of ERA5 and NASA POWER history before going incremental, and the mandi crawler walks the OGD feed page by page, resuming from its saved cursor across runs until the national cycle is complete.
+4. **Validation before storage.** Parsers reject wrong units, out-of-range values, future-dated history and inverted price bands. Unmapped states or crops go to `sv3.quality_issues` instead of polluting the tables.
+5. **Normalisation.** Raw names are resolved through `source_mappings` into canonical regions, crops, varieties and markets, so "Lasalgaon" and its district land on the same series every time.
+6. **Deduplication and versioning.** Upserts are keyed on `(dataset, series, date)`, and every release keeps its raw object, content hash and ingest run, so any number on screen can be traced back to the exact payload it came from.
+7. **Health and backoff.** Failures mark the source unhealthy in `sv3.source_health` and back off for 30 minutes. `GET /api/data/status` exposes connector health to the app.
+8. **Provenance on every row.** Each dataset is tagged `observed`, `modeled`, `reanalysis` or `curated`, so the agents can say *where* a figure came from and *when* it was measured.
+
+### Coverage
+
+| Dimension | Volume |
+|:---|:---|
+| Farmer profiles in the reference workspace | **400** across **36** regions |
+| Markets | **1,000+** mandi series (108 core + 158 eNAM directory + regional expansion) |
+| Price history | **365–731 days** per series (~**118k+** daily price rows) |
+| Weather history | **365-day** ERA5 + NASA POWER backfill per farm location |
+| Forecast horizon | **16 days** per farm grid cell |
+| Schema | **75** base tables, **103** tables parity-checked in production |
+| Source research catalog | **26** further Indian agri sources mapped for the next connectors (IMD, SoilGrids, LGD, myScheme, PPQS, BHASHINI, AgriStack…) in [`source-catalog.json`](data_platform/v3/catalog/source-catalog.json) |
+
+See [`data_platform/v3/CONNECTORS.md`](data_platform/v3/CONNECTORS.md) for the full connector contract and [`data_platform/v3/OPERATIONS.md`](data_platform/v3/OPERATIONS.md) for worker operations.
 
 ---
 
