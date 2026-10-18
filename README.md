@@ -1,12 +1,17 @@
 ![Kisan Mitra — an agentic Farm OS](docs/media/readme-cover.svg)
 
-### **An agentic Farm OS that turns a farmer's question into finished work**
+# 🌾 Kisan Mitra (Mitra & Saathi) — Multilingual, Multi-Agentic AI Farm OS
 
-*Ask in your language. See the evidence. Review the action. Find the result in your farm.*
+### **An autonomous, multi-agentic AI orchestrator with 22 specialized skills, 52 typed tool contracts, neural TTS/STT voice pipelines, and background preparation workers that turn a farmer's question into finished farm work**
+
+*Speak or ask in 22+ Indian languages & Hinglish · Multi-agent orchestration & sub-agent delegation · Real-time tool calling & planning · Token-budgeted agentic memory · Reviewable human-in-the-loop execution*
 
 ---
 
 [![AI Builder Cup](https://img.shields.io/badge/AI%20Builder%20Cup-init.io-355B3C?style=for-the-badge)](https://github.com/vvinayakkk/kisan-mitra-farm-os)
+[![Multi-Agent Orchestrator](https://img.shields.io/badge/Agentic%20AI-Orchestrator%20%2B%20Sub--Agents-2E6B47?style=for-the-badge)](#%EF%B8%8F-agentic-system-design--multi-agent-orchestration)
+[![Skills & Tools](https://img.shields.io/badge/22%20Skills-52%20Typed%20Tools-3E7B52?style=for-the-badge)](#the-22-farm-skills)
+[![Multilingual Voice](https://img.shields.io/badge/Multilingual%20STT%2FTTS-22%2B%20Indian%20Languages-48885C?style=for-the-badge)](#%EF%B8%8F-multilingual-voice-pipeline-stt--tts--live-turn-taking)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Live%20deployment-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://growwithmitra.web.app/workspace)
 [![Firebase](https://img.shields.io/badge/Firebase-Hosting%20%2B%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://growwithmitra.web.app/workspace)
 [![Web](https://img.shields.io/badge/Web-Farm%20OS%20%2B%20Classic-50784C?style=for-the-badge&logo=react&logoColor=white)](frontend/)
@@ -14,11 +19,11 @@
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Connected%20channel-77A966?style=for-the-badge&logo=whatsapp&logoColor=white)](docs/api/websocket-and-webhooks.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-A5C48A?style=for-the-badge)](LICENSE)
 
-**Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, brings farm records, crop care, weather, mandi markets, planning, documents and farmer exchange into one connected experience. **Firebase and Google Cloud provide its live web delivery, identity, API runtime, scheduled work and message queue.** Farmers can work through the website, the Flutter companion, a configured WhatsApp channel or the website's call control. Mitra understands ordinary language, investigates with tools, prepares useful work and brings changes back for review.
+**Kisan Mitra**, built by **init.io** for Google's **AI Builder Cup**, is a **fully agentic, multilingual AI Farm Operating System** powered by a central **Agentic Orchestrator (`Mitra`)**, proactive **Background Companion Sub-Agents (`Saathi`)**, and domain-specialized sub-agents across agronomy, meteorology, mandi intelligence, crop diagnostics, and resource routing. Equipped with **22 versioned domain skills**, **52 schema-validated tool contracts**, **token-budgeted agentic memory management**, **multilingual neural STT/TTS voice pipelines**, and **lease-coordinated background workers**, Kisan Mitra brings farm records, crop care, weather, mandi markets, seasonal planning, document synthesis, and farmer exchange into one unified agentic runtime. **Firebase and Google Cloud provide its live web delivery, identity, API runtime, scheduled work, and message queue.**
 
 **Explore the live deployment:** [Open Farm OS](https://growwithmitra.web.app/workspace) · [Open Classic SkyView](https://growwithmitra.web.app/overview) · [API health](https://kisan-mitra-api-344920654513.asia-south1.run.app/health) · [Android release](https://github.com/vvinayakkk/kisan-mitra-farm-os/releases/latest) · [Administration](https://growwithmitra.web.app/control)
 
-> **A question is the beginning of a workflow, not the end of a chat.** Ask what needs doing; Mitra finds the relevant farm context, shows its work, asks for missing details and returns an answer, chart, file or action ready to approve.
+> **A question is the beginning of an autonomous multi-agent workflow, not the end of a chat.** Ask or speak in your own language; Mitra orchestrates specialist sub-agents, loads domain skills dynamically, executes parallel tool calls against live farm & public data, manages multi-turn working memory, synthesizes documents/charts, and stages version-checked farm writes for one-tap human-in-the-loop approval.
 
 ---
 
@@ -56,17 +61,18 @@ The field demonstration pairs physical wind and rainfall tests with the dashboar
 
 ---
 
-## ⚡ Platform at a Glance
+## ⚡ Agentic AI Platform at a Glance
 
 | Capability | What is in the repository | Why it matters |
 | :--- | :--- | :--- |
-| **Four ways to connect** | Website, Flutter app, configured WhatsApp channel and web call control | Reach farm help through the interface at hand |
-| **Google-powered platform** | Firebase Hosting and Authentication; Cloud Run, Build, Tasks, Scheduler and Secret Manager | Carry one secure farm experience from sign-in to completed work |
-| **Two web experiences** | Farm OS workspace and Classic SkyView | A conversational workspace alongside dedicated dashboards |
-| **22 farm skills** | Versioned workflows in [the assistant skill catalog](skyview/assistant/skills/) | The agent can plan, research, calculate and prepare work |
-| **52 typed tools** | Validated tool contracts in [the assistant runtime](skyview/assistant/tools.py) | Read farm context and carry out reviewed software actions |
-| **Ten Farm OS views** | Assistant, calendar, station, weather, crops, markets, support, notebook, exchange and profile | Every major farm need has a focused home |
-| **One farmer context** | Owner-scoped records, conversations, files and approvals | The result of a conversation appears in the right farm |
+| **Multi-Agent Orchestrator & Sub-Agents** | Central `Mitra` runtime ([`engine.py`](skyview/assistant/engine.py)), proactive `Saathi` planning sub-agent ([`companion_plans.py`](skyview/assistant/companion_plans.py)), and supervisor/specialist agents ([`skyview/agents/`](skyview/agents/)) | Coordinates multi-step reasoning, fast-path execution, and background plan synthesis across domains |
+| **22 Versioned Domain Skills** | On-demand procedural workflows in [the assistant skill catalog](skyview/assistant/skills/) loaded via `load_skill` | Gives the agent deep domain planning playbooks without bloating base prompt context |
+| **52 Typed Tool Contracts** | Schema-validated read, calculation, research, artifact, and guarded-write tools in [`tools.py`](skyview/assistant/tools.py) | Deterministic tool calling with strict argument validation, bounded outputs, and execution receipts |
+| **Agentic Memory Management** | Token-budgeted working memory (`12k` context budget, `1.8k` compaction summary) in [`memory.py`](skyview/assistant/memory.py) + durable fact store ([`memory_facts.py`](skyview/assistant/memory_facts.py)) | Preserves long-horizon farmer facts, attributions, and tool outcomes across compactions without losing raw transcripts |
+| **Multilingual Neural STT / TTS & Voice** | 22+ Indian language codes, Sarvam AI (`saaras:v4` / `bulbul:v2`) + Groq Whisper (`whisper-large-v3-turbo`) fallback in [`v3_voice_routes.py`](skyview/api/v3_voice_routes.py) | Farmers speak naturally in Hindi, Marathi, Tamil, Telugu, Hinglish, and more with automatic turn-taking and spoken replies |
+| **Autonomous Background Workers** | PostgreSQL advisory-leased workers ([`worker.py`](skyview/data/v3/worker.py)), Cloud Scheduler & Cloud Tasks queues ([`whatsapp_tasks.py`](skyview/assistant/whatsapp_tasks.py)) | Continuously ingests weather/mandi feeds, pre-computes `Saathi` proposals, and processes async WhatsApp media/voice turns |
+| **Multi-Model Consensus & Provider Pool** | Multi-key LLM router ([`provider.py`](skyview/assistant/provider.py), [`llm_pool.py`](skyview/utils/llm_pool.py)) with automatic health cooldowns and fallback | High resilience across tool-calling turns, vision diagnostics, and multilingual synthesis |
+| **Four Connected Surfaces** | Website (`Farm OS` + `Classic`), Flutter Android app, signed WhatsApp webhook channel, and voice/call controls | One owner-scoped agentic brain accessible from any device or field condition |
 
 The counts describe the current code and catalog. They are not latency or production-scale claims.
 
@@ -76,6 +82,9 @@ The counts describe the current code and catalog. They are not latency or produc
 
 - [Our hardware in action](#our-hardware-in-action)
 - [Four ways to use Kisan Mitra](#-four-ways-to-use-kisan-mitra)
+- [Agentic AI Platform at a Glance](#-agentic-ai-platform-at-a-glance)
+- [Agentic System Design & Multi-Agent Orchestration](#-agentic-system-design--multi-agent-orchestration)
+- [Multilingual Voice Pipeline (STT · TTS · Live Turn-Taking)](#-multilingual-voice-pipeline-stt--tts--live-turn-taking)
 - [Overview & Vision](#-overview--vision)
 - [System Architecture](#-system-architecture)
 - [UltraCache & Background Data](#-ultracache--background-data)
@@ -94,6 +103,114 @@ The counts describe the current code and catalog. They are not latency or produc
 - [OpenAPI REST Endpoints](#-openapi-rest-endpoints)
 - [Live Google Cloud Deployment](#-live-google-cloud-deployment)
 - [License & Open Source Dedication](#-license--open-source-dedication)
+
+---
+
+## 🧠 Agentic System Design & Multi-Agent Orchestration
+
+Kisan Mitra is architected from the ground up as an **agentic operating system** rather than a single-prompt wrapper. Every interaction flows through a layered orchestration pipeline that combines **deterministic fast actions**, **multi-round tool-calling loops**, **specialized domain sub-agents**, **dynamic skill injection**, **token-budgeted working memory**, and **background companion preparation**.
+
+```mermaid
+flowchart TB
+    subgraph Channels["Multimodal & Multilingual Ingress"]
+        WebUI["Web Farm OS & Classic"]
+        MobileApp["Flutter Field Companion"]
+        VoiceStream["Neural STT / TTS & Live Voice Turns"]
+        WAWebhook["Signed WhatsApp Webhook & Media"]
+    end
+
+    subgraph Orchestrator["Central Agentic Runtime (skyview/assistant/)"]
+        FastPath["Deterministic Fast-Action Router (fast_actions.py)"]
+        ExecEngine["Bounded ReAct & Plan-Execute Loop (engine.py · 12 rounds / 24 tool calls)"]
+        Contract["Execution Contract & Approval Gate (execution_contract.py)"]
+        SkillLoader["Dynamic Skill Loader (22 Markdown Playbooks)"]
+        MemoryMgr["Token-Budgeted Working Memory & Compaction (memory.py + memory_facts.py)"]
+    end
+
+    subgraph SubAgents["Specialized Sub-Agents & Background Planners"]
+        Saathi["Saathi Proactive Planner Sub-Agent (companion_plans.py)"]
+        VisionAgent["Crop Doctor & Document Vision Sub-Agent (document_vision.py + disease_service.py)"]
+        ResearchAgent["Grounded Web & Scheme Research Sub-Agent (research.py)"]
+        Supervisor["Classic Supervisor & Domain Agents (Weather · Mandi · Alert · Agronomy · FPGA)"]
+        ArtifactGen["Artifact Synthesis Sub-Agent (DOCX · PDF · XLSX · CSV · PPTX)"]
+    end
+
+    subgraph ToolPlane["52 Schema-Validated Tool Contracts (tools.py)"]
+        ReadTools["Farm, Plot, Ledger, Task & Station Readers"]
+        MarketWeather["Mandi Price Series & Weather Outlook Tools (weather_tools.py)"]
+        CalcTools["Irrigation, Budget & Sale Take-Home Calculators (planning_tools.py)"]
+        WriteTools["Guarded Mutation Tools (Version-Checked + Replay-Safe)"]
+    end
+
+    subgraph Workers["Autonomous Background Workers & Persistence"]
+        LeasedWorker["PostgreSQL Advisory-Leased Worker (worker.py)"]
+        CloudTasks["Cloud Tasks Async WhatsApp & Media Queue"]
+        NeonDB[("Neon PostgreSQL (RLS + Canonical v3 Store)")]
+    end
+
+    Channels --> FastPath
+    FastPath -->|"Explicit command"| ToolPlane
+    FastPath -->|"Complex / multi-step goal"| ExecEngine
+    ExecEngine <--> MemoryMgr
+    ExecEngine --> SkillLoader
+    ExecEngine --> Contract
+    ExecEngine --> SubAgents
+    ExecEngine --> ToolPlane
+    SubAgents --> ToolPlane
+    ToolPlane <--> NeonDB
+    LeasedWorker <--> NeonDB
+    LeasedWorker --> Saathi
+    CloudTasks --> ExecEngine
+```
+
+### 1. Multi-Agent Hierarchy & Specialist Sub-Agents
+- **Primary Orchestrator (`Mitra` — [`skyview/assistant/engine.py`](skyview/assistant/engine.py)):** Manages the stateful execution loop (`MAX_ROUNDS = 12`, `MAX_CALLS = 24`), coordinates parallel tool execution, enforces output token bounding (`bounded_result`), streams real-time progress heartbeats ([`progress.py`](skyview/assistant/progress.py)), and arbitrates between autonomous reads and human-gated writes.
+- **Deterministic Fast-Action Sub-Router ([`skyview/assistant/fast_actions.py`](skyview/assistant/fast_actions.py)):** Intercepts unambiguous operational commands (such as adding dated tasks) for low-latency deterministic preparation while routing ambiguous, analytical, or multi-step goals to the full reasoning engine.
+- **Proactive Companion Sub-Agent (`Saathi` — [`skyview/assistant/companion_plans.py`](skyview/assistant/companion_plans.py)):** Operates across six farm domains (`today`, `markets`, `schemes`, `records`, `crops`, `exchange`). It snapshots the owner's live crops, open tasks, active disease cases, 30-day ledger totals, and exchange listings, combines them with dated mandi/weather evidence, and drafts multilingual action proposals in the background.
+- **Multimodal Vision & Diagnostic Sub-Agents ([`document_vision.py`](skyview/assistant/document_vision.py), [`disease_service.py`](skyview/agents/disease_service.py)):** Inspects uploaded crop leaf photographs, soil lab reports, bills, and receipts to extract structured agronomic observations, differential diagnoses, and follow-up care plans.
+- **Grounded Web & Policy Research Sub-Agent ([`skyview/assistant/research.py`](skyview/assistant/research.py)):** Executes source-attributed public research for government schemes, university advisories, and market arrival guidance, preserving URLs and citations across session restores.
+- **Artifact Generation Sub-Agent ([`skyview/assistant/artifacts.py`](skyview/assistant/artifacts.py)):** Transforms structured tool outputs and plans into downloadable `.docx`, `.pdf`, `.xlsx`, `.csv`, and `.pptx` files stored in private owner-scoped object storage.
+- **Supervisor & Telemetry Specialist Agents ([`skyview/agents/supervisor.py`](skyview/agents/supervisor.py)):** Coordinates domain specialists (`weather_agent`, `alert_agent`, `farm_agent`, `trend_agent`, `sensor_agent`, `mandi_agent`, `scheme_agent`, and `fpga_agent`) for telemetry fusion and classic advisor workflows.
+
+### 2. Dynamic Skill Injection & 52 Typed Tool Contracts
+Instead of stuffing every domain rule into a monolithic system prompt, Mitra uses **progressive skill disclosure** ([`skyview/assistant/skills/`](skyview/assistant/skills/)):
+- **Preloaded & On-Demand Skills:** Recognized workflows preload their matching skill markdown playbook automatically, or the orchestrator calls `load_skill(name)` mid-run to pull in specialized instructions (e.g., `irrigation`, `sale-planning`, `insurance-pack`, `soil-report-review`, `expert-handoff`).
+- **52 Schema-Validated Tools ([`skyview/assistant/tools.py`](skyview/assistant/tools.py)):** Every tool is backed by strict JSON Schema validation and an owner-scoped `Executor`. Tool results are automatically compacted (`bounded_result`) so large mandi series or weather charts render in full on the UI while feeding concise statistical summaries and top-N rows to the LLM context window.
+- **Execution Contracts & Pause/Resume State Machine ([`skyview/assistant/execution_contract.py`](skyview/assistant/execution_contract.py)):** If a tool requires missing parameters, Mitra emits a structured `ask_user` turn and pauses the run. If a tool mutates farm state (creating tasks, logging ledger expenses, updating crop cases, publishing exchange offers), Mitra stages a cryptographic approval payload with version checks and resumes execution only after explicit farmer confirmation.
+
+### 3. Token-Budgeted Agentic Memory Management
+Long-running farm relationships require memory that neither overflows the context window nor hallucinates past instructions ([`skyview/assistant/memory.py`](skyview/assistant/memory.py) & [`memory_facts.py`](skyview/assistant/memory_facts.py)):
+- **Token-Budgeted Sliding Window (`CONTEXT_BUDGET = 12,000` tokens):** Before every reasoning turn, `memory.context()` measures the active transcript using `tiktoken` (`cl100k_base`).
+- **Turn-Boundary Compaction (`SUMMARY_LIMIT = 1,800` tokens):** When the active conversation exceeds budget, the memory manager finds a clean user-turn boundary (never splitting tool-call/tool-result pairs) and compacts older turns into an attributed evidence summary while keeping the full raw transcript archived in PostgreSQL (`sv3.assistant_sessions`).
+- **Prompt-Injection & Authority Isolation:** Compacted memory summaries are explicitly marked as untrusted historical evidence—quoted text in summaries or external documents can never self-authorize a tool write or override system safety boundaries.
+- **Redundant Skill Pruning:** Older `load_skill` payloads are automatically pruned from the active token window when the conversation grows, preserving token budget for fresh tool observations.
+
+### 4. Lease-Coordinated Background Workers & Async Queues
+- **PostgreSQL Advisory-Leased Worker ([`skyview/data/v3/worker.py`](skyview/data/v3/worker.py)):** Coordinates recurring background jobs across stateless Cloud Run instances without duplicate execution—refreshing weather forecasts, syncing mandi price arrivals, tracking source health, and warming `Saathi` companion plans.
+- **Asynchronous WhatsApp & Media Worker ([`skyview/assistant/whatsapp_tasks.py`](skyview/assistant/whatsapp_tasks.py)):** Signed Twilio webhooks enqueue inbound farmer voice notes, crop photos, and messages into **Google Cloud Tasks**, allowing a background worker to transcribe audio, run the multi-step Mitra orchestrator, and deliver the response reliably.
+
+---
+
+## 🎙️ Multilingual Voice Pipeline (STT · TTS · Live Turn-Taking)
+
+Kisan Mitra treats voice as a first-class agentic interface across **22+ Indian language codes** (`hi-IN`, `mr-IN`, `ta-IN`, `te-IN`, `kn-IN`, `ml-IN`, `bn-IN`, `gu-IN`, `pa-IN`, `od-IN`, `as-IN`, `ur-IN`, `ne-IN`, `kok-IN`, `mai-IN`, `sa-IN`, `en-IN`, and Hinglish):
+
+```mermaid
+flowchart LR
+    Mic["Farmer Speaks (Web / Flutter / WhatsApp Audio)"] --> Validate["Container & RIFF/WAVE Integrity Check (<=5MB, <=30s)"]
+    Validate --> PrimarySTT["Primary Neural STT: Sarvam AI (saaras:v4 / saaras:v3)"]
+    PrimarySTT -->|"Fallback on timeout/503"| FallbackSTT["Fallback LPU STT: Groq Whisper (whisper-large-v3-turbo)"]
+    PrimarySTT --> Orchestrator["Mitra Agentic Orchestrator (Language-Locked Context)"]
+    FallbackSTT --> Orchestrator
+    Orchestrator --> ReplyText["Grounded Response + Action / Review Cards"]
+    ReplyText --> NeuralTTS["Neural TTS Synthesis: Sarvam Bulbul (bulbul:v2 · 11 Indian Languages)"]
+    NeuralTTS --> AudioOut["Streaming Audio Playback + Live Captions"]
+```
+
+- **Multi-Provider Speech-to-Text (STT) with Automatic Failover ([`skyview/api/v3_voice_routes.py`](skyview/api/v3_voice_routes.py)):** Audio uploads undergo binary signature validation (`WAV`, `WebM`, `Ogg`, `FLAC`, `MP3`, `MP4`) and duration bounds before routing to **Sarvam AI (`saaras:v4`)** for Indian-accent and code-mixed recognition, with automatic multi-key failover to **Groq LPU Whisper (`whisper-large-v3-turbo`)**.
+- **Neural Text-to-Speech (TTS) & Spoken Onboarding:** Responses, guided tours, and onboarding prompts are synthesized via **Sarvam AI (`bulbul:v2`)** with preprocessing enabled for natural Indian cadence across 11 spoken output languages.
+- **Hands-Free Live Conversation Mode ([`LiveConversation.tsx`](frontend/src/components/assistant/LiveConversation.tsx)):** Supports automatic speech turn detection (`automatic_speech_turns`), live streaming captions, and voice-driven tool execution while strictly preserving review gates—voice input never bypasses farmer approval for record changes.
+- **Structured Voice-to-Field Extraction:** Spoken farmer introductions are transcribed and parsed into editable profile/farm proposal fields without silently overwriting existing database records.
 
 ---
 
