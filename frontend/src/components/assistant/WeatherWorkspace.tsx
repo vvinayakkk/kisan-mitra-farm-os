@@ -73,6 +73,8 @@ const cityLabel = (city: City) => [city.name, city.admin1, city.country].filter(
 const particles = Array.from({ length: 24 }, (_, index) => index);
 
 export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: string) => void }) {
+  const [hourRange, setHourRange] = useState(12);
+  const [dayRange, setDayRange] = useState(10);
   const [farmKey, setFarmKey] = useState("");
   const [nearby, setNearby] = useState<{latitude: number; longitude: number} | null>(null);
   const [locating, setLocating] = useState(false);
@@ -157,7 +159,7 @@ export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: st
     code: daily ? at(daily, "weather_code", index) : null,
   }));
   const nowIndex = live?.hourly.time?.findIndex(value => String(value) >= String(current?.time || "")) ?? -1;
-  const hours = nowIndex < 0 ? [] : (live?.hourly.time || []).slice(nowIndex, nowIndex + 12).map((time, i) => ({
+  const hours = nowIndex < 0 ? [] : (live?.hourly.time || []).slice(nowIndex, nowIndex + hourRange).map((time, i) => ({
     time,
     temperature: at(live?.hourly, "temperature_2m", nowIndex + i),
     probability: at(live?.hourly, "precipitation_probability", nowIndex + i),
@@ -207,8 +209,8 @@ export default function WeatherWorkspace({ onNavigate }: { onNavigate: (view: st
           </section>
           {displayed?.live_error && <p className="farm-weather-soft-note" role="status">{displayed.live_error}</p>}
           <div className="farm-weather-grid">
-            <section className="farm-weather-card farm-weather-hourly"><div className="farm-weather-card-title"><CloudSun size={16}/> Next hours</div>{hours.length ? <div className="farm-weather-hour-strip">{hours.map((hour, i) => { const HourIcon = condition(hour.code).icon; return <div key={String(hour.time)}><span>{i === 0 ? "Now" : clock(hour.time, live?.timezone)}</span><HourIcon size={22}/><strong>{rounded(hour.temperature, "°")}</strong><small><Droplets size={11}/>{rounded(hour.probability, "%")}</small></div>; })}</div> : <p className="farm-weather-card-empty">Hourly outlook is temporarily unavailable.</p>}</section>
-            <section className="farm-weather-card farm-weather-ten-day"><div className="farm-weather-card-title"><Sun size={16}/> 10-day forecast</div><div className="farm-weather-day-list">{days.map((day, i) => { const Icon = condition(day.code).icon; return <div key={day.date}><span>{i === 0 ? "Today" : dayLabel(day.date)}</span><Icon size={18}/><span className="farm-weather-rain"><Droplets size={12}/>{day.probability === null ? rainAmount(day.rain) : rounded(day.probability, "%")}</span><span className="farm-weather-range"><small>{rounded(day.low, "°")}</small><i style={{ width: `${Math.max(16, Math.min(100, ((Number(day.high || 0) - Number(day.low || 0)) / 18) * 100))}%` }}/><strong>{rounded(day.high, "°")}</strong></span></div>; })}</div></section>
+            <section className="farm-weather-card farm-weather-hourly"><div className="farm-weather-card-title"><CloudSun size={16}/> Next hours <select aria-label="Hourly forecast range" value={hourRange} onChange={e=>setHourRange(Number(e.target.value))}>{[6,12,24].map(n=><option key={n} value={n}>{n} hours</option>)}</select></div>{hours.length ? <div className="farm-weather-hour-strip">{hours.map((hour, i) => { const HourIcon = condition(hour.code).icon; return <div key={String(hour.time)}><span>{i === 0 ? "Now" : clock(hour.time, live?.timezone)}</span><HourIcon size={22}/><strong>{rounded(hour.temperature, "°")}</strong><small><Droplets size={11}/>{rounded(hour.probability, "%")}</small></div>; })}</div> : <p className="farm-weather-card-empty">Hourly outlook is temporarily unavailable.</p>}</section>
+            <section className="farm-weather-card farm-weather-ten-day"><div className="farm-weather-card-title"><Sun size={16}/> Forecast <select aria-label="Daily forecast range" value={dayRange} onChange={e=>setDayRange(Number(e.target.value))}>{[3,7,10].map(n=><option key={n} value={n}>{n} days</option>)}</select></div><div className="farm-weather-day-list">{days.slice(0,dayRange).map((day, i) => { const Icon = condition(day.code).icon; return <div key={day.date}><span>{i === 0 ? "Today" : dayLabel(day.date)}</span><Icon size={18}/><span className="farm-weather-rain"><Droplets size={12}/>{day.probability === null ? rainAmount(day.rain) : rounded(day.probability, "%")}</span><span className="farm-weather-range"><small>{rounded(day.low, "°")}</small><i style={{ width: `${Math.max(16, Math.min(100, ((Number(day.high || 0) - Number(day.low || 0)) / 18) * 100))}%` }}/><strong>{rounded(day.high, "°")}</strong></span></div>; })}</div></section>
             <div className="farm-weather-detail-grid">
               <section className="farm-weather-card"><div className="farm-weather-card-title"><Wind size={16}/> Wind</div><strong>{rounded(current?.wind_speed_10m, " km/h")}</strong><p>Gusts {rounded(current?.wind_gusts_10m, " km/h")}</p><div className="farm-weather-compass"><Compass size={25} style={{ transform: `rotate(${number(current?.wind_direction_10m) || 0}deg)` }}/><span>{rounded(current?.wind_direction_10m, "°")}</span></div></section>
               <section className="farm-weather-card"><div className="farm-weather-card-title"><Droplets size={16}/> Humidity</div><strong>{rounded(current?.relative_humidity_2m, "%")}</strong><p>Regional model estimate</p></section>

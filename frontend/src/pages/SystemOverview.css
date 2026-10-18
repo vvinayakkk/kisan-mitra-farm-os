@@ -457,3 +457,4 @@
 .station-explorer .header-location,.station-explorer .eyebrow,.station-explorer .stage-heading p,.station-explorer .stage-status,.station-explorer .station-readings small,.station-explorer .brand-ai,.station-explorer .header-mitra,.station-explorer .back-dashboard { color:#44593b; }
 
 .station-readings span,.station-explorer .station-options,.station-explorer .station-controls { color:#465c3b; }
+.station-readings>label{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 12px;color:#647955}.station-readings select{max-width:105px;border:1px solid #d5dfca;background:#ffffffc9;border-radius:8px;padding:5px;font-size:10px;color:#435d37}

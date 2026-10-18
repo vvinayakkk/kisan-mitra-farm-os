@@ -1,3 +1,4 @@
+import { CollectionFilters, useCollectionFilters } from "./CollectionFilters";
 import { PreparedBySaathi } from "./PreparedBySaathi";
 import { localPresentation } from "@/lib/localPresentation";
 import { useEffect, useRef, useState } from "react";
@@ -134,6 +135,7 @@ export function FarmExchange({ initialListingId }: { initialListingId?: string }
     [refresh, setRefresh] = useState(0),
     [journeyOpen, setJourneyOpen] = useState(false),
     [discoveryNote, setDiscoveryNote] = useState("");
+  const listingFilter = useCollectionFilters(listings, l => `${l.title} ${l.category}`, l => l.kind);
   const messageAttempt = useRef<{ signature: string; key: string } | null>(
     null,
   );
@@ -584,7 +586,8 @@ export function FarmExchange({ initialListingId }: { initialListingId?: string }
                 </button>
               </div>
             )}
-            {listings.map((l) => {
+            <CollectionFilters control={listingFilter} label="Exchange offers and needs" />
+            {listingFilter.items.map((l) => {
               const Icon =
                 categories.find((c) => c.id === l.category)?.icon || Sprout;
               return (

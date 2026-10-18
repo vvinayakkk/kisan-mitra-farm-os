@@ -33,6 +33,7 @@ export default function SystemOverview({
   embedded?: boolean;
 }) {
   const [selected, setSelected] = useState<SensorId | null>(null);
+  const [readingGroup, setReadingGroup] = useState("all");
   const [autoRotate, setAutoRotate] = useState(false);
   const [exploded, setExploded] = useState(false);
   const [labels, setLabels] = useState(true);
@@ -156,6 +157,7 @@ export default function SystemOverview({
           </Suspense>
         </div>
         <div className="station-readings" aria-label="Field readings">
+          <label style={{fontSize:10}}>Readings<select aria-label="Station reading group" value={readingGroup} onChange={e=>setReadingGroup(e.target.value)}><option value="all">All readings</option><option value="soil">Soil</option><option value="weather">Weather</option></select></label>
           {[
             [
               "Temperature",
@@ -164,7 +166,7 @@ export default function SystemOverview({
             ["Soil moisture", reading("soilSensor", data)],
             ["Wind", reading("anemometer", data)],
             ["Rain", reading("rainGauge", data)],
-          ].map(([name, value]) => (
+          ].filter(([name]) => readingGroup === "all" || (readingGroup === "soil" ? name === "Soil moisture" : name !== "Soil moisture")).map(([name, value]) => (
             <div key={name}>
               <span>{name}</span>
               <strong>{value}</strong>

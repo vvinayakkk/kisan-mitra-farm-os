@@ -1,3 +1,4 @@
+import { CollectionFilters, useCollectionFilters } from "./CollectionFilters";
 import { WorkspaceVoiceField } from "@/components/WorkspaceVoiceField";
 import { ExportMenu } from "./ExportMenu";
 import { useState } from "react";
@@ -37,7 +38,8 @@ export function FarmCalendar({ onChat }: { onChat: () => void }) {
     (_, i) =>
       new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
   );
-  const tasks = state.tasks.filter((t) => t.due_date === selected);
+  const filter = useCollectionFilters(state.tasks, t => `${t.title} ${t.notes || ""}`, t => t.completed ? "Completed" : "Open", t => t.due_date);
+  const tasks = filter.items.filter((t) => t.due_date === selected);
   const today = key(new Date());
   const disabled = saving || state.running || !!state.pending;
   const ask = (text: string) => {
@@ -102,6 +104,7 @@ export function FarmCalendar({ onChat }: { onChat: () => void }) {
           </button>
         </div>
       </header>
+      <CollectionFilters control={filter} label="Calendar tasks" />
       <div className="calendar-layout">
         <div className="calendar-month">
           <div className="calendar-heading">
@@ -148,7 +151,7 @@ export function FarmCalendar({ onChat }: { onChat: () => void }) {
                   className={`calendar-day ${d.getMonth() !== month.getMonth() ? "outside" : ""} ${date === today ? "today" : ""} ${date === selected ? "selected" : ""}`}
                 >
                   <span>{d.getDate()}</span>
-                  {state.tasks
+                  {filter.items
                     .filter((t) => t.due_date === date)
                     .slice(0, 2)
                     .map((t) => (

@@ -1194,11 +1194,11 @@ class Executor:
                 },
             }
         if name == "list_tasks":
-            return {"tasks": store.records(self.sid, "task")}
+            return {"tasks": await asyncio.to_thread(store.records, self.sid, "task")}
         if name == "save_task":
             return {
-                "saved": store.add_record(
-                    self.sid,
+                "saved": await asyncio.to_thread(
+                    store.add_record, self.sid,
                     "task",
                     {**args.model_dump(mode="json"), "completed": False},
                     execution_id,

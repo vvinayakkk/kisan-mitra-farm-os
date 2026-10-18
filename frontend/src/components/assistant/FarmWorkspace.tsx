@@ -1,3 +1,4 @@
+import { CollectionFilters, useCollectionFilters } from "./CollectionFilters";
 import { onWorkspaceCacheInvalidated } from "@/lib/workspaceCacheLifecycle";
 import { localPresentation } from "@/lib/localPresentation";
 import type { ExportColumn } from "@/lib/farmExports";
@@ -344,6 +345,7 @@ function Fields() {
       .then((d) => setRegions(d.regions || []))
       .catch((e) => setError(e.message));
   }, []);
+  const farmFilter = useCollectionFilters(farms.items, f => `${f.name || ""} ${f.irrigation_method || ""}`, f => String(f.ownership_type || ""));
   const open = (type: "farm" | "plot", row?: Row) => {
     setKind(type);
     setError("");
@@ -442,11 +444,12 @@ function Fields() {
           </button>
         </div>
       </div>
+      <CollectionFilters control={farmFilter} label="Farms" />
       <Failure error={farms.error || plots.error || (!edit ? error : "")} />
       {farms.loading ? (
         <p>Loading your fields…</p>
       ) : farms.items.length ? (
-        farms.items.map((f) => (
+        farmFilter.items.map((f) => (
           <article className="feature-card farm-field-card" key={f.id}>
             <div className="farm-section-heading">
               <div>
@@ -680,6 +683,7 @@ function WorkflowRecords({
     [busy, setBusy] = useState(false),
     [expanded, setExpanded] = useState<string | null>(null),
     [history, setHistory] = useState<Record<string, Row[]>>({});
+  const filter = useCollectionFilters(rows.items, r => [r.title,r.name,r.description,r.notes,r.summary,r.value,r.crop_name,r.fact_key,r.fact,r.key].filter(Boolean).map(String).join(" "), r => String(r.status || r.kind || r.entry_type || r.category || ""), r => String(r.occurred_on || r.observed_on || r.created_at || ""));
   const titles: Record<string, string> = {
     ledger: "Money in & money out",
     cases: "Crop follow-ups",
@@ -687,6 +691,7 @@ function WorkflowRecords({
     memory: "Your farm details",
   };
   useEffect(() => {
+    filter.setFilters({query:"",status:"",from:"",to:""});
     setEdit(null);
     setExpanded(null);
     setVisible(5);
@@ -846,15 +851,17 @@ function WorkflowRecords({
           )}
         </div>
       </div>
+      <CollectionFilters key={tab} control={filter} label={titles[tab] || "Records"} />
       <Failure error={rows.error || (!edit ? error : "")} />
       {tab === "ledger" && rows.summary && (
         <LedgerSummary summary={rows.summary} />
       )}{" "}
+      {!rows.loading && rows.items.length > 0 && filter.items.length === 0 && <p role="status">No records match these filters. Clear filters to see all records.</p>}
       {rows.loading ? (
         <p>Loading saved records…</p>
       ) : rows.items.length ? (
         <div className="farm-record-list">
-          {rows.items.slice(0, visible).map((r) => (
+          {filter.items.slice(0, visible).map((r) => (
             <article key={r.id} className={`feature-card notebook-record notebook-record-${tab}`}>
               <div className="farm-section-heading">
                 <div>
@@ -1095,12 +1102,12 @@ function WorkflowRecords({
             : "Nothing saved here yet. Add your first record when you’re ready."}
         </Empty>
       )}
-      {rows.items.length > visible && (
+      {filter.items.length > visible && (
         <button
           className="farm-text-action"
           onClick={() => setVisible((n) => n + 5)}
         >
-          Show more records ({rows.items.length - visible})
+          Show more records ({filter.items.length - visible})
         </button>
       )}
       {tab === "missions" && <SharedFarmWork />}

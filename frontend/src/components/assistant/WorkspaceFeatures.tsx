@@ -1,3 +1,4 @@
+import { CollectionFilters, useCollectionFilters } from "./CollectionFilters";
 import { reportedMarketsOnly } from "@/lib/localPresentation";
 import "./feature-form.css";
 import "./feature-experiences.css";
@@ -165,6 +166,7 @@ function Crops({ active }: { active: boolean }) {
   const [result, setResult] = useState<Diagnostic | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const actionFilter = useCollectionFilters(result?.solutions || [], item => `${item.title} ${item.details}`, item => item.stage);
   const operation = useRef(0);
   useEffect(
     () => () => {
@@ -309,8 +311,9 @@ function Crops({ active }: { active: boolean }) {
                   </ul>
                 </>
               )}
+              <CollectionFilters control={actionFilter} label="Crop care steps" />
               {result.confidence > 0 &&
-                result.solutions?.map((solution, i) => (
+                actionFilter.items.map((solution, i) => (
                   <div className="crop-action" key={i}>
                     <span>{solution.stage}</span>
                     <h3>{solution.title}</h3>
@@ -815,12 +818,14 @@ function Files({ active }: { active: boolean }) {
       cancelled = true;
     };
   }, [active, assistant.ready, assistant.running]);
+  const fileFilter = useCollectionFilters(assistant.artifacts, file => file.title, file => file.format);
   const total = expenses.reduce(
     (sum, e) => sum + (Number.isFinite(e.amount) ? e.amount : 0),
     0,
   );
   return (
     <div className="notebook-files">
+      <CollectionFilters control={fileFilter} label="Files" />
       <div className="record-overview">
         <div>
           <FileText size={19} />
@@ -846,7 +851,7 @@ function Files({ active }: { active: boolean }) {
           </div>
           {assistant.artifacts.length ? (
             <div className="record-file-list">
-              {assistant.artifacts.map((file) => (
+              {fileFilter.items.map((file) => (
                 <button
                   className={selected?.id === file.id ? "selected" : ""}
                   key={file.id}

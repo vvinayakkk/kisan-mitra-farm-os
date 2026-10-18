@@ -87,11 +87,14 @@ def create_session_for_farmer(fid):
             raise ValueError("Verified farmer account not found")
         # Idempotent across simultaneous web/mobile sign-ins. An empty farm is
         # a workspace, not an assertion of land size, location or connected kit.
-        db.execute(text("""INSERT INTO sv3.farms(farmer_id,farm_key,name,region_id,ownership_type,irrigation_method)
+        db.execute(
+            text("""INSERT INTO sv3.farms(farmer_id,farm_key,name,region_id,ownership_type,irrigation_method)
             SELECT id,'HOME-'||id::text,'My farm',region_id,'unspecified','unspecified'
             FROM sv3.farmers WHERE id=:f
               AND NOT EXISTS(SELECT 1 FROM sv3.farms WHERE farmer_id=:f)
-            ON CONFLICT(farm_key) DO NOTHING"""), {"f": fid})
+            ON CONFLICT(farm_key) DO NOTHING"""),
+            {"f": fid},
+        )
         # Preserve completed conversations when a device renews its 30-day
         # capability. The verified owner and RLS scope both constrain this copy.
         db.execute(
@@ -758,51 +761,51 @@ def append_event(sid, event):
         "cancelled": "cancelled",
     }
     with database.connection(fid, write=True) as db:
-        s = session(db, sid)
+        # One SQL round trip creates/updates the run and appends its ordered
+        # event. The existing per-session lease serializes writers; RLS remains
+        # active for both the session lookup and each inserted row.
+        terminal = event["type"] in {"done", "error", "cancelled"}
         db.execute(
-            text(
-                "INSERT INTO sv3.agent_runs(id,farmer_id,conversation_id,request_key,status,started_at,lease_expires_at) VALUES(:id,:f,:cid,:key,'running',now(),now()+interval '240 seconds') ON CONFLICT(id) DO NOTHING"
-            ),
-            {"id": rid, "f": fid, "cid": s["conversation_id"], "key": event["run_id"]},
-        )
-        if event["type"] in {"done", "error", "cancelled"}:
-            db.execute(
-                text(
-                    "UPDATE sv3.agent_runs SET status=:status,ended_at=now() WHERE id=:id"
-                ),
-                {"id": rid, "status": event.get("status", "failed")},
+            text("""
+            WITH ensured_run AS (
+                INSERT INTO sv3.agent_runs(id,farmer_id,conversation_id,request_key,status,started_at,lease_expires_at)
+                SELECT :id,:f,s.conversation_id,:key,'running',now(),now()+interval '240 seconds'
+                FROM sv3.assistant_sessions s WHERE s.id=:sid
+                ON CONFLICT(id) DO UPDATE SET
+                    status=CASE WHEN :terminal THEN :status ELSE sv3.agent_runs.status END,
+                    ended_at=CASE WHEN :terminal THEN now() ELSE sv3.agent_runs.ended_at END
+                RETURNING id
             )
-        seq = db.execute(
-            text(
-                "SELECT coalesce(max(sequence),0)+1 FROM sv3.run_events WHERE run_id=:id"
-            ),
-            {"id": rid},
-        ).scalar_one()
-        db.execute(
-            text(
-                "INSERT INTO sv3.run_events(farmer_id,run_id,sequence,event_type,payload,occurred_at) VALUES(:f,:id,:seq,:type,CAST(:payload AS jsonb),:at)"
-            ),
+            INSERT INTO sv3.run_events(farmer_id,run_id,sequence,event_type,payload,occurred_at)
+            SELECT :f,r.id,(SELECT coalesce(max(sequence),0)+1 FROM sv3.run_events WHERE run_id=r.id),:type,CAST(:payload AS jsonb),:at
+            FROM ensured_run r
+        """),
             {
-                "f": fid,
                 "id": rid,
-                "seq": seq,
+                "f": fid,
+                "key": event["run_id"],
+                "sid": sid,
+                "terminal": terminal,
+                "status": event.get("status", "failed"),
                 "type": mapping.get(event["type"], "skill"),
                 "payload": dump(event),
                 "at": datetime.fromtimestamp(event["at"], UTC),
             },
         )
         if event.get("call_id"):
-            tool_version = db.execute(
-                text(
-                    "SELECT id FROM sv3.tool_versions WHERE code=:code AND version=:version"
-                ),
-                {
-                    "code": event.get("tool"),
-                    "version": bindings["tools"].get(event.get("tool")),
-                },
-            ).scalar_one_or_none()
+            tool_version = None
+            if event["type"] == "tool_started":
+                tool_version = db.execute(
+                    text(
+                        "SELECT id FROM sv3.tool_versions WHERE code=:code AND version=:version"
+                    ),
+                    {
+                        "code": event.get("tool"),
+                        "version": bindings["tools"].get(event.get("tool")),
+                    },
+                ).scalar_one_or_none()
             skill_version = None
-            if event.get("tool") == "load_skill":
+            if event["type"] == "tool_started" and event.get("tool") == "load_skill":
                 skill_version = db.execute(
                     text(
                         "SELECT id FROM sv3.skill_versions WHERE code=:code AND version=:version"

@@ -1,3 +1,4 @@
+import { CollectionFilters, useCollectionFilters } from "./CollectionFilters";
 import { createPortal } from "react-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { offlineEnabled } from "@/lib/offlineStore";
@@ -483,10 +484,8 @@ const MessageBubble = memo(function MessageBubble({
           <span>{message.error}</span>
         </div>
       )}
-      {message.status === "working" &&
-        !message.text &&
-        message.activities.length === 0 && (
-          <div className="mitra-working">
+      {message.status === "working" && (
+          <div className="mitra-working" role="status" aria-live="polite">
             <span />
             <span />
             <span /> {liveStatus || "Getting started"}
@@ -515,6 +514,7 @@ export function AssistantChat({
   weatherCity?: string;
 }) {
   const state = useAssistant();
+  const conversationFilter = useCollectionFilters(state.conversations, chat => chat.title);
   const latestAnswerId = [...state.messages].reverse().find(message => message.role === "assistant")?.id;
   const [startedInline, setStartedInline] = useState(false);
   const [collapsedReply, setCollapsedReply] = useState(false);
@@ -1229,11 +1229,12 @@ export function AssistantChat({
                     <X size={15} />
                   </button>
                 </header>
+                <CollectionFilters control={conversationFilter} label="Conversations" />
                 <div className="recent-chat-list">
                   {state.conversations.length === 0 ? (
                     <p>Your previous chats will appear here.</p>
                   ) : (
-                    state.conversations.map((chat) => (
+                    conversationFilter.items.map((chat) => (
                       <button
                         key={chat.id}
                         onClick={() => {

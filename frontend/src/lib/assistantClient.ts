@@ -293,7 +293,7 @@ export async function sendAssistant(
   update({
     running: true,
     error: null,
-    status: "Connecting",
+    status: "Sending your request to Mitra…",
     messages: [
       ...state.messages,
       { id: crypto.randomUUID(), role: "user", text: message, activities: [] },

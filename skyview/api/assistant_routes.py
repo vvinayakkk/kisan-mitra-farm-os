@@ -259,17 +259,30 @@ async def run(
     request: Request,
     authorization: str | None = Header(default=None),
 ):
-    await asyncio.to_thread(authorize, sid, authorization)
-    lock = _locks.setdefault(sid, asyncio.Lock())
-    if lock.locked():
-        raise HTTPException(409, "A request is already running in this conversation.")
-    await lock.acquire()
-    lease = await asyncio.to_thread(store.claim_run, sid)
-    if not lease:
-        lock.release()
-        _locks.pop(sid, None)
-        raise HTTPException(409, "A request is already running in this conversation.")
-    state = await asyncio.to_thread(store.load, sid)
+    from skyview.assistant.v3_store import identity_scope
+
+    with identity_scope():
+        await asyncio.to_thread(authorize, sid, authorization)
+        lock = _locks.setdefault(sid, asyncio.Lock())
+        if lock.locked():
+            raise HTTPException(
+                409, "A request is already running in this conversation."
+            )
+        await lock.acquire()
+        lease = await asyncio.to_thread(store.claim_run, sid)
+        if not lease:
+            lock.release()
+            _locks.pop(sid, None)
+            raise HTTPException(
+                409, "A request is already running in this conversation."
+            )
+        try:
+            state = await asyncio.to_thread(store.load, sid)
+        except Exception:
+            await asyncio.to_thread(store.release_run, sid, lease)
+            lock.release()
+            _locks.pop(sid, None)
+            raise
     try:
         engine.preflight(state, req)
         if any(
@@ -304,11 +317,14 @@ async def run(
 
     async def stream():
         from skyview.assistant.v3_store import identity_scope
+
         # Thread offloads inherit this request-local scope. No authentication
         # decisions or owner identities are cached between requests.
         scope = identity_scope()
         scope.__enter__()
-        generator = engine.run(sid, req, state)
+        from skyview.assistant.progress import live_events
+
+        generator = live_events(engine.run(sid, req, state))
         try:
             async with asyncio.timeout(180):
                 async for event in generator:
@@ -489,7 +505,9 @@ async def station_data(
             and bool(data.get("timestamp")),
             "station_id": station_id,
             "data": data,
-            "source": "Stored station reference" if data.get("reference") else "Station measurements",
+            "source": "Stored station reference"
+            if data.get("reference")
+            else "Station measurements",
             "provenance": data.get("provenance", {}),
         }
     from skyview.assistant.data_sources import station_snapshot
