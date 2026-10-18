@@ -25,6 +25,19 @@ export function filterMapFarmers(farmers: MapFarmer[], query: string) {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   return farmers.filter(farmer => words.every(word => [farmer.name, farmer.location, farmer.state, ...farmer.crops, ...farmer.excess_resources, ...farmer.required_resources].join(' ').toLowerCase().includes(word)));
 }
+export type MapArea = {south: number; north: number; west: number; east: number; lat: number; lng: number};
+export function nearbyMapFarmers(farmers: MapFarmer[], area: MapArea | null) {
+  if (!area) return [];
+  const distance = (farmer: MapFarmer) => {
+    const radians = Math.PI / 180;
+    const lat = farmer.latitude! * radians;
+    const center = area.lat * radians;
+    return Math.sin((lat - center) / 2) ** 2 + Math.cos(lat) * Math.cos(center) * Math.sin((farmer.longitude! - area.lng) * radians / 2) ** 2;
+  };
+  return farmers.filter(f => f.latitude !== null && f.longitude !== null && f.latitude >= area.south && f.latitude <= area.north &&
+    (area.west <= area.east ? f.longitude >= area.west && f.longitude <= area.east : f.longitude >= area.west || f.longitude <= area.east))
+    .sort((a, b) => distance(a) - distance(b) || a.name.localeCompare(b.name));
+}
 let leafletPromise: Promise<any> | undefined;
 function loadLeaflet() {
   if (window.L) return Promise.resolve(window.L);
@@ -45,11 +58,14 @@ export default function WorkspaceFarmerMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
+  const [area, setArea] = useState<MapArea | null>(null);
+  const [listLimit, setListLimit] = useState(12);
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any>(null);
   const filtered = useMemo(() => filterMapFarmers(farmers, query), [farmers, query]);
   const located = useMemo(() => filtered.filter(f => f.latitude !== null && f.longitude !== null), [filtered]);
+  const nearby = useMemo(() => nearbyMapFarmers(filtered, area), [filtered, area]);
   async function refresh() {
     setLoading(true); setError('');
     try {
@@ -70,11 +86,22 @@ export default function WorkspaceFarmerMap() {
       L.control.zoom({position: 'bottomright'}).addTo(map.current);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 19 }).addTo(map.current);
       markers.current = L.layerGroup().addTo(map.current);
+      const updateArea = () => {
+        const bounds = map.current.getBounds(); const center = map.current.getCenter();
+        setArea({south: bounds.getSouth(), north: bounds.getNorth(), west: bounds.getWest(), east: bounds.getEast(), lat: center.lat, lng: center.lng});
+        setListLimit(12);
+      };
+      map.current.on('moveend', updateArea); updateArea();
       observer = new ResizeObserver(() => map.current?.invalidateSize()); observer.observe(container.current);
       setReady(true);
     }).catch(failure => { if (!disposed) setError(failure.message); });
     return () => { disposed = true; observer?.disconnect(); map.current?.remove(); map.current = null; markers.current = null; };
   }, []);
+  function showIndia() {
+    setQuery(''); setSelected(null); setListLimit(12);
+    const all = farmers.filter(f => f.latitude !== null && f.longitude !== null);
+    if (all.length) map.current?.fitBounds(all.map(f => [f.latitude, f.longitude]), {padding: [36,36], maxZoom: 6});
+  }
   function choose(farmer: MapFarmer) {
     setSelected(farmer);
     if (farmer.latitude !== null && farmer.longitude !== null) map.current?.flyTo([farmer.latitude, farmer.longitude], 10, {duration: 0.6});
@@ -96,11 +123,15 @@ export default function WorkspaceFarmerMap() {
     <header className="farmer-network-heading"><div><span className="farmer-network-eyebrow">GROW BETTER, TOGETHER</span><h1>Your farming neighbourhood</h1><p>Find farmers, discover shared resources, and plan the next step with Mitra.</p></div><button className="farmer-network-refresh" onClick={refresh} disabled={loading} aria-label="Refresh farmer map"><RotateCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh</button></header>
     <div className="farmer-network-layout"><div className="farmer-network-main">
       <label className="farmer-network-search"><Search size={17}/><input aria-label="Search farmers and resources" placeholder="Filter map by resource or state..." value={query} onChange={event => {setQuery(event.target.value); setSelected(null);}}/><span>{filtered.length} farmers</span></label>
+      <div className="farmer-map-controls"><span>Explore India · zoom into any region</span><button onClick={showIndia}>Show all India</button></div>
       {error && <p role="alert" className="farmer-network-error">{error} <button onClick={refresh}>Retry</button></p>}
       <div className="farmer-network-canvas"><div ref={container} className="farmer-network-map" aria-label="Farmer locations"/><div className="farmer-network-legend"><i/> {located.length} locations <span>· {located.some(f => f.reference) ? "Reference data" : "Approximate areas"}</span></div></div>
-      {!selected && <div className="farmer-network-hint"><MapPin size={16}/><p>Select a green dot or a farmer below to see crops and resources.</p></div>}
-      <div className="farmer-network-list" aria-label="Farmers in the map search">{filtered.slice(0,60).map(farmer => <button key={farmer.id} onClick={() => choose(farmer)} aria-pressed={selected?.id === farmer.id}><span className="farmer-network-avatar">{farmer.name.slice(0,1)}</span><span><strong>{farmer.name}</strong><small>{farmer.location || farmer.state || 'Location not shared'} · {farmer.excess_resources[0] || farmer.crops[0] || 'View profile'}</small></span><ArrowUpRight size={15}/></button>)}</div>
-      {!loading && !filtered.length && <p className="farmer-network-hint">No shared farmers match this search. Try a crop, resource or state.</p>}
+      <section className="farmer-nearby-section" aria-label="Farmers near the map centre">
+        <header><div><span className="farmer-network-eyebrow">EXPLORE THE NEIGHBOURHOOD</span><h2>Farmers in this area <span>{nearby.length}</span></h2><p>Closest to the map centre first. Move or zoom the map to explore another area.</p></div><MapPin size={20}/></header>
+        <div className="farmer-network-list">{nearby.slice(0,listLimit).map(farmer => <button key={farmer.id} onClick={() => choose(farmer)} aria-pressed={selected?.id === farmer.id}><span className="farmer-network-avatar">{farmer.name.slice(0,1)}</span><span className="farmer-list-details"><strong>{farmer.name}</strong><small>{farmer.location || farmer.state || 'Location not shared'}</small><span className="farmer-resource-tag">{farmer.excess_resources[0] || farmer.crops[0] || 'View profile'}</span></span><ArrowUpRight size={16}/></button>)}</div>
+        {nearby.length > listLimit && <button className="farmer-list-more" onClick={() => setListLimit(limit => limit + 12)}>Show more farmers</button>}
+        {!loading && !nearby.length && <p className="farmer-network-hint">No shared farmer locations in this view. Zoom out or choose Show all India.</p>}
+      </section>
     </div><aside className="farmer-network-assistant">{profile}<MitraHelper context="map"/><p className="farmer-network-note">Mitra can help find resources and plan a handover. Contact details are shared only through available exchange listings.</p></aside></div>
   </section>;
 }
